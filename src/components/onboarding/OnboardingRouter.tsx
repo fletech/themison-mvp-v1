@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { AdminSetupFlow } from './AdminSetupFlow';
@@ -10,78 +9,88 @@ import { StaffOnboarding } from './StaffOnboarding';
 
 export function OnboardingRouter() {
   const { user } = useAuth();
-  const navigate = useNavigate();
 
-  const { data: onboardingData, isLoading } = useQuery({
-    queryKey: ['onboarding-routing', user?.id],
+  // Get member information
+  const { data: member, isLoading: memberLoading } = useQuery({
+    queryKey: ['member', user?.id],
     queryFn: async () => {
-      if (!user?.id) throw new Error('No user found');
-
-      // Get member data
-      const { data: member, error: memberError } = await supabase
+      if (!user?.id) return null;
+      
+      const { data, error } = await supabase
         .from('members')
         .select('onboarding_completed, default_role, organization_id')
         .eq('profile_id', user.id)
         .single();
-
-      if (memberError) throw memberError;
-
-      // If user already completed onboarding, redirect to dashboard
-      if (member.onboarding_completed) {
-        navigate('/dashboard');
-        return null;
-      }
-
-      // Get organization data
-      const { data: organization, error: orgError } = await supabase
-        .from('organizations')
-        .select('onboarding_completed, name')
-        .eq('id', member.organization_id)
-        .single();
-
-      if (orgError) throw orgError;
-
-      return {
-        member,
-        organization,
-        onboardingType: determineOnboardingType(member, organization)
-      };
+      
+      if (error) throw error;
+      return data;
     },
     enabled: !!user?.id
   });
 
-  const determineOnboardingType = (member: any, organization: any) => {
-    if (member.default_role === 'admin') {
-      return organization.onboarding_completed ? 'admin-overview' : 'admin-setup';
-    }
-    return 'staff';
-  };
+  // Get organization information
+  const { data: organization, isLoading: orgLoading } = useQuery({
+    queryKey: ['organization', member?.organization_id],
+    queryFn: async () => {
+      if (!member?.organization_id) return null;
+      
+      const { data, error } = await supabase
+        .from('organizations')
+        .select('onboarding_completed, name, id')
+        .eq('id', member.organization_id)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!member?.organization_id
+  });
 
-  if (isLoading) {
+  if (memberLoading || orgLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  // If no member record, something went wrong
+  if (!member) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading onboarding...</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Setup Required</h1>
+          <p className="text-gray-600">Please contact your administrator to set up your account.</p>
         </div>
       </div>
     );
   }
 
-  if (!onboardingData) {
-    return null; // User was redirected to dashboard
+  // Staff onboarding - simple welcome
+  if (member.default_role === 'staff') {
+    return <StaffOnboarding member={member} organization={organization} />;
   }
 
-  const { onboardingType, member, organization } = onboardingData;
-
-  switch (onboardingType) {
-    case 'admin-setup':
+  // Admin onboarding logic
+  if (member.default_role === 'admin') {
+    // If organization onboarding is not completed, show setup flow
+    if (!organization?.onboarding_completed) {
       return <AdminSetupFlow member={member} organization={organization} />;
-    case 'admin-overview':
+    }
+    
+    // If organization is set up but member hasn't completed onboarding, show overview
+    if (!member.onboarding_completed) {
       return <AdminOverview member={member} organization={organization} />;
-    case 'staff':
-      return <StaffOnboarding member={member} organization={organization} />;
-    default:
-      return <AdminSetupFlow member={member} organization={organization} />;
+    }
   }
+
+  // Fallback - redirect to dashboard if everything is completed
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome back!</h1>
+        <p className="text-gray-600">Redirecting to dashboard...</p>
+      </div>
+    </div>
+  );
 }

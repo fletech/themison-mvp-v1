@@ -18,12 +18,14 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
 
+  console.log('AdminOverview props:', { member, organization });
+
   // Get organization metrics
   const { data: metrics, isLoading } = useQuery({
     queryKey: ['organization-metrics', organization?.id],
     queryFn: async () => {
       if (!organization?.id) {
-        console.log('No organization ID available');
+        console.log('No organization ID available for metrics');
         return {
           trials: [],
           members: [],
@@ -48,9 +50,7 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
           .eq('organization_id', organization.id)
       ]);
 
-      console.log('Trials result:', trialsResult);
-      console.log('Members result:', membersResult);
-      console.log('Roles result:', rolesResult);
+      console.log('Metrics fetched:', { trialsResult, membersResult, rolesResult });
 
       if (trialsResult.error) console.error('Trials error:', trialsResult.error);
       if (membersResult.error) console.error('Members error:', membersResult.error);
@@ -97,7 +97,8 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
     completeOnboardingMutation.mutate();
   };
 
-  if (isLoading) {
+  // Show loading if metrics are still loading or if we don't have organization data
+  if (isLoading || !organization) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
