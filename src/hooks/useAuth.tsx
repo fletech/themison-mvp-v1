@@ -28,44 +28,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(session?.user ?? null);
         setLoading(false);
         
-        // Handle new user sign in after signup
+        // The database trigger now handles profile creation automatically
+        // when email is confirmed, so we don't need to manually create profiles here
         if (event === 'SIGNED_IN' && session?.user) {
-          console.log('User signed in, checking if profile exists...');
-          
-          // Check if profile already exists
-          const { data: existingProfile, error: profileCheckError } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('id', session.user.id)
-            .single();
-
-          if (profileCheckError && profileCheckError.code === 'PGRST116') {
-            // Profile doesn't exist, this is a new user
-            console.log('New user detected, creating profile...');
-            try {
-              const { error: profileError } = await supabase
-                .from('profiles')
-                .insert({
-                  id: session.user.id,
-                  email: session.user.email!,
-                  first_name: session.user.user_metadata?.first_name,
-                  last_name: session.user.user_metadata?.last_name,
-                  onboarding_completed: false
-                });
-
-              if (profileError) {
-                console.error('Error creating profile:', profileError);
-              } else {
-                console.log('Profile created successfully, invitation trigger should fire now');
-              }
-            } catch (error) {
-              console.error('Error in profile creation:', error);
-            }
-          } else if (existingProfile) {
-            console.log('Existing user signed in, profile already exists');
-          } else {
-            console.error('Unexpected error checking profile:', profileCheckError);
-          }
+          console.log('User signed in:', session.user.email);
         }
       }
     );
