@@ -20,8 +20,17 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
 
   // Get organization metrics
   const { data: metrics, isLoading } = useQuery({
-    queryKey: ['organization-metrics', organization.id],
+    queryKey: ['organization-metrics', organization?.id],
     queryFn: async () => {
+      if (!organization?.id) {
+        console.log('No organization ID available');
+        return {
+          trials: [],
+          members: [],
+          roles: []
+        };
+      }
+      
       console.log('Fetching metrics for organization:', organization.id);
       
       const [trialsResult, membersResult, rolesResult] = await Promise.all([
@@ -52,7 +61,8 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
         members: membersResult.data || [],
         roles: rolesResult.data || []
       };
-    }
+    },
+    enabled: !!organization?.id
   });
 
   // Complete onboarding mutation
@@ -105,7 +115,7 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome to {organization.name}!
+            Welcome to {organization?.name || 'your organization'}!
           </h1>
           <p className="text-gray-600">
             Your organization is already set up. Here's an overview of what's available.
@@ -154,7 +164,7 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
                 Available Roles
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {metrics?.roles.map((role) => (
+                {metrics?.roles?.map((role) => (
                   <div key={role.id} className="border rounded-lg p-4">
                     <h3 className="font-medium text-gray-900">{role.name}</h3>
                     <p className="text-sm text-gray-600 mt-1">{role.description}</p>
@@ -181,7 +191,7 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
                 Current Team
               </h2>
               <div className="space-y-3">
-                {metrics?.members.map((teamMember) => (
+                {metrics?.members?.map((teamMember) => (
                   <div key={teamMember.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div>
                       <p className="font-medium text-gray-900">{teamMember.name}</p>
