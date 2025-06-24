@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
@@ -18,7 +17,7 @@ export function OnboardingFlow() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  // Get user's organization ID from their member record
+  // Get user's organization ID and member info
   const { data: memberData, isLoading: memberLoading, error: memberError } = useQuery({
     queryKey: ['user-organization', user?.id],
     queryFn: async () => {
@@ -26,7 +25,7 @@ export function OnboardingFlow() {
 
       const { data, error } = await supabase
         .from('members')
-        .select('organization_id, organizations(name)')
+        .select('id, organization_id, email, organizations(name)')
         .eq('profile_id', user.id)
         .single();
 
@@ -39,12 +38,14 @@ export function OnboardingFlow() {
   });
 
   const organizationId = memberData?.organization_id;
+  const currentMemberId = memberData?.id;
+  const currentMemberEmail = memberData?.email;
 
   // Send invitations mutation
   const sendInvitationsMutation = useMutation({
     mutationFn: async (members: any[]) => {
-      if (!organizationId) {
-        throw new Error('No organization ID available');
+      if (!organizationId || !currentMemberId) {
+        throw new Error('No organization or member ID available');
       }
 
       const invitations = members.map(member => ({
@@ -52,7 +53,7 @@ export function OnboardingFlow() {
         email: member.email,
         organization_id: organizationId,
         initial_role: member.role,
-        invited_by: user?.id,
+        invited_by: currentMemberId, // Using member_id instead of profile_id
         status: 'pending'
       }));
 
@@ -76,7 +77,7 @@ export function OnboardingFlow() {
   // Create roles mutation
   const createRolesMutation = useMutation({
     mutationFn: async (roles: any[]) => {
-      if (!organizationId) {
+      if (!organizationId || !user?.id) {
         throw new Error('No organization ID available');
       }
 
@@ -85,7 +86,7 @@ export function OnboardingFlow() {
         description: role.description,
         permission_level: role.permission_level,
         organization_id: organizationId,
-        created_by: user?.id
+        created_by: user.id
       }));
 
       const { error } = await supabase
@@ -107,9 +108,14 @@ export function OnboardingFlow() {
   // Create trial and complete onboarding mutation
   const createTrialMutation = useMutation({
     mutationFn: async (trialData: any) => {
-      if (!organizationId) {
-        throw new Error('No organization ID available');
+      if (!organizationId || !currentMemberId) {
+        throw new Error('No organization or member ID available');
       }
+
+      // Use member email as PI contact if auto-assigning as PI
+      const piContact = trialData.autoAssignAsPI && currentMemberEmail 
+        ? currentMemberEmail 
+        : trialData.pi_contact;
 
       // Create the trial
       const { data: trial, error: trialError } = await supabase
@@ -120,7 +126,7 @@ export function OnboardingFlow() {
           phase: trialData.phase,
           sponsor: trialData.sponsor,
           location: trialData.location,
-          pi_contact: trialData.pi_contact,
+          pi_contact: piContact,
           study_start: trialData.study_start,
           estimated_close_out: trialData.estimated_close_out,
           organization_id: organizationId,
@@ -134,33 +140,30 @@ export function OnboardingFlow() {
 
       // If auto-assign as PI, add user to trial team
       if (trialData.autoAssignAsPI) {
-        // Find PI role
+        // Find PI role (look for Principal Investigator roles first)
         const { data: piRole } = await supabase
           .from('roles')
           .select('id')
           .eq('organization_id', organizationId)
-          .eq('name', 'Principal Investigator (PI)')
+          .or('name.ilike.%PI%,name.ilike.%Principal Investigator%')
+          .order('name')
+          .limit(1)
           .single();
 
         if (piRole) {
-          // Get current user's member record
-          const { data: memberData } = await supabase
-            .from('members')
-            .select('id')
-            .eq('profile_id', user?.id)
-            .single();
+          await supabase
+            .from('trial_members')
+            .insert({
+              trial_id: trial.id,
+              member_id: currentMemberId,
+              role_id: piRole.id,
+              is_active: true,
+              start_date: new Date().toISOString().split('T')[0]
+            });
 
-          if (memberData) {
-            await supabase
-              .from('trial_members')
-              .insert({
-                trial_id: trial.id,
-                member_id: memberData.id,
-                role_id: piRole.id,
-                is_active: true,
-                start_date: new Date().toISOString().split('T')[0]
-              });
-          }
+          console.log('Auto-assigned user as PI to trial');
+        } else {
+          console.warn('No PI role found for auto-assignment');
         }
       }
 
