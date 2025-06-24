@@ -7,7 +7,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import Index from "./pages/Index";
-import Auth from "./pages/Auth";
+import SignUp from "./pages/auth/SignUp";
+import SignIn from "./pages/auth/SignIn";
 import DashboardPage from "./pages/DashboardPage";
 import NotFound from "./pages/NotFound";
 
@@ -27,7 +28,10 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <Index />} />
-      <Route path="/auth" element={user ? <Navigate to="/dashboard" replace /> : <Auth />} />
+      <Route path="/auth/sign-up" element={user ? <Navigate to="/dashboard" replace /> : <SignUp />} />
+      <Route path="/auth/sign-in" element={user ? <Navigate to="/dashboard" replace /> : <SignIn />} />
+      {/* Legacy routes for backwards compatibility */}
+      <Route path="/auth" element={<Navigate to="/auth/sign-in" replace />} />
       <Route 
         path="/dashboard" 
         element={

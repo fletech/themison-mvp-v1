@@ -5,12 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface SignupFormProps {
-  onSwitchToLogin: () => void;
+  onSignupSuccess: (email: string) => void;
 }
 
-export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
+export function SignupForm({ onSignupSuccess }: SignupFormProps) {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -21,6 +22,7 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
   const [loading, setLoading] = useState(false);
   const { signUp } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,10 +50,7 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
         variant: "destructive",
       });
     } else {
-      toast({
-        title: "Registration Successful!",
-        description: "Your account has been created. Please check your email to confirm.",
-      });
+      onSignupSuccess(formData.email);
     }
     
     setLoading(false);
@@ -142,7 +141,7 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
           Already have an account?{' '}
           <button
             type="button"
-            onClick={onSwitchToLogin}
+            onClick={() => navigate('/auth/sign-in')}
             className="text-blue-600 hover:text-blue-500 font-medium"
           >
             Sign in here

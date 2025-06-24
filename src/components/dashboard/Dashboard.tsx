@@ -3,13 +3,33 @@ import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, Users, FileText, Clock } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 export function Dashboard() {
+  // Fetch pending invitations count
+  const { data: pendingInvitationsCount } = useQuery({
+    queryKey: ['pending-invitations-count'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('invitations')
+        .select('id', { count: 'exact' })
+        .eq('status', 'pending');
+      
+      if (error) {
+        console.error('Error fetching pending invitations:', error);
+        return 0;
+      }
+      
+      return data?.length || 0;
+    }
+  });
+
   const stats = [
     { name: 'Active Trials', value: '0', icon: FileText, color: 'text-blue-600' },
     { name: 'Total Patients', value: '0', icon: Users, color: 'text-blue-600' },
     { name: 'Team Members', value: '1', icon: Users, color: 'text-blue-600' },
-    { name: 'Pending Invitations', value: '1', icon: Clock, color: 'text-blue-600' },
+    { name: 'Pending Invitations', value: pendingInvitationsCount?.toString() || '0', icon: Clock, color: 'text-blue-600' },
   ];
 
   return (

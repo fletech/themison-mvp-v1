@@ -46,13 +46,13 @@ const Index = () => {
             <div className="space-x-4">
               <Button 
                 variant="outline" 
-                onClick={() => navigate('/auth')}
+                onClick={() => navigate('/auth/sign-in')}
               >
                 Sign In
               </Button>
               <Button 
                 className="bg-blue-600 hover:bg-blue-700"
-                onClick={() => navigate('/auth')}
+                onClick={() => navigate('/auth/sign-up')}
               >
                 Get Started
               </Button>
@@ -76,7 +76,7 @@ const Index = () => {
             <Button 
               size="lg" 
               className="bg-blue-600 hover:bg-blue-700"
-              onClick={() => navigate('/auth')}
+              onClick={() => navigate('/auth/sign-up')}
             >
               Start Free Trial
             </Button>
@@ -112,7 +112,7 @@ const Index = () => {
           <Button 
             size="lg" 
             className="bg-blue-600 hover:bg-blue-700"
-            onClick={() => navigate('/auth')}
+            onClick={() => navigate('/auth/sign-up')}
           >
             Create Free Account
           </Button>

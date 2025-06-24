@@ -5,17 +5,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
-interface LoginFormProps {
-  onSwitchToSignup: () => void;
-}
-
-export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
+export function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const { signIn } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,7 +78,7 @@ export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
           Don't have an account?{' '}
           <button
             type="button"
-            onClick={onSwitchToSignup}
+            onClick={() => navigate('/auth/sign-up')}
             className="text-blue-600 hover:text-blue-500 font-medium"
           >
             Sign up here
