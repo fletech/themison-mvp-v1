@@ -14,21 +14,72 @@ export function OnboardingFlow() {
   const [currentStep, setCurrentStep] = useState(1);
   const [invitedMembers, setInvitedMembers] = useState<any[]>([]);
   const [customRoles, setCustomRoles] = useState<any[]>([]);
+  const [organizationId, setOrganizationId] = useState<string | null>(null);
   const navigate = useNavigate();
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
+  // Create organization and member record
+  const createOrganizationMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error('No user found');
+
+      // First check if user already has an organization
+      const { data: existingMember } = await supabase
+        .from('members')
+        .select('organization_id, organizations(name)')
+        .eq('profile_id', user.id)
+        .single();
+
+      if (existingMember) {
+        return existingMember.organization_id;
+      }
+
+      // Create organization
+      const orgName = `${user.user_metadata?.first_name || user.email.split('@')[0]}'s Organization`;
+      
+      const { data: org, error: orgError } = await supabase
+        .from('organizations')
+        .insert({
+          name: orgName,
+          created_by: user.id
+        })
+        .select()
+        .single();
+
+      if (orgError) throw orgError;
+
+      // Create member record for the creator
+      const { error: memberError } = await supabase
+        .from('members')
+        .insert({
+          name: `${user.user_metadata?.first_name || ''} ${user.user_metadata?.last_name || ''}`.trim() || user.email,
+          email: user.email,
+          organization_id: org.id,
+          profile_id: user.id,
+          default_role: 'admin',
+          onboarding_completed: false
+        });
+
+      if (memberError) throw memberError;
+
+      return org.id;
+    },
+    onSuccess: (orgId) => {
+      setOrganizationId(orgId);
+      toast.success('Organization created successfully!');
+    },
+    onError: (error) => {
+      toast.error('Failed to create organization: ' + error.message);
+    }
+  });
+
   // Send invitations mutation
   const sendInvitationsMutation = useMutation({
     mutationFn: async (members: any[]) => {
-      const { data: userOrgData } = await supabase
-        .rpc('user_organization_status', { user_profile_id: user?.id });
-      
-      if (!userOrgData || userOrgData.length === 0) {
-        throw new Error('User organization not found');
+      if (!organizationId) {
+        throw new Error('No organization ID available');
       }
-
-      const organizationId = userOrgData[0].organization_id;
 
       const invitations = members.map(member => ({
         name: member.name,
@@ -59,14 +110,9 @@ export function OnboardingFlow() {
   // Create roles mutation
   const createRolesMutation = useMutation({
     mutationFn: async (roles: any[]) => {
-      const { data: userOrgData } = await supabase
-        .rpc('user_organization_status', { user_profile_id: user?.id });
-      
-      if (!userOrgData || userOrgData.length === 0) {
-        throw new Error('User organization not found');
+      if (!organizationId) {
+        throw new Error('No organization ID available');
       }
-
-      const organizationId = userOrgData[0].organization_id;
 
       const rolesToCreate = roles.map(role => ({
         name: role.name,
@@ -95,14 +141,9 @@ export function OnboardingFlow() {
   // Create trial and complete onboarding mutation
   const createTrialMutation = useMutation({
     mutationFn: async (trialData: any) => {
-      const { data: userOrgData } = await supabase
-        .rpc('user_organization_status', { user_profile_id: user?.id });
-      
-      if (!userOrgData || userOrgData.length === 0) {
-        throw new Error('User organization not found');
+      if (!organizationId) {
+        throw new Error('No organization ID available');
       }
-
-      const organizationId = userOrgData[0].organization_id;
 
       // Create the trial
       const { data: trial, error: trialError } = await supabase
@@ -127,7 +168,7 @@ export function OnboardingFlow() {
 
       // If auto-assign as PI, add user to trial team
       if (trialData.autoAssignAsPI) {
-        // Find PI role (should be created in step 2)
+        // Find PI role
         const { data: piRole } = await supabase
           .from('roles')
           .select('id')
@@ -174,6 +215,13 @@ export function OnboardingFlow() {
     }
   });
 
+  // Initialize organization on component mount
+  React.useEffect(() => {
+    if (user && !organizationId) {
+      createOrganizationMutation.mutate();
+    }
+  }, [user]);
+
   const handleStep1Continue = (members: any[]) => {
     setInvitedMembers(members);
     if (members.length > 0) {
@@ -191,6 +239,18 @@ export function OnboardingFlow() {
   const handleStep3Complete = (trialData: any) => {
     createTrialMutation.mutate(trialData);
   };
+
+  // Show loading while creating organization
+  if (createOrganizationMutation.isPending) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Setting up your organization...</p>
+        </div>
+      </div>
+    );
+  }
 
   const renderCurrentStep = () => {
     switch (currentStep) {
