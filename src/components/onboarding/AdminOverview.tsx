@@ -1,13 +1,17 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, Users, Shield, Eye } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { FileText, Users, Shield, Eye, Plus, UserPlus } from 'lucide-react';
+import { InviteMembers } from './InviteMembers';
+import { CreateCustomRoles } from './CreateCustomRoles';
+import { CreateFirstTrial } from './CreateFirstTrial';
 
 interface AdminOverviewProps {
   member: any;
@@ -17,6 +21,12 @@ interface AdminOverviewProps {
 export function AdminOverview({ member, organization }: AdminOverviewProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  // Dialog states
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [showRolesDialog, setShowRolesDialog] = useState(false);
+  const [showTrialDialog, setShowTrialDialog] = useState(false);
 
   console.log('AdminOverview props:', { member, organization });
 
@@ -38,7 +48,7 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
       const [trialsResult, membersResult, rolesResult] = await Promise.all([
         supabase
           .from('trials')
-          .select('id, name, status')
+          .select('id, name, status, phase, sponsor, created_at')
           .eq('organization_id', organization.id),
         supabase
           .from('members')
@@ -63,6 +73,139 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
       };
     },
     enabled: !!organization?.id
+  });
+
+  // Send invitations mutation
+  const sendInvitationsMutation = useMutation({
+    mutationFn: async (members: any[]) => {
+      if (!organization?.id || !member?.id) {
+        throw new Error('No organization or member ID available');
+      }
+
+      const invitations = members.map(m => ({
+        name: m.name,
+        email: m.email,
+        organization_id: organization.id,
+        initial_role: m.role,
+        invited_by: member.id,
+        status: 'pending'
+      }));
+
+      const { error } = await supabase
+        .from('invitations')
+        .insert(invitations);
+
+      if (error) throw error;
+      return invitations;
+    },
+    onSuccess: () => {
+      toast.success('Invitations sent successfully!');
+      setShowInviteDialog(false);
+      queryClient.invalidateQueries({ queryKey: ['organization-metrics'] });
+    },
+    onError: (error) => {
+      toast.error('Failed to send invitations: ' + error.message);
+    }
+  });
+
+  // Create roles mutation
+  const createRolesMutation = useMutation({
+    mutationFn: async (roles: any[]) => {
+      if (!organization?.id || !user?.id) {
+        throw new Error('No organization ID available');
+      }
+
+      const rolesToCreate = roles.map(role => ({
+        name: role.name,
+        description: role.description,
+        permission_level: role.permission_level,
+        organization_id: organization.id,
+        created_by: user.id
+      }));
+
+      const { error } = await supabase
+        .from('roles')
+        .insert(rolesToCreate);
+
+      if (error) throw error;
+      return rolesToCreate;
+    },
+    onSuccess: () => {
+      toast.success('Custom roles created successfully!');
+      setShowRolesDialog(false);
+      queryClient.invalidateQueries({ queryKey: ['organization-metrics'] });
+    },
+    onError: (error) => {
+      toast.error('Failed to create roles: ' + error.message);
+    }
+  });
+
+  // Create trial mutation
+  const createTrialMutation = useMutation({
+    mutationFn: async (trialData: any) => {
+      if (!organization?.id || !member?.id) {
+        throw new Error('No organization or member ID available');
+      }
+
+      const piContact = trialData.autoAssignAsPI && member.email 
+        ? member.email 
+        : trialData.pi_contact;
+
+      // Create the trial
+      const { data: trial, error: trialError } = await supabase
+        .from('trials')
+        .insert({
+          name: trialData.name,
+          description: trialData.description,
+          phase: trialData.phase,
+          sponsor: trialData.sponsor,
+          location: trialData.location,
+          pi_contact: piContact,
+          study_start: trialData.study_start,
+          estimated_close_out: trialData.estimated_close_out,
+          organization_id: organization.id,
+          created_by: user?.id,
+          status: 'planning'
+        })
+        .select()
+        .single();
+
+      if (trialError) throw trialError;
+
+      // Auto-assign as PI if requested
+      if (trialData.autoAssignAsPI) {
+        const { data: piRole } = await supabase
+          .from('roles')
+          .select('id')
+          .eq('organization_id', organization.id)
+          .or('name.ilike.%PI%,name.ilike.%Principal Investigator%')
+          .order('name')
+          .limit(1)
+          .single();
+
+        if (piRole) {
+          await supabase
+            .from('trial_members')
+            .insert({
+              trial_id: trial.id,
+              member_id: member.id,
+              role_id: piRole.id,
+              is_active: true,
+              start_date: new Date().toISOString().split('T')[0]
+            });
+        }
+      }
+
+      return trial;
+    },
+    onSuccess: () => {
+      toast.success('Trial created successfully!');
+      setShowTrialDialog(false);
+      queryClient.invalidateQueries({ queryKey: ['organization-metrics'] });
+    },
+    onError: (error) => {
+      toast.error('Failed to create trial: ' + error.message);
+    }
   });
 
   // Complete onboarding mutation
@@ -91,10 +234,24 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
     completeOnboardingMutation.mutate();
   };
 
-  const handleCreateTrial = () => {
-    console.log('Create trial clicked');
-    // Complete onboarding first, then navigate to dashboard where they can create trials
-    completeOnboardingMutation.mutate();
+  const handleInviteMembers = (members: any[]) => {
+    if (members.length > 0) {
+      sendInvitationsMutation.mutate(members);
+    } else {
+      setShowInviteDialog(false);
+    }
+  };
+
+  const handleCreateRoles = (roles: any[]) => {
+    if (roles.length > 0) {
+      createRolesMutation.mutate(roles);
+    } else {
+      setShowRolesDialog(false);
+    }
+  };
+
+  const handleCreateTrial = (trialData: any) => {
+    createTrialMutation.mutate(trialData);
   };
 
   // Show loading if metrics are still loading or if we don't have organization data
@@ -126,35 +283,100 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
         {/* Metrics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card className="p-6">
-            <div className="flex items-center space-x-3">
-              <FileText className="h-8 w-8 text-blue-600" />
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{trialsCount}</p>
-                <p className="text-sm text-gray-600">Active Trials</p>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <FileText className="h-8 w-8 text-blue-600" />
+                <div>
+                  <p className="text-2xl font-bold text-gray-900">{trialsCount}</p>
+                  <p className="text-sm text-gray-600">Active Trials</p>
+                </div>
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowTrialDialog(true)}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
             </div>
           </Card>
 
           <Card className="p-6">
-            <div className="flex items-center space-x-3">
-              <Users className="h-8 w-8 text-green-600" />
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{membersCount}</p>
-                <p className="text-sm text-gray-600">Team Members</p>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <Users className="h-8 w-8 text-green-600" />
+                <div>
+                  <p className="text-2xl font-bold text-gray-900">{membersCount}</p>
+                  <p className="text-sm text-gray-600">Team Members</p>
+                </div>
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowInviteDialog(true)}
+              >
+                <UserPlus className="h-4 w-4" />
+              </Button>
             </div>
           </Card>
 
           <Card className="p-6">
-            <div className="flex items-center space-x-3">
-              <Shield className="h-8 w-8 text-purple-600" />
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{rolesCount}</p>
-                <p className="text-sm text-gray-600">Available Roles</p>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <Shield className="h-8 w-8 text-purple-600" />
+                <div>
+                  <p className="text-2xl font-bold text-gray-900">{rolesCount}</p>
+                  <p className="text-sm text-gray-600">Available Roles</p>
+                </div>
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowRolesDialog(true)}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
             </div>
           </Card>
         </div>
+
+        {/* Trials Detail Section */}
+        {trialsCount > 0 && (
+          <Card className="mb-8">
+            <div className="p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                <FileText className="h-5 w-5 mr-2" />
+                Current Trials
+              </h2>
+              <div className="space-y-3">
+                {metrics?.trials?.map((trial) => (
+                  <div key={trial.id} className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-medium text-gray-900">{trial.name}</h3>
+                        <p className="text-sm text-gray-600">
+                          {trial.phase} • {trial.sponsor}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <span className={`inline-block px-2 py-1 text-xs rounded-full ${
+                          trial.status === 'active' ? 'bg-green-100 text-green-800' :
+                          trial.status === 'planning' ? 'bg-blue-100 text-blue-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {trial.status}
+                        </span>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Created: {new Date(trial.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Card>
+        )}
 
         {/* Available Roles Section */}
         {rolesCount > 0 && (
@@ -211,25 +433,44 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
         )}
 
         {/* Action Buttons */}
-        <div className="flex justify-center space-x-4">
+        <div className="flex justify-center">
           <Button 
             onClick={handleGoToDashboard}
             disabled={completeOnboardingMutation.isPending}
             className="bg-blue-600 hover:bg-blue-700 px-8 py-3"
           >
             <Eye className="h-4 w-4 mr-2" />
-            {completeOnboardingMutation.isPending ? 'Loading...' : 'View Dashboard'}
-          </Button>
-          <Button 
-            variant="outline"
-            onClick={handleCreateTrial}
-            disabled={completeOnboardingMutation.isPending}
-            className="px-8 py-3"
-          >
-            <FileText className="h-4 w-4 mr-2" />
-            Create New Trial
+            {completeOnboardingMutation.isPending ? 'Loading...' : 'Go to Dashboard'}
           </Button>
         </div>
+
+        {/* Dialog Modals */}
+        <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Invite Team Members</DialogTitle>
+            </DialogHeader>
+            <InviteMembers onContinue={handleInviteMembers} />
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showRolesDialog} onOpenChange={setShowRolesDialog}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Create Custom Roles</DialogTitle>
+            </DialogHeader>
+            <CreateCustomRoles onContinue={handleCreateRoles} />
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showTrialDialog} onOpenChange={setShowTrialDialog}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Create New Trial</DialogTitle>
+            </DialogHeader>
+            <CreateFirstTrial onComplete={handleCreateTrial} />
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
