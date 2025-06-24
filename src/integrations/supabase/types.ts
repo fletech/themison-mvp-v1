@@ -64,6 +64,7 @@ export type Database = {
           id: string
           invited_by: string | null
           name: string
+          onboarding_completed: boolean
           organization_id: string
           profile_id: string
           updated_at: string | null
@@ -75,6 +76,7 @@ export type Database = {
           id?: string
           invited_by?: string | null
           name: string
+          onboarding_completed?: boolean
           organization_id: string
           profile_id: string
           updated_at?: string | null
@@ -86,6 +88,7 @@ export type Database = {
           id?: string
           invited_by?: string | null
           name?: string
+          onboarding_completed?: boolean
           organization_id?: string
           profile_id?: string
           updated_at?: string | null
@@ -178,7 +181,6 @@ export type Database = {
           first_name: string | null
           id: string
           last_name: string | null
-          onboarding_completed: boolean
           updated_at: string | null
         }
         Insert: {
@@ -187,7 +189,6 @@ export type Database = {
           first_name?: string | null
           id?: string
           last_name?: string | null
-          onboarding_completed?: boolean
           updated_at?: string | null
         }
         Update: {
@@ -196,7 +197,6 @@ export type Database = {
           first_name?: string | null
           id?: string
           last_name?: string | null
-          onboarding_completed?: boolean
           updated_at?: string | null
         }
         Relationships: []
