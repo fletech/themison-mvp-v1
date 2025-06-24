@@ -9,8 +9,8 @@ export default function Auth() {
 
   return (
     <AuthLayout
-      title={isLogin ? 'Iniciar Sesión' : 'Crear Cuenta'}
-      subtitle={isLogin ? 'Accede a tu cuenta de THEMISON' : 'Únete a THEMISON Clinical Trials'}
+      title={isLogin ? 'Sign In' : 'Create Account'}
+      subtitle={isLogin ? 'Access your THEMISON account' : 'Join THEMISON Clinical Trials'}
     >
       {isLogin ? (
         <LoginForm onSwitchToSignup={() => setIsLogin(false)} />

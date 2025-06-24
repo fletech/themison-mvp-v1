@@ -11,23 +11,23 @@ const Index = () => {
   const features = [
     {
       icon: Shield,
-      title: "Seguridad Garantizada",
-      description: "Cumplimos con todas las regulaciones de seguridad y privacidad para ensayos clínicos."
+      title: "Guaranteed Security",
+      description: "We comply with all security and privacy regulations for clinical trials."
     },
     {
       icon: Users,
-      title: "Gestión de Equipos",
-      description: "Administra fácilmente roles y permisos de tu equipo de investigación."
+      title: "Team Management",
+      description: "Easily manage roles and permissions for your research team."
     },
     {
       icon: BarChart,
-      title: "Reportes en Tiempo Real",
-      description: "Accede a datos y análisis actualizados para tomar decisiones informadas."
+      title: "Real-Time Reports",
+      description: "Access updated data and analysis to make informed decisions."
     },
     {
       icon: CheckCircle,
-      title: "Cumplimiento Regulatorio",
-      description: "Herramientas diseñadas para cumplir con estándares internacionales."
+      title: "Regulatory Compliance",
+      description: "Tools designed to meet international standards."
     }
   ];
 
@@ -48,13 +48,13 @@ const Index = () => {
                 variant="outline" 
                 onClick={() => navigate('/auth')}
               >
-                Iniciar Sesión
+                Sign In
               </Button>
               <Button 
                 className="bg-blue-600 hover:bg-blue-700"
                 onClick={() => navigate('/auth')}
               >
-                Comenzar
+                Get Started
               </Button>
             </div>
           </div>
@@ -65,12 +65,12 @@ const Index = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center mb-16">
           <h1 className="text-5xl font-bold text-gray-900 mb-6">
-            Gestión de Ensayos Clínicos
-            <span className="block text-blue-600">Simplificada</span>
+            Clinical Trial Management
+            <span className="block text-blue-600">Simplified</span>
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            THEMISON es la plataforma integral para la gestión de ensayos clínicos. 
-            Administra pacientes, equipos y datos con la máxima seguridad y eficiencia.
+            THEMISON is the comprehensive platform for clinical trial management. 
+            Manage patients, teams, and data with maximum security and efficiency.
           </p>
           <div className="space-x-4">
             <Button 
@@ -78,10 +78,10 @@ const Index = () => {
               className="bg-blue-600 hover:bg-blue-700"
               onClick={() => navigate('/auth')}
             >
-              Comenzar Prueba Gratuita
+              Start Free Trial
             </Button>
             <Button size="lg" variant="outline">
-              Ver Demo
+              View Demo
             </Button>
           </div>
         </div>
@@ -104,17 +104,17 @@ const Index = () => {
         {/* CTA Section */}
         <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            ¿Listo para comenzar?
+            Ready to get started?
           </h2>
           <p className="text-lg text-gray-600 mb-6">
-            Únete a las organizaciones que confían en THEMISON para sus ensayos clínicos.
+            Join the organizations that trust THEMISON for their clinical trials.
           </p>
           <Button 
             size="lg" 
             className="bg-blue-600 hover:bg-blue-700"
             onClick={() => navigate('/auth')}
           >
-            Crear Cuenta Gratuita
+            Create Free Account
           </Button>
         </div>
       </main>
@@ -130,7 +130,7 @@ const Index = () => {
               <span className="ml-3 text-xl font-bold">THEMISON</span>
             </div>
             <p className="text-gray-400">
-              © 2024 THEMISON. Todos los derechos reservados.
+              © 2024 THEMISON. All rights reserved.
             </p>
           </div>
         </div>

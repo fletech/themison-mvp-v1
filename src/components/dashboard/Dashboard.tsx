@@ -6,10 +6,10 @@ import { Plus, Users, FileText, Clock } from 'lucide-react';
 
 export function Dashboard() {
   const stats = [
-    { name: 'Trials Activos', value: '0', icon: FileText, color: 'text-blue-600' },
-    { name: 'Pacientes Totales', value: '0', icon: Users, color: 'text-green-600' },
-    { name: 'Miembros del Equipo', value: '1', icon: Users, color: 'text-purple-600' },
-    { name: 'Invitaciones Pendientes', value: '1', icon: Clock, color: 'text-orange-600' },
+    { name: 'Active Trials', value: '0', icon: FileText, color: 'text-blue-600' },
+    { name: 'Total Patients', value: '0', icon: Users, color: 'text-blue-600' },
+    { name: 'Team Members', value: '1', icon: Users, color: 'text-blue-600' },
+    { name: 'Pending Invitations', value: '1', icon: Clock, color: 'text-blue-600' },
   ];
 
   return (
@@ -40,28 +40,28 @@ export function Dashboard() {
       {/* Quick Actions */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card className="p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Acciones Rápidas</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
           <div className="space-y-3">
             <Button className="w-full justify-start bg-blue-600 hover:bg-blue-700">
               <Plus className="h-4 w-4 mr-2" />
-              Crear Nuevo Trial
+              Create New Trial
             </Button>
             <Button variant="outline" className="w-full justify-start">
               <Users className="h-4 w-4 mr-2" />
-              Invitar Miembro del Equipo
+              Invite Team Member
             </Button>
             <Button variant="outline" className="w-full justify-start">
               <FileText className="h-4 w-4 mr-2" />
-              Ver Reportes
+              View Reports
             </Button>
           </div>
         </Card>
 
         <Card className="p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Actividad Reciente</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Activity</h3>
           <div className="text-sm text-gray-500">
-            <p>No hay actividad reciente para mostrar.</p>
-            <p className="mt-2">¡Comienza creando tu primer trial clínico!</p>
+            <p>No recent activity to show.</p>
+            <p className="mt-2">Start by creating your first clinical trial!</p>
           </div>
         </Card>
       </div>
@@ -69,12 +69,12 @@ export function Dashboard() {
       {/* Getting Started */}
       <Card className="p-6">
         <div className="text-center">
-          <h3 className="text-lg font-medium text-gray-900 mb-2">¡Bienvenido a THEMISON!</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Welcome to THEMISON!</h3>
           <p className="text-gray-600 mb-4">
-            Comienza configurando tu organización y creando tu primer trial clínico.
+            Start by setting up your organization and creating your first clinical trial.
           </p>
           <Button className="bg-blue-600 hover:bg-blue-700">
-            Guía de Inicio Rápido
+            Quick Start Guide
           </Button>
         </div>
       </Card>

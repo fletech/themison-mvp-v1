@@ -28,7 +28,7 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
     if (formData.password !== formData.confirmPassword) {
       toast({
         title: "Error",
-        description: "Las contraseñas no coinciden",
+        description: "Passwords do not match",
         variant: "destructive",
       });
       return;
@@ -43,14 +43,14 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
     
     if (error) {
       toast({
-        title: "Error de registro",
+        title: "Registration Error",
         description: error.message,
         variant: "destructive",
       });
     } else {
       toast({
-        title: "¡Registro exitoso!",
-        description: "Tu cuenta ha sido creada. Revisa tu email para confirmar.",
+        title: "Registration Successful!",
+        description: "Your account has been created. Please check your email to confirm.",
       });
     }
     
@@ -65,26 +65,26 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="firstName">Nombre</Label>
+          <Label htmlFor="firstName">First Name</Label>
           <Input
             id="firstName"
             type="text"
             value={formData.firstName}
             onChange={(e) => handleChange('firstName', e.target.value)}
             required
-            placeholder="Nombre"
+            placeholder="First Name"
             className="mt-1"
           />
         </div>
         <div>
-          <Label htmlFor="lastName">Apellido</Label>
+          <Label htmlFor="lastName">Last Name</Label>
           <Input
             id="lastName"
             type="text"
             value={formData.lastName}
             onChange={(e) => handleChange('lastName', e.target.value)}
             required
-            placeholder="Apellido"
+            placeholder="Last Name"
             className="mt-1"
           />
         </div>
@@ -98,13 +98,13 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
           value={formData.email}
           onChange={(e) => handleChange('email', e.target.value)}
           required
-          placeholder="tu.email@ejemplo.com"
+          placeholder="your.email@example.com"
           className="mt-1"
         />
       </div>
 
       <div>
-        <Label htmlFor="password">Contraseña</Label>
+        <Label htmlFor="password">Password</Label>
         <Input
           id="password"
           type="password"
@@ -117,7 +117,7 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
       </div>
 
       <div>
-        <Label htmlFor="confirmPassword">Confirmar Contraseña</Label>
+        <Label htmlFor="confirmPassword">Confirm Password</Label>
         <Input
           id="confirmPassword"
           type="password"
@@ -134,18 +134,18 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
         className="w-full bg-blue-600 hover:bg-blue-700" 
         disabled={loading}
       >
-        {loading ? 'Creando cuenta...' : 'Crear Cuenta'}
+        {loading ? 'Creating account...' : 'Create Account'}
       </Button>
 
       <div className="text-center">
         <p className="text-sm text-gray-600">
-          ¿Ya tienes cuenta?{' '}
+          Already have an account?{' '}
           <button
             type="button"
             onClick={onSwitchToLogin}
             className="text-blue-600 hover:text-blue-500 font-medium"
           >
-            Inicia sesión aquí
+            Sign in here
           </button>
         </p>
       </div>

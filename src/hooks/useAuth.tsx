@@ -22,10 +22,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
+        console.log('Auth state change:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+        
+        // Handle new user registration
+        if (event === 'SIGNED_UP' && session?.user) {
+          console.log('New user signed up, creating profile...');
+          try {
+            // Create profile with user metadata
+            const { error: profileError } = await supabase
+              .from('profiles')
+              .insert({
+                id: session.user.id,
+                email: session.user.email!,
+                first_name: session.user.user_metadata?.first_name,
+                last_name: session.user.user_metadata?.last_name,
+                onboarding_completed: false
+              });
+
+            if (profileError) {
+              console.error('Error creating profile:', profileError);
+            } else {
+              console.log('Profile created successfully');
+            }
+          } catch (error) {
+            console.error('Error in profile creation:', error);
+          }
+        }
       }
     );
 

@@ -25,14 +25,14 @@ export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
     
     if (error) {
       toast({
-        title: "Error de autenticación",
+        title: "Authentication Error",
         description: error.message,
         variant: "destructive",
       });
     } else {
       toast({
-        title: "¡Bienvenido!",
-        description: "Has iniciado sesión correctamente.",
+        title: "Welcome!",
+        description: "You have successfully signed in.",
       });
     }
     
@@ -49,13 +49,13 @@ export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          placeholder="tu.email@ejemplo.com"
+          placeholder="your.email@example.com"
           className="mt-1"
         />
       </div>
 
       <div>
-        <Label htmlFor="password">Contraseña</Label>
+        <Label htmlFor="password">Password</Label>
         <Input
           id="password"
           type="password"
@@ -72,18 +72,18 @@ export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
         className="w-full bg-blue-600 hover:bg-blue-700" 
         disabled={loading}
       >
-        {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+        {loading ? 'Signing in...' : 'Sign In'}
       </Button>
 
       <div className="text-center">
         <p className="text-sm text-gray-600">
-          ¿No tienes cuenta?{' '}
+          Don't have an account?{' '}
           <button
             type="button"
             onClick={onSwitchToSignup}
             className="text-blue-600 hover:text-blue-500 font-medium"
           >
-            Regístrate aquí
+            Sign up here
           </button>
         </p>
       </div>
