@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { OnboardingFlow } from '@/components/onboarding/OnboardingFlow';
+import { OnboardingRouter } from '@/components/onboarding/OnboardingRouter';
 
 export default function OnboardingPage() {
-  return <OnboardingFlow />;
+  return <OnboardingRouter />;
 }

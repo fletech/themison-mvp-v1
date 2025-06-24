@@ -116,6 +116,7 @@ export type Database = {
           created_by: string
           id: string
           name: string
+          onboarding_completed: boolean | null
           updated_at: string | null
         }
         Insert: {
@@ -123,6 +124,7 @@ export type Database = {
           created_by: string
           id?: string
           name: string
+          onboarding_completed?: boolean | null
           updated_at?: string | null
         }
         Update: {
@@ -130,6 +132,7 @@ export type Database = {
           created_by?: string
           id?: string
           name?: string
+          onboarding_completed?: boolean | null
           updated_at?: string | null
         }
         Relationships: [
