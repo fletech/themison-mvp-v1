@@ -86,18 +86,7 @@ export function Dashboard() {
         </Card>
       </div>
 
-      {/* Getting Started */}
-      <Card className="p-6">
-        <div className="text-center">
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Welcome to THEMISON!</h3>
-          <p className="text-gray-600 mb-4">
-            Start by setting up your organization and creating your first clinical trial.
-          </p>
-          <Button className="bg-blue-600 hover:bg-blue-700">
-            Quick Start Guide
-          </Button>
-        </div>
-      </Card>
+      
     </div>
   );
 }
