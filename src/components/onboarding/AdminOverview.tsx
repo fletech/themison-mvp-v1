@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -167,15 +168,41 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
       console.log('Creating trial with data:', trialData);
       console.log('Organization:', organization);
       console.log('Member:', member);
+      console.log('User:', user);
       
-      if (!organization?.id || !member?.id) {
-        console.error('Missing IDs - Organization:', organization?.id, 'Member:', member?.id);
-        throw new Error('No organization or member ID available');
+      // Validate required data
+      if (!organization?.id) {
+        console.error('Missing organization ID:', organization);
+        throw new Error('Organization information is not available');
+      }
+      
+      if (!member?.id) {
+        console.error('Missing member ID:', member);
+        throw new Error('Member information is not available');
+      }
+
+      if (!user?.id) {
+        console.error('Missing user ID:', user);
+        throw new Error('User information is not available');
       }
 
       const piContact = trialData.autoAssignAsPI && member.email 
         ? member.email 
         : trialData.pi_contact;
+
+      console.log('Inserting trial with:', {
+        name: trialData.name,
+        description: trialData.description,
+        phase: trialData.phase,
+        sponsor: trialData.sponsor,
+        location: trialData.location,
+        pi_contact: piContact,
+        study_start: trialData.study_start,
+        estimated_close_out: trialData.estimated_close_out,
+        organization_id: organization.id,
+        created_by: user.id,
+        status: 'planning'
+      });
 
       // Create the trial
       const { data: trial, error: trialError } = await supabase
@@ -190,7 +217,7 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
           study_start: trialData.study_start,
           estimated_close_out: trialData.estimated_close_out,
           organization_id: organization.id,
-          created_by: user?.id,
+          created_by: user.id,
           status: 'planning'
         })
         .select()
@@ -294,6 +321,28 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
   };
 
   const handleCreateTrial = (trialData: any) => {
+    console.log('handleCreateTrial called with:', trialData);
+    console.log('Available data:', { organization, member, user });
+    
+    // Check if we have all required data before proceeding
+    if (!organization?.id) {
+      toast({
+        title: "Error",
+        description: "Organization information is missing. Please refresh the page.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (!member?.id) {
+      toast({
+        title: "Error", 
+        description: "Member information is missing. Please refresh the page.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     createTrialMutation.mutate(trialData);
   };
 
@@ -335,7 +384,7 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
                   <FileText className="h-5 w-5 mr-2" />
                   Clinical Trials
                 </h2>
-                <Badge variant="secondary" className="bg-blue-100 text-blue-800 font-medium">
+                <Badge variant="secondary" className="bg-blue-100 text-blue-800 font-medium px-2 py-1 rounded-full">
                   {trialsCount}
                 </Badge>
               </div>
@@ -344,7 +393,7 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
                 className="bg-blue-600 hover:bg-blue-700"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Create New Trial
+                Add New Trial
               </Button>
             </div>
             
@@ -413,7 +462,7 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
                   <Users className="h-5 w-5 mr-2" />
                   Team Members
                 </h2>
-                <Badge variant="secondary" className="bg-green-100 text-green-800 font-medium">
+                <Badge variant="secondary" className="bg-green-100 text-green-800 font-medium px-2 py-1 rounded-full">
                   {membersCount}
                 </Badge>
               </div>
@@ -479,7 +528,7 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
                   <Shield className="h-5 w-5 mr-2" />
                   Trial Roles
                 </h2>
-                <Badge variant="secondary" className="bg-purple-100 text-purple-800 font-medium">
+                <Badge variant="secondary" className="bg-purple-100 text-purple-800 font-medium px-2 py-1 rounded-full">
                   {rolesCount}
                 </Badge>
               </div>
