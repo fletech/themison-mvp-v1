@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +22,7 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   // Dialog states
   const [showInviteDialog, setShowInviteDialog] = useState(false);
@@ -105,12 +106,19 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
       return invitations;
     },
     onSuccess: () => {
-      toast.success('New members invited successfully!');
+      toast({
+        title: "Success",
+        description: "New members invited successfully!"
+      });
       setShowInviteDialog(false);
       queryClient.invalidateQueries({ queryKey: ['organization-metrics'] });
     },
     onError: (error) => {
-      toast.error('Failed to send invitations: ' + error.message);
+      toast({
+        title: "Error",
+        description: 'Failed to send invitations: ' + error.message,
+        variant: "destructive"
+      });
     }
   });
 
@@ -137,19 +145,31 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
       return rolesToCreate;
     },
     onSuccess: () => {
-      toast.success('New custom roles created successfully!');
+      toast({
+        title: "Success",
+        description: "New custom roles created successfully!"
+      });
       setShowRolesDialog(false);
       queryClient.invalidateQueries({ queryKey: ['organization-metrics'] });
     },
     onError: (error) => {
-      toast.error('Failed to create roles: ' + error.message);
+      toast({
+        title: "Error",
+        description: 'Failed to create roles: ' + error.message,
+        variant: "destructive"
+      });
     }
   });
 
   // Create trial mutation
   const createTrialMutation = useMutation({
     mutationFn: async (trialData: any) => {
+      console.log('Creating trial with data:', trialData);
+      console.log('Organization:', organization);
+      console.log('Member:', member);
+      
       if (!organization?.id || !member?.id) {
+        console.error('Missing IDs - Organization:', organization?.id, 'Member:', member?.id);
         throw new Error('No organization or member ID available');
       }
 
@@ -176,7 +196,12 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
         .select()
         .single();
 
-      if (trialError) throw trialError;
+      if (trialError) {
+        console.error('Trial creation error:', trialError);
+        throw trialError;
+      }
+
+      console.log('Trial created successfully:', trial);
 
       // Auto-assign as PI if requested
       if (trialData.autoAssignAsPI) {
@@ -205,12 +230,20 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
       return trial;
     },
     onSuccess: () => {
-      toast.success('New trial created successfully!');
+      toast({
+        title: "Success",
+        description: "New trial created successfully!"
+      });
       setShowTrialDialog(false);
       queryClient.invalidateQueries({ queryKey: ['organization-metrics'] });
     },
     onError: (error) => {
-      toast.error('Failed to create trial: ' + error.message);
+      console.error('Create trial mutation error:', error);
+      toast({
+        title: "Error",
+        description: 'Failed to create trial: ' + error.message,
+        variant: "destructive"
+      });
     }
   });
 
@@ -231,7 +264,11 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
     },
     onError: (error) => {
       console.error('Failed to complete onboarding:', error);
-      toast.error('Failed to complete onboarding: ' + error.message);
+      toast({
+        title: "Error",
+        description: 'Failed to complete onboarding: ' + error.message,
+        variant: "destructive"
+      });
     }
   });
 
@@ -520,7 +557,10 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
             <DialogHeader>
               <DialogTitle>Create New Trial</DialogTitle>
             </DialogHeader>
-            <CreateFirstTrial onComplete={handleCreateTrial} />
+            <CreateFirstTrial 
+              onComplete={handleCreateTrial} 
+              isFirstTrial={trialsCount === 0}
+            />
           </DialogContent>
         </Dialog>
       </div>

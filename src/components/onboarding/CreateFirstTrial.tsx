@@ -23,9 +23,10 @@ interface TrialData {
 
 interface CreateFirstTrialProps {
   onComplete: (trialData: TrialData) => void;
+  isFirstTrial?: boolean;
 }
 
-export function CreateFirstTrial({ onComplete }: CreateFirstTrialProps) {
+export function CreateFirstTrial({ onComplete, isFirstTrial = true }: CreateFirstTrialProps) {
   const [trialData, setTrialData] = useState<TrialData>({
     name: '',
     description: '',
@@ -66,9 +67,14 @@ export function CreateFirstTrial({ onComplete }: CreateFirstTrialProps) {
         <div className="flex items-start space-x-3">
           <Sparkles className="h-5 w-5 text-purple-600 mt-0.5" />
           <div>
-            <h3 className="font-medium text-purple-900">Create Your First Trial</h3>
+            <h3 className="font-medium text-purple-900">
+              {isFirstTrial ? 'Create Your First Trial' : 'Create New Trial'}
+            </h3>
             <p className="text-sm text-purple-700 mt-1">
-              Set up your first clinical trial to get started. You can add more trials later from the dashboard.
+              {isFirstTrial 
+                ? 'Set up your first clinical trial to get started. You can add more trials later from the dashboard.'
+                : 'Add a new clinical trial to your organization.'
+              }
             </p>
           </div>
         </div>
@@ -186,7 +192,7 @@ export function CreateFirstTrial({ onComplete }: CreateFirstTrialProps) {
           className="bg-blue-600 hover:bg-blue-700"
         >
           <FileText className="h-4 w-4 mr-2" />
-          Complete Setup & Go to Dashboard
+          {isFirstTrial ? 'Complete Setup & Go to Dashboard' : 'Create Trial'}
         </Button>
       </div>
     </div>
