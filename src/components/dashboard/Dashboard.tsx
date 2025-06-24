@@ -5,15 +5,81 @@ import { Button } from '@/components/ui/button';
 import { Plus, Users, FileText, Clock } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 export function Dashboard() {
+  const { user } = useAuth();
+
+  // Fetch user's organization ID
+  const { data: member } = useQuery({
+    queryKey: ['user-member', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      
+      const { data, error } = await supabase
+        .from('members')
+        .select('organization_id')
+        .eq('profile_id', user.id)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.id
+  });
+
+  // Fetch active trials count
+  const { data: activeTrialsCount } = useQuery({
+    queryKey: ['active-trials-count', member?.organization_id],
+    queryFn: async () => {
+      if (!member?.organization_id) return 0;
+      
+      const { data, error } = await supabase
+        .from('trials')
+        .select('id', { count: 'exact' })
+        .eq('organization_id', member.organization_id);
+      
+      if (error) {
+        console.error('Error fetching active trials:', error);
+        return 0;
+      }
+      
+      return data?.length || 0;
+    },
+    enabled: !!member?.organization_id
+  });
+
+  // Fetch team members count
+  const { data: teamMembersCount } = useQuery({
+    queryKey: ['team-members-count', member?.organization_id],
+    queryFn: async () => {
+      if (!member?.organization_id) return 0;
+      
+      const { data, error } = await supabase
+        .from('members')
+        .select('id', { count: 'exact' })
+        .eq('organization_id', member.organization_id);
+      
+      if (error) {
+        console.error('Error fetching team members:', error);
+        return 0;
+      }
+      
+      return data?.length || 0;
+    },
+    enabled: !!member?.organization_id
+  });
+
   // Fetch pending invitations count
   const { data: pendingInvitationsCount } = useQuery({
-    queryKey: ['pending-invitations-count'],
+    queryKey: ['pending-invitations-count', member?.organization_id],
     queryFn: async () => {
+      if (!member?.organization_id) return 0;
+      
       const { data, error } = await supabase
         .from('invitations')
         .select('id', { count: 'exact' })
+        .eq('organization_id', member.organization_id)
         .eq('status', 'pending');
       
       if (error) {
@@ -22,13 +88,14 @@ export function Dashboard() {
       }
       
       return data?.length || 0;
-    }
+    },
+    enabled: !!member?.organization_id
   });
 
   const stats = [
-    { name: 'Active Trials', value: '0', icon: FileText, color: 'text-blue-600' },
+    { name: 'Active Trials', value: activeTrialsCount?.toString() || '0', icon: FileText, color: 'text-blue-600' },
     { name: 'Total Patients', value: '0', icon: Users, color: 'text-blue-600' },
-    { name: 'Team Members', value: '1', icon: Users, color: 'text-blue-600' },
+    { name: 'Team Members', value: teamMembersCount?.toString() || '0', icon: Users, color: 'text-blue-600' },
     { name: 'Pending Invitations', value: pendingInvitationsCount?.toString() || '0', icon: Clock, color: 'text-blue-600' },
   ];
 
