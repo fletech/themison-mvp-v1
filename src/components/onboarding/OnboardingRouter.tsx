@@ -18,7 +18,7 @@ export function OnboardingRouter() {
       
       const { data, error } = await supabase
         .from('members')
-        .select('onboarding_completed, default_role, organization_id')
+        .select('id, name, email, onboarding_completed, default_role, organization_id')
         .eq('profile_id', user.id)
         .single();
       
