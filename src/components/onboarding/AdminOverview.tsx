@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -8,7 +7,7 @@ import { toast } from 'sonner';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { FileText, Users, Shield, Eye, Plus, UserPlus } from 'lucide-react';
+import { FileText, Users, Shield, Eye, Plus, UserPlus, Settings } from 'lucide-react';
 import { InviteMembers } from './InviteMembers';
 import { CreateCustomRoles } from './CreateCustomRoles';
 import { CreateFirstTrial } from './CreateFirstTrial';
@@ -280,74 +279,24 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
           </p>
         </div>
 
-        {/* Metrics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <FileText className="h-8 w-8 text-blue-600" />
-                <div>
-                  <p className="text-2xl font-bold text-gray-900">{trialsCount}</p>
-                  <p className="text-sm text-gray-600">Active Trials</p>
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowTrialDialog(true)}
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-          </Card>
-
-          <Card className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <Users className="h-8 w-8 text-green-600" />
-                <div>
-                  <p className="text-2xl font-bold text-gray-900">{membersCount}</p>
-                  <p className="text-sm text-gray-600">Team Members</p>
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowInviteDialog(true)}
-              >
-                <UserPlus className="h-4 w-4" />
-              </Button>
-            </div>
-          </Card>
-
-          <Card className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <Shield className="h-8 w-8 text-purple-600" />
-                <div>
-                  <p className="text-2xl font-bold text-gray-900">{rolesCount}</p>
-                  <p className="text-sm text-gray-600">Available Roles</p>
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowRolesDialog(true)}
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-          </Card>
-        </div>
-
-        {/* Trials Detail Section */}
-        {trialsCount > 0 && (
-          <Card className="mb-8">
-            <div className="p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+        {/* Trials Section */}
+        <Card className="mb-8">
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900 flex items-center">
                 <FileText className="h-5 w-5 mr-2" />
-                Current Trials
+                Clinical Trials ({trialsCount})
               </h2>
+              <Button
+                onClick={() => setShowTrialDialog(true)}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create New Trial
+              </Button>
+            </div>
+            
+            {trialsCount > 0 ? (
               <div className="space-y-3">
                 {metrics?.trials?.map((trial) => (
                   <div key={trial.id} className="border rounded-lg p-4">
@@ -374,45 +323,34 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
                   </div>
                 ))}
               </div>
-            </div>
-          </Card>
-        )}
-
-        {/* Available Roles Section */}
-        {rolesCount > 0 && (
-          <Card className="mb-8">
-            <div className="p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                <Shield className="h-5 w-5 mr-2" />
-                Available Roles
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {metrics?.roles?.map((role) => (
-                  <div key={role.id} className="border rounded-lg p-4">
-                    <h3 className="font-medium text-gray-900">{role.name}</h3>
-                    <p className="text-sm text-gray-600 mt-1">{role.description}</p>
-                    <span className={`inline-block mt-2 px-2 py-1 text-xs rounded-full ${
-                      role.permission_level === 'admin' ? 'bg-red-100 text-red-800' :
-                      role.permission_level === 'edit' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-green-100 text-green-800'
-                    }`}>
-                      {role.permission_level}
-                    </span>
-                  </div>
-                ))}
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p>No trials created yet. Create your first trial to get started!</p>
               </div>
-            </div>
-          </Card>
-        )}
+            )}
+          </div>
+        </Card>
 
-        {/* Current Team Section */}
-        {membersCount > 0 && (
-          <Card className="mb-8">
-            <div className="p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+        {/* Team Members Section */}
+        <Card className="mb-8">
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900 flex items-center">
                 <Users className="h-5 w-5 mr-2" />
-                Current Team
+                Team Members ({membersCount})
               </h2>
+              <Button
+                variant="outline"
+                onClick={() => setShowInviteDialog(true)}
+                className="border-green-500 text-green-600 hover:bg-green-50"
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                Invite New Members
+              </Button>
+            </div>
+            
+            {membersCount > 0 ? (
               <div className="space-y-3">
                 {metrics?.members?.map((teamMember) => (
                   <div key={teamMember.id} className="flex items-center justify-between p-3 border rounded-lg">
@@ -428,9 +366,57 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
                   </div>
                 ))}
               </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p>No team members yet. Invite members to start collaborating!</p>
+              </div>
+            )}
+          </div>
+        </Card>
+
+        {/* Available Roles Section */}
+        <Card className="mb-8">
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+                <Shield className="h-5 w-5 mr-2" />
+                Trial Roles ({rolesCount})
+              </h2>
+              <Button
+                variant="outline"
+                onClick={() => setShowRolesDialog(true)}
+                className="border-purple-500 text-purple-600 hover:bg-purple-50"
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Create Custom Roles
+              </Button>
             </div>
-          </Card>
-        )}
+            
+            {rolesCount > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {metrics?.roles?.map((role) => (
+                  <div key={role.id} className="border rounded-lg p-4">
+                    <h3 className="font-medium text-gray-900">{role.name}</h3>
+                    <p className="text-sm text-gray-600 mt-1">{role.description}</p>
+                    <span className={`inline-block mt-2 px-2 py-1 text-xs rounded-full ${
+                      role.permission_level === 'admin' ? 'bg-red-100 text-red-800' :
+                      role.permission_level === 'edit' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-green-100 text-green-800'
+                    }`}>
+                      {role.permission_level}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <Shield className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p>No custom roles created yet. Define roles to organize your team!</p>
+              </div>
+            )}
+          </div>
+        </Card>
 
         {/* Action Buttons */}
         <div className="flex justify-center">
