@@ -1,11 +1,14 @@
-
 import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Trash2, Shield, Info } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Plus, Shield, Info } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 
 interface CustomRole {
@@ -41,10 +44,37 @@ const defaultRoles: CustomRole[] = [
 ];
 
 export function CreateCustomRoles({ onContinue }: CreateCustomRolesProps) {
-  const [roles, setRoles] = useState<CustomRole[]>(defaultRoles);
+  const { user } = useAuth();
+  const [newRoles, setNewRoles] = useState<CustomRole[]>([]);
 
-  const addRole = () => {
-    setRoles([...roles, {
+  // Get existing roles
+  const { data: existingRoles, isLoading } = useQuery({
+    queryKey: ['existing-roles', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      
+      // Get user's organization
+      const { data: member } = await supabase
+        .from('members')
+        .select('organization_id')
+        .eq('profile_id', user.id)
+        .single();
+        
+      if (!member?.organization_id) return [];
+      
+      const { data: roles, error } = await supabase
+        .from('roles')
+        .select('*')
+        .eq('organization_id', member.organization_id);
+        
+      if (error) throw error;
+      return roles || [];
+    },
+    enabled: !!user?.id
+  });
+
+  const addNewRole = () => {
+    setNewRoles([...newRoles, {
       id: Date.now().toString(),
       name: '',
       description: '',
@@ -52,19 +82,20 @@ export function CreateCustomRoles({ onContinue }: CreateCustomRolesProps) {
     }]);
   };
 
-  const removeRole = (id: string) => {
-    setRoles(roles.filter(r => r.id !== id));
+  const removeNewRole = (id: string) => {
+    setNewRoles(newRoles.filter(r => r.id !== id));
   };
 
-  const updateRole = (id: string, field: keyof CustomRole, value: string) => {
-    setRoles(roles.map(r => 
+  const updateNewRole = (id: string, field: keyof CustomRole, value: string) => {
+    setNewRoles(newRoles.map(r => 
       r.id === id ? { ...r, [field]: value } : r
     ));
   };
 
   const handleContinue = () => {
-    const validRoles = roles.filter(r => r.name.trim());
-    onContinue(validRoles);
+    // Only send new roles that have names
+    const validNewRoles = newRoles.filter(r => r.name.trim());
+    onContinue(validNewRoles);
   };
 
   const getPermissionDescription = (level: string) => {
@@ -80,6 +111,21 @@ export function CreateCustomRoles({ onContinue }: CreateCustomRolesProps) {
     }
   };
 
+  const allRoles = [
+    ...(existingRoles || []),
+    ...defaultRoles.filter(defaultRole => 
+      !existingRoles?.some(existing => existing.name === defaultRole.name)
+    )
+  ];
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="bg-green-50 border border-green-200 rounded-lg p-4">
@@ -94,8 +140,52 @@ export function CreateCustomRoles({ onContinue }: CreateCustomRolesProps) {
         </div>
       </div>
 
+      {/* Existing Roles */}
+      {allRoles.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-medium text-gray-900">Current Roles</h3>
+            <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+              {allRoles.length}
+            </Badge>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {allRoles.map((role) => (
+              <Card key={role.id} className="p-4 bg-gray-50 border-gray-200">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium text-gray-900">{role.name}</h4>
+                    <Badge 
+                      variant={
+                        role.permission_level === 'admin' ? 'destructive' :
+                        role.permission_level === 'edit' ? 'default' :
+                        'secondary'
+                      }
+                    >
+                      {role.permission_level}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-gray-600">{role.description}</p>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Add New Roles */}
       <div className="space-y-4">
-        {roles.map((role, index) => (
+        <div className="flex items-center gap-2">
+          <h3 className="text-lg font-medium text-gray-900">Add New Roles</h3>
+          {newRoles.length > 0 && (
+            <Badge variant="secondary" className="bg-purple-100 text-purple-800">
+              {newRoles.length}
+            </Badge>
+          )}
+        </div>
+
+        {newRoles.map((role, index) => (
           <Card key={role.id} className="p-4">
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -105,7 +195,7 @@ export function CreateCustomRoles({ onContinue }: CreateCustomRolesProps) {
                     id={`name-${role.id}`}
                     placeholder="e.g., Study Coordinator"
                     value={role.name}
-                    onChange={(e) => updateRole(role.id, 'name', e.target.value)}
+                    onChange={(e) => updateNewRole(role.id, 'name', e.target.value)}
                   />
                 </div>
                 
@@ -113,7 +203,7 @@ export function CreateCustomRoles({ onContinue }: CreateCustomRolesProps) {
                   <Label htmlFor={`permission-${role.id}`}>Permission Level</Label>
                   <Select 
                     value={role.permission_level} 
-                    onValueChange={(value: 'read' | 'edit' | 'admin') => updateRole(role.id, 'permission_level', value)}
+                    onValueChange={(value: 'read' | 'edit' | 'admin') => updateNewRole(role.id, 'permission_level', value)}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -136,36 +226,33 @@ export function CreateCustomRoles({ onContinue }: CreateCustomRolesProps) {
                   id={`description-${role.id}`}
                   placeholder="Describe the responsibilities and duties of this role..."
                   value={role.description}
-                  onChange={(e) => updateRole(role.id, 'description', e.target.value)}
+                  onChange={(e) => updateNewRole(role.id, 'description', e.target.value)}
                   rows={2}
                 />
               </div>
 
-              {roles.length > 1 && (
-                <div className="flex justify-end">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => removeRole(role.id)}
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Remove Role
-                  </Button>
-                </div>
-              )}
+              <div className="flex justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => removeNewRole(role.id)}
+                >
+                  Remove
+                </Button>
+              </div>
             </div>
           </Card>
         ))}
-      </div>
 
-      <Button
-        variant="outline"
-        onClick={addRole}
-        className="w-full border-dashed"
-      >
-        <Plus className="h-4 w-4 mr-2" />
-        Add Custom Role
-      </Button>
+        <Button
+          variant="outline"
+          onClick={addNewRole}
+          className="w-full border-dashed border-purple-300 text-purple-600 hover:bg-purple-50"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Add New Role
+        </Button>
+      </div>
 
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <div className="flex items-start space-x-3">
@@ -181,7 +268,7 @@ export function CreateCustomRoles({ onContinue }: CreateCustomRolesProps) {
           onClick={handleContinue}
           className="bg-blue-600 hover:bg-blue-700"
         >
-          Continue to First Trial
+          {newRoles.length > 0 ? 'Add New Roles & Continue' : 'Continue'}
         </Button>
       </div>
     </div>

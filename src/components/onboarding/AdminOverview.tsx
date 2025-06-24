@@ -6,8 +6,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { FileText, Users, Shield, Eye, Plus, UserPlus, Settings } from 'lucide-react';
+import { FileText, Users, Shield, Eye, Plus, UserPlus, Settings, ChevronDown, ChevronUp } from 'lucide-react';
 import { InviteMembers } from './InviteMembers';
 import { CreateCustomRoles } from './CreateCustomRoles';
 import { CreateFirstTrial } from './CreateFirstTrial';
@@ -26,6 +27,12 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [showRolesDialog, setShowRolesDialog] = useState(false);
   const [showTrialDialog, setShowTrialDialog] = useState(false);
+
+  // Show more states
+  const [showAllTrials, setShowAllTrials] = useState(false);
+  const [showAllMembers, setShowAllMembers] = useState(false);
+
+  const INITIAL_DISPLAY_LIMIT = 5;
 
   console.log('AdminOverview props:', { member, organization });
 
@@ -98,7 +105,7 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
       return invitations;
     },
     onSuccess: () => {
-      toast.success('Invitations sent successfully!');
+      toast.success('New members invited successfully!');
       setShowInviteDialog(false);
       queryClient.invalidateQueries({ queryKey: ['organization-metrics'] });
     },
@@ -130,7 +137,7 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
       return rolesToCreate;
     },
     onSuccess: () => {
-      toast.success('Custom roles created successfully!');
+      toast.success('New custom roles created successfully!');
       setShowRolesDialog(false);
       queryClient.invalidateQueries({ queryKey: ['organization-metrics'] });
     },
@@ -198,7 +205,7 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
       return trial;
     },
     onSuccess: () => {
-      toast.success('Trial created successfully!');
+      toast.success('New trial created successfully!');
       setShowTrialDialog(false);
       queryClient.invalidateQueries({ queryKey: ['organization-metrics'] });
     },
@@ -266,6 +273,9 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
   const membersCount = metrics?.members?.length || 0;
   const rolesCount = metrics?.roles?.length || 0;
 
+  const displayedTrials = showAllTrials ? metrics?.trials : metrics?.trials?.slice(0, INITIAL_DISPLAY_LIMIT);
+  const displayedMembers = showAllMembers ? metrics?.members : metrics?.members?.slice(0, INITIAL_DISPLAY_LIMIT);
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-4xl mx-auto">
@@ -279,14 +289,19 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
           </p>
         </div>
 
-        {/* Trials Section */}
+        {/* Clinical Trials Section */}
         <Card className="mb-8">
           <div className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900 flex items-center">
-                <FileText className="h-5 w-5 mr-2" />
-                Clinical Trials ({trialsCount})
-              </h2>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+                  <FileText className="h-5 w-5 mr-2" />
+                  Clinical Trials
+                </h2>
+                <Badge variant="secondary" className="bg-blue-100 text-blue-800 font-medium">
+                  {trialsCount}
+                </Badge>
+              </div>
               <Button
                 onClick={() => setShowTrialDialog(true)}
                 className="bg-blue-600 hover:bg-blue-700"
@@ -298,7 +313,7 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
             
             {trialsCount > 0 ? (
               <div className="space-y-3">
-                {metrics?.trials?.map((trial) => (
+                {displayedTrials?.map((trial) => (
                   <div key={trial.id} className="border rounded-lg p-4">
                     <div className="flex items-center justify-between">
                       <div>
@@ -308,13 +323,13 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
                         </p>
                       </div>
                       <div className="text-right">
-                        <span className={`inline-block px-2 py-1 text-xs rounded-full ${
-                          trial.status === 'active' ? 'bg-green-100 text-green-800' :
-                          trial.status === 'planning' ? 'bg-blue-100 text-blue-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
+                        <Badge variant={
+                          trial.status === 'active' ? 'default' :
+                          trial.status === 'planning' ? 'secondary' :
+                          'outline'
+                        }>
                           {trial.status}
-                        </span>
+                        </Badge>
                         <p className="text-xs text-gray-500 mt-1">
                           Created: {new Date(trial.created_at).toLocaleDateString()}
                         </p>
@@ -322,6 +337,26 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
                     </div>
                   </div>
                 ))}
+                
+                {trialsCount > INITIAL_DISPLAY_LIMIT && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => setShowAllTrials(!showAllTrials)}
+                    className="w-full mt-4"
+                  >
+                    {showAllTrials ? (
+                      <>
+                        <ChevronUp className="h-4 w-4 mr-2" />
+                        Show Less
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="h-4 w-4 mr-2" />
+                        Show {trialsCount - INITIAL_DISPLAY_LIMIT} More Trials
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="text-center py-8 text-gray-500">
@@ -335,36 +370,59 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
         {/* Team Members Section */}
         <Card className="mb-8">
           <div className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900 flex items-center">
-                <Users className="h-5 w-5 mr-2" />
-                Team Members ({membersCount})
-              </h2>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+                  <Users className="h-5 w-5 mr-2" />
+                  Team Members
+                </h2>
+                <Badge variant="secondary" className="bg-green-100 text-green-800 font-medium">
+                  {membersCount}
+                </Badge>
+              </div>
               <Button
                 variant="outline"
                 onClick={() => setShowInviteDialog(true)}
                 className="border-green-500 text-green-600 hover:bg-green-50"
               >
                 <UserPlus className="h-4 w-4 mr-2" />
-                Invite New Members
+                Invite Team Members
               </Button>
             </div>
             
             {membersCount > 0 ? (
               <div className="space-y-3">
-                {metrics?.members?.map((teamMember) => (
+                {displayedMembers?.map((teamMember) => (
                   <div key={teamMember.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div>
                       <p className="font-medium text-gray-900">{teamMember.name}</p>
                       <p className="text-sm text-gray-600">{teamMember.email}</p>
                     </div>
-                    <span className={`px-3 py-1 text-xs rounded-full ${
-                      teamMember.default_role === 'admin' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'
-                    }`}>
+                    <Badge variant={teamMember.default_role === 'admin' ? 'default' : 'secondary'}>
                       {teamMember.default_role}
-                    </span>
+                    </Badge>
                   </div>
                 ))}
+                
+                {membersCount > INITIAL_DISPLAY_LIMIT && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => setShowAllMembers(!showAllMembers)}
+                    className="w-full mt-4"
+                  >
+                    {showAllMembers ? (
+                      <>
+                        <ChevronUp className="h-4 w-4 mr-2" />
+                        Show Less
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="h-4 w-4 mr-2" />
+                        Show {membersCount - INITIAL_DISPLAY_LIMIT} More Members
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="text-center py-8 text-gray-500">
@@ -378,18 +436,23 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
         {/* Available Roles Section */}
         <Card className="mb-8">
           <div className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900 flex items-center">
-                <Shield className="h-5 w-5 mr-2" />
-                Trial Roles ({rolesCount})
-              </h2>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+                  <Shield className="h-5 w-5 mr-2" />
+                  Trial Roles
+                </h2>
+                <Badge variant="secondary" className="bg-purple-100 text-purple-800 font-medium">
+                  {rolesCount}
+                </Badge>
+              </div>
               <Button
                 variant="outline"
                 onClick={() => setShowRolesDialog(true)}
                 className="border-purple-500 text-purple-600 hover:bg-purple-50"
               >
                 <Settings className="h-4 w-4 mr-2" />
-                Create Custom Roles
+                Add Custom Roles
               </Button>
             </div>
             
@@ -399,13 +462,16 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
                   <div key={role.id} className="border rounded-lg p-4">
                     <h3 className="font-medium text-gray-900">{role.name}</h3>
                     <p className="text-sm text-gray-600 mt-1">{role.description}</p>
-                    <span className={`inline-block mt-2 px-2 py-1 text-xs rounded-full ${
-                      role.permission_level === 'admin' ? 'bg-red-100 text-red-800' :
-                      role.permission_level === 'edit' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-green-100 text-green-800'
-                    }`}>
+                    <Badge 
+                      variant={
+                        role.permission_level === 'admin' ? 'destructive' :
+                        role.permission_level === 'edit' ? 'default' :
+                        'secondary'
+                      }
+                      className="mt-2"
+                    >
                       {role.permission_level}
-                    </span>
+                    </Badge>
                   </div>
                 ))}
               </div>
@@ -443,7 +509,7 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
         <Dialog open={showRolesDialog} onOpenChange={setShowRolesDialog}>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Create Custom Roles</DialogTitle>
+              <DialogTitle>Add Custom Roles</DialogTitle>
             </DialogHeader>
             <CreateCustomRoles onContinue={handleCreateRoles} />
           </DialogContent>
