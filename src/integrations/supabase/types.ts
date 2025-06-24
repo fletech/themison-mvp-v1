@@ -15,9 +15,9 @@ export type Database = {
           email: string
           expires_at: string | null
           id: string
-          initial_role: string
+          initial_role: Database["public"]["Enums"]["organization_member_type"]
           invited_at: string | null
-          invited_by: string
+          invited_by: string | null
           name: string
           organization_id: string
           status: string | null
@@ -27,9 +27,9 @@ export type Database = {
           email: string
           expires_at?: string | null
           id?: string
-          initial_role: string
+          initial_role: Database["public"]["Enums"]["organization_member_type"]
           invited_at?: string | null
-          invited_by: string
+          invited_by?: string | null
           name: string
           organization_id: string
           status?: string | null
@@ -39,9 +39,9 @@ export type Database = {
           email?: string
           expires_at?: string | null
           id?: string
-          initial_role?: string
+          initial_role?: Database["public"]["Enums"]["organization_member_type"]
           invited_at?: string | null
-          invited_by?: string
+          invited_by?: string | null
           name?: string
           organization_id?: string
           status?: string | null
@@ -59,7 +59,7 @@ export type Database = {
       members: {
         Row: {
           created_at: string | null
-          default_role: string
+          default_role: Database["public"]["Enums"]["organization_member_type"]
           email: string
           id: string
           invited_by: string | null
@@ -70,7 +70,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
-          default_role: string
+          default_role: Database["public"]["Enums"]["organization_member_type"]
           email: string
           id?: string
           invited_by?: string | null
@@ -81,7 +81,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
-          default_role?: string
+          default_role?: Database["public"]["Enums"]["organization_member_type"]
           email?: string
           id?: string
           invited_by?: string | null
@@ -129,7 +129,15 @@ export type Database = {
           name?: string
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "organizations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "themison_admins"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       patients: {
         Row: {
@@ -482,6 +490,7 @@ export type Database = {
       }
     }
     Enums: {
+      organization_member_type: "admin" | "staff"
       permission_level: "read" | "edit" | "admin"
     }
     CompositeTypes: {
@@ -598,6 +607,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      organization_member_type: ["admin", "staff"],
       permission_level: ["read", "edit", "admin"],
     },
   },
