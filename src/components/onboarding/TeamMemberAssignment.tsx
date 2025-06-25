@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -115,7 +116,7 @@ export function TeamMemberAssignment({
     onAssignmentsChange(updatedAssignments);
   };
 
-  // Get available members for a specific assignment - now includes ALL members not already assigned
+  // Get available members for a specific assignment
   const getAvailableMembersForAssignment = (currentAssignmentIndex: number) => {
     return members.filter(member => {
       // Check if this member is already assigned in OTHER assignments (not the current one being edited)
@@ -131,6 +132,13 @@ export function TeamMemberAssignment({
     role.name.toLowerCase().includes('principal investigator') || 
     role.name.toLowerCase().includes('pi')
   );
+
+  // Check if there's already a PI assigned in the assignments
+  const hasPIAssigned = assignments.some(assignment => {
+    const role = roles.find(r => r.id === assignment.roleId);
+    return role && (role.name.toLowerCase().includes('principal investigator') || 
+                   role.name.toLowerCase().includes('pi'));
+  });
 
   // Check if current user is assigned as PI in the assignments
   const currentUserAssignedAsPI = assignments.some(assignment => {
@@ -149,9 +157,15 @@ export function TeamMemberAssignment({
           id="autoAssignPI"
           checked={autoAssignAsPI}
           onCheckedChange={onAutoAssignPIChange}
+          disabled={hasPIAssigned && !currentUserAssignedAsPI}
         />
         <Label htmlFor="autoAssignPI" className="text-sm font-medium">
           Auto-assign me as Principal Investigator for this trial
+          {hasPIAssigned && !currentUserAssignedAsPI && (
+            <span className="text-gray-500 text-xs block">
+              (Disabled: Another member is already assigned as PI)
+            </span>
+          )}
         </Label>
       </div>
 
@@ -231,7 +245,14 @@ export function TeamMemberAssignment({
                           {roles.map(role => {
                             const isPIRole = piRole && role.id === piRole.id;
                             const isCurrentUserAssigning = members.find(m => m.id === assignment.memberId)?.profile_id === currentUserId;
-                            const isDisabled = isPIRole && autoAssignAsPI && isCurrentUserAssigning;
+                            
+                            // Disable PI role if:
+                            // 1. Auto-assign is ON and this is the current user (because they're already auto-assigned)
+                            // 2. There's already another PI assigned and this isn't that assignment
+                            const isDisabled = isPIRole && (
+                              (autoAssignAsPI && isCurrentUserAssigning) ||
+                              (hasPIAssigned && assignment.roleId !== role.id)
+                            );
                             
                             return (
                               <SelectItem 
@@ -241,7 +262,8 @@ export function TeamMemberAssignment({
                                 className={isDisabled ? 'text-gray-400 cursor-not-allowed' : ''}
                               >
                                 {role.name}
-                                {isDisabled && ' (Already auto-assigned to you)'}
+                                {isPIRole && autoAssignAsPI && isCurrentUserAssigning && ' (Auto-assigned to you)'}
+                                {isPIRole && hasPIAssigned && assignment.roleId !== role.id && ' (Already assigned to another member)'}
                               </SelectItem>
                             );
                           })}
