@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -116,13 +117,12 @@ export function TeamMemberAssignment({
     onAssignmentsChange(updatedAssignments);
   };
 
-  // Available members should include ALL members, not filtered by assignments yet
-  // The filtering happens in the Select component to show available options
-  const getAvailableMembersForAssignment = (currentAssignmentId?: string) => {
+  // Get available members for a specific assignment - now includes ALL members not already assigned
+  const getAvailableMembersForAssignment = (currentAssignmentIndex: number) => {
     return members.filter(member => {
-      // Don't show members already assigned, except for the current assignment being edited
+      // Check if this member is already assigned in OTHER assignments (not the current one being edited)
       const isAlreadyAssigned = assignments.some((assignment, index) => 
-        assignment.memberId === member.id && assignments.findIndex(a => a === assignment) !== (currentAssignmentId ? parseInt(currentAssignmentId) : -1)
+        assignment.memberId === member.id && index !== currentAssignmentIndex
       );
       return !isAlreadyAssigned;
     });
@@ -188,7 +188,7 @@ export function TeamMemberAssignment({
       ) : (
         <div className="space-y-3">
           {assignments.map((assignment, index) => {
-            const availableMembersForThisAssignment = getAvailableMembersForAssignment(index.toString());
+            const availableMembersForThisAssignment = getAvailableMembersForAssignment(index);
             
             return (
               <Card key={index} className="p-4">
@@ -232,7 +232,8 @@ export function TeamMemberAssignment({
                         <SelectContent>
                           {roles.map(role => {
                             const isPIRole = piRole && role.id === piRole.id;
-                            const isDisabled = isPIRole && (autoAssignAsPI || currentUserAssignedAsPI);
+                            const isCurrentUserAssigning = members.find(m => m.id === assignment.memberId)?.profile_id === currentUserId;
+                            const isDisabled = isPIRole && autoAssignAsPI && isCurrentUserAssigning;
                             
                             return (
                               <SelectItem 
@@ -242,8 +243,7 @@ export function TeamMemberAssignment({
                                 className={isDisabled ? 'text-gray-400 cursor-not-allowed' : ''}
                               >
                                 {role.name}
-                                {isDisabled && autoAssignAsPI && ' (Already auto-assigned to you)'}
-                                {isDisabled && currentUserAssignedAsPI && !autoAssignAsPI && ' (Already assigned in team)'}
+                                {isDisabled && ' (Already auto-assigned to you)'}
                               </SelectItem>
                             );
                           })}
