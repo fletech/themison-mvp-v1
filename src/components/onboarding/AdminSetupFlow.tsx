@@ -85,29 +85,41 @@ export function AdminSetupFlow({ member, organization }: AdminSetupFlowProps) {
   // Create trial and complete onboarding mutation
   const createTrialMutation = useMutation({
     mutationFn: async (trialData: any) => {
+      console.log('AdminSetupFlow - Received trialData:', trialData);
+      
       if (!organization.id || !member.id) {
         throw new Error('No organization or member ID available');
       }
 
+      // Prepare trial data - explicitly exclude pi_contact
+      const trialInsertData = {
+        name: trialData.name,
+        description: trialData.description,
+        phase: trialData.phase,
+        sponsor: trialData.sponsor,
+        location: trialData.location,
+        study_start: trialData.study_start,
+        estimated_close_out: trialData.estimated_close_out,
+        organization_id: organization.id,
+        created_by: user?.id,
+        status: 'planning'
+      };
+
+      console.log('AdminSetupFlow - Inserting trial with data:', trialInsertData);
+
       // Create the trial without pi_contact field
       const { data: trial, error: trialError } = await supabase
         .from('trials')
-        .insert({
-          name: trialData.name,
-          description: trialData.description,
-          phase: trialData.phase,
-          sponsor: trialData.sponsor,
-          location: trialData.location,
-          study_start: trialData.study_start,
-          estimated_close_out: trialData.estimated_close_out,
-          organization_id: organization.id,
-          created_by: user?.id,
-          status: 'planning'
-        })
+        .insert(trialInsertData)
         .select()
         .single();
 
-      if (trialError) throw trialError;
+      if (trialError) {
+        console.error('AdminSetupFlow - Trial creation error:', trialError);
+        throw trialError;
+      }
+
+      console.log('AdminSetupFlow - Trial created successfully:', trial);
 
       // Auto-assign as PI if requested
       if (trialData.autoAssignAsPI) {
@@ -169,6 +181,7 @@ export function AdminSetupFlow({ member, organization }: AdminSetupFlowProps) {
       navigate('/dashboard');
     },
     onError: (error) => {
+      console.error('AdminSetupFlow - Trial creation failed:', error);
       toast.error('Failed to complete setup: ' + error.message);
     }
   });
@@ -186,6 +199,7 @@ export function AdminSetupFlow({ member, organization }: AdminSetupFlowProps) {
   };
 
   const handleStep3Complete = (trialData: any) => {
+    console.log('AdminSetupFlow - handleStep3Complete called with:', trialData);
     createTrialMutation.mutate(trialData);
   };
 

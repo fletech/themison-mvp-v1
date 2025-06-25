@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
@@ -109,29 +108,41 @@ export function OnboardingFlow() {
   // Create trial and complete onboarding mutation
   const createTrialMutation = useMutation({
     mutationFn: async (trialData: any) => {
+      console.log('OnboardingFlow - Received trialData:', trialData);
+      
       if (!organizationId || !currentMemberId) {
         throw new Error('No organization or member ID available');
       }
 
+      // Prepare trial data - explicitly exclude pi_contact
+      const trialInsertData = {
+        name: trialData.name,
+        description: trialData.description,
+        phase: trialData.phase,
+        sponsor: trialData.sponsor,
+        location: trialData.location,
+        study_start: trialData.study_start,
+        estimated_close_out: trialData.estimated_close_out,
+        organization_id: organizationId,
+        created_by: user?.id,
+        status: 'planning'
+      };
+
+      console.log('OnboardingFlow - Inserting trial with data:', trialInsertData);
+
       // Create the trial without pi_contact field
       const { data: trial, error: trialError } = await supabase
         .from('trials')
-        .insert({
-          name: trialData.name,
-          description: trialData.description,
-          phase: trialData.phase,
-          sponsor: trialData.sponsor,
-          location: trialData.location,
-          study_start: trialData.study_start,
-          estimated_close_out: trialData.estimated_close_out,
-          organization_id: organizationId,
-          created_by: user?.id,
-          status: 'planning'
-        })
+        .insert(trialInsertData)
         .select()
         .single();
 
-      if (trialError) throw trialError;
+      if (trialError) {
+        console.error('OnboardingFlow - Trial creation error:', trialError);
+        throw trialError;
+      }
+
+      console.log('OnboardingFlow - Trial created successfully:', trial);
 
       // If auto-assign as PI, add user to trial team
       if (trialData.autoAssignAsPI) {
@@ -196,6 +207,7 @@ export function OnboardingFlow() {
       navigate('/dashboard');
     },
     onError: (error) => {
+      console.error('OnboardingFlow - Trial creation failed:', error);
       toast.error('Failed to create trial: ' + error.message);
     }
   });
@@ -215,6 +227,7 @@ export function OnboardingFlow() {
   };
 
   const handleStep3Complete = (trialData: any) => {
+    console.log('OnboardingFlow - handleStep3Complete called with:', trialData);
     createTrialMutation.mutate(trialData);
   };
 

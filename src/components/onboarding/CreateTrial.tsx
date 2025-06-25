@@ -48,11 +48,14 @@ export function CreateTrial({ onComplete, isFirstTrial = true, organizationId }:
     teamAssignments: []
   });
 
+  console.log('CreateTrial - Current trialData:', trialData);
+
   const updateField = (field: keyof TrialData, value: string | boolean | any[]) => {
     setTrialData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleComplete = () => {
+    console.log('CreateTrial - Sending trialData to onComplete:', trialData);
     onComplete(trialData);
   };
 
