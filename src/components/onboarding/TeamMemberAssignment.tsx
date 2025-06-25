@@ -34,16 +34,15 @@ export function TeamMemberAssignment({
 }: TeamMemberAssignmentProps) {
   const [assignments, setAssignments] = useState<TeamAssignment[]>([]);
 
-  // Fetch confirmed members (excluding current user)
+  // Fetch confirmed members (including current user)
   const { data: members = [] } = useQuery({
     queryKey: ['confirmed-members', organizationId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('members')
-        .select('id, name, email')
+        .select('id, name, email, profile_id')
         .eq('organization_id', organizationId)
-        .eq('onboarding_completed', true)
-        .neq('profile_id', currentUserId);
+        .eq('onboarding_completed', true);
       
       if (error) throw error;
       return data || [];
@@ -128,6 +127,15 @@ export function TeamMemberAssignment({
     role.name.toLowerCase().includes('pi')
   );
 
+  // Check if current user is assigned as PI in the assignments
+  const currentUserAssignedAsPI = assignments.some(assignment => {
+    const member = members.find(m => m.id === assignment.memberId);
+    const role = roles.find(r => r.id === assignment.roleId);
+    return member?.profile_id === currentUserId && 
+           role && (role.name.toLowerCase().includes('principal investigator') || 
+                   role.name.toLowerCase().includes('pi'));
+  });
+
   return (
     <div className="space-y-4">
       {/* PI Auto-assignment checkbox */}
@@ -143,7 +151,7 @@ export function TeamMemberAssignment({
       </div>
 
       <div className="flex items-center justify-between">
-        <Label className="text-base font-medium">Assign Additional Team Members</Label>
+        <Label className="text-base font-medium">Assign Team Members</Label>
         <Button 
           type="button"
           variant="outline" 
@@ -160,14 +168,14 @@ export function TeamMemberAssignment({
         <Card className="p-4">
           <div className="text-center text-gray-500">
             <UserPlus className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-            <p>No confirmed team members available to assign.</p>
+            <p>No team members available to assign.</p>
             <p className="text-sm mt-1">Members will appear here once they accept their invitations.</p>
           </div>
         </Card>
       ) : assignments.length === 0 ? (
         <Card className="p-4">
           <p className="text-sm text-gray-600 text-center">
-            No additional team members assigned yet. Click "Add Member" to assign roles to your team.
+            No team members assigned yet. Click "Add Member" to assign roles to your team.
           </p>
         </Card>
       ) : (
@@ -212,7 +220,7 @@ export function TeamMemberAssignment({
                       <SelectContent>
                         {roles.map(role => {
                           const isPIRole = piRole && role.id === piRole.id;
-                          const isDisabled = isPIRole && autoAssignAsPI;
+                          const isDisabled = isPIRole && (autoAssignAsPI || currentUserAssignedAsPI);
                           
                           return (
                             <SelectItem 
@@ -222,7 +230,8 @@ export function TeamMemberAssignment({
                               className={isDisabled ? 'text-gray-400 cursor-not-allowed' : ''}
                             >
                               {role.name}
-                              {isDisabled && ' (Already assigned to you)'}
+                              {isDisabled && autoAssignAsPI && ' (Already auto-assigned to you)'}
+                              {isDisabled && currentUserAssignedAsPI && !autoAssignAsPI && ' (Already assigned in team)'}
                             </SelectItem>
                           );
                         })}
