@@ -467,8 +467,16 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_user_organization_id_for_trial_members: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       is_themison_admin: {
         Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      user_can_access_trial: {
+        Args: { trial_id_param: string }
         Returns: boolean
       }
       user_can_create_trials: {
