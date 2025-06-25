@@ -131,15 +131,7 @@ export function CreateTrial({ onComplete, isFirstTrial = true, organizationId }:
               />
             </div>
 
-            <div>
-              <Label htmlFor="location">Location *</Label>
-              <Input
-                id="location"
-                placeholder="Study location/site"
-                value={trialData.location}
-                onChange={(e) => updateField('location', e.target.value)}
-              />
-            </div>
+            
 
             <div>
               <Label htmlFor="study_start">Study Start Date</Label>
@@ -158,6 +150,15 @@ export function CreateTrial({ onComplete, isFirstTrial = true, organizationId }:
                 type="date"
                 value={trialData.estimated_close_out}
                 onChange={(e) => updateField('estimated_close_out', e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="location">Location *</Label>
+              <Input
+                id="location"
+                placeholder="Study location/site"
+                value={trialData.location}
+                onChange={(e) => updateField('location', e.target.value)}
               />
             </div>
           </div>
