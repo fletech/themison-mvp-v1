@@ -608,6 +608,7 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
             <CreateTrial 
               onComplete={handleCreateTrial} 
               isFirstTrial={trialsCount === 0}
+              organizationId={organization?.id || ''}
             />
           </DialogContent>
         </Dialog>
