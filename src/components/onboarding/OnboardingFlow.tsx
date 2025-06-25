@@ -130,6 +130,24 @@ export function OnboardingFlow() {
         }
       }
 
+      // Log the complete payload being sent to the database
+      console.log('🚀 CREATING TRIAL - Full payload sent to database:', {
+        trial_data: {
+          name: trialData.name,
+          description: trialData.description,
+          phase: trialData.phase,
+          sponsor: trialData.sponsor,
+          location: trialData.location,
+          study_start: trialData.study_start,
+          estimated_close_out: trialData.estimated_close_out
+        },
+        team_assignments: teamAssignments,
+        organization_id: organizationId,
+        current_member_id: currentMemberId,
+        current_user_id: user?.id,
+        auto_assign_pi: trialData.autoAssignAsPI
+      });
+
       // Use the stored procedure to create trial with members atomically
       const { data: trialId, error: trialError } = await supabase.rpc('create_trial_with_members', {
         trial_data: {
