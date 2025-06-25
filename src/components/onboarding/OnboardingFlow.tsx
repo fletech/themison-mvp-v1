@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
@@ -7,7 +8,7 @@ import { toast } from 'sonner';
 import { OnboardingLayout } from './OnboardingLayout';
 import { InviteMembers } from './InviteMembers';
 import { CreateCustomRoles } from './CreateCustomRoles';
-import { CreateFirstTrial } from './CreateFirstTrial';
+import { CreateTrial } from './CreateTrial';
 
 export function OnboardingFlow() {
   const [currentStep, setCurrentStep] = useState(1);
@@ -167,6 +168,27 @@ export function OnboardingFlow() {
         }
       }
 
+      // Assign team members to trial
+      if (trialData.teamAssignments && trialData.teamAssignments.length > 0) {
+        const teamAssignments = trialData.teamAssignments
+          .filter((assignment: any) => assignment.memberId && assignment.roleId)
+          .map((assignment: any) => ({
+            trial_id: trial.id,
+            member_id: assignment.memberId,
+            role_id: assignment.roleId,
+            is_active: true,
+            start_date: new Date().toISOString().split('T')[0]
+          }));
+
+        if (teamAssignments.length > 0) {
+          await supabase
+            .from('trial_members')
+            .insert(teamAssignments);
+          
+          console.log(`Assigned ${teamAssignments.length} team members to trial`);
+        }
+      }
+
       // Mark onboarding as completed
       await supabase
         .from('members')
@@ -270,7 +292,11 @@ export function OnboardingFlow() {
             totalSteps={3}
             onBack={() => setCurrentStep(2)}
           >
-            <CreateFirstTrial onComplete={handleStep3Complete} />
+            <CreateTrial 
+              onComplete={handleStep3Complete} 
+              isFirstTrial={true}
+              organizationId={organizationId}
+            />
           </OnboardingLayout>
         );
       default:

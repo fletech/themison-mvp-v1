@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { OnboardingLayout } from './OnboardingLayout';
 import { InviteMembers } from './InviteMembers';
 import { CreateCustomRoles } from './CreateCustomRoles';
-import { CreateFirstTrial } from './CreateFirstTrial';
+import { CreateTrial } from './CreateTrial';
 
 interface AdminSetupFlowProps {
   member: any;
@@ -138,6 +138,25 @@ export function AdminSetupFlow({ member, organization }: AdminSetupFlowProps) {
         }
       }
 
+      // Assign team members to trial
+      if (trialData.teamAssignments && trialData.teamAssignments.length > 0) {
+        const teamAssignments = trialData.teamAssignments
+          .filter((assignment: any) => assignment.memberId && assignment.roleId)
+          .map((assignment: any) => ({
+            trial_id: trial.id,
+            member_id: assignment.memberId,
+            role_id: assignment.roleId,
+            is_active: true,
+            start_date: new Date().toISOString().split('T')[0]
+          }));
+
+        if (teamAssignments.length > 0) {
+          await supabase
+            .from('trial_members')
+            .insert(teamAssignments);
+        }
+      }
+
       // Complete onboarding for both member and organization
       await Promise.all([
         supabase.from('members')
@@ -209,7 +228,11 @@ export function AdminSetupFlow({ member, organization }: AdminSetupFlowProps) {
             totalSteps={3}
             onBack={() => setCurrentStep(2)}
           >
-            <CreateFirstTrial onComplete={handleStep3Complete} />
+            <CreateTrial 
+              onComplete={handleStep3Complete} 
+              isFirstTrial={true}
+              organizationId={organization.id}
+            />
           </OnboardingLayout>
         );
       default:

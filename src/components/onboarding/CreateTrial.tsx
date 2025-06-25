@@ -8,6 +8,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { FileText, Sparkles } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { TeamMemberAssignment } from './TeamMemberAssignment';
+import { useAuth } from '@/hooks/useAuth';
 
 interface TrialData {
   name: string;
@@ -19,14 +21,23 @@ interface TrialData {
   study_start: string;
   estimated_close_out: string;
   autoAssignAsPI: boolean;
+  teamAssignments: Array<{
+    memberId: string;
+    memberName: string;
+    memberEmail: string;
+    roleId: string;
+    roleName: string;
+  }>;
 }
 
-interface CreateFirstTrialProps {
+interface CreateTrialProps {
   onComplete: (trialData: TrialData) => void;
   isFirstTrial?: boolean;
+  organizationId: string;
 }
 
-export function CreateFirstTrial({ onComplete, isFirstTrial = true }: CreateFirstTrialProps) {
+export function CreateTrial({ onComplete, isFirstTrial = true, organizationId }: CreateTrialProps) {
+  const { user } = useAuth();
   const [trialData, setTrialData] = useState<TrialData>({
     name: '',
     description: '',
@@ -36,10 +47,11 @@ export function CreateFirstTrial({ onComplete, isFirstTrial = true }: CreateFirs
     pi_contact: '',
     study_start: '',
     estimated_close_out: '',
-    autoAssignAsPI: true
+    autoAssignAsPI: true,
+    teamAssignments: []
   });
 
-  const updateField = (field: keyof TrialData, value: string | boolean) => {
+  const updateField = (field: keyof TrialData, value: string | boolean | any[]) => {
     setTrialData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -80,7 +92,9 @@ export function CreateFirstTrial({ onComplete, isFirstTrial = true }: CreateFirs
         </div>
       </div>
 
+      {/* Trial Details */}
       <Card className="p-6">
+        <h4 className="text-lg font-semibold mb-4">Trial Information</h4>
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
@@ -183,6 +197,16 @@ export function CreateFirstTrial({ onComplete, isFirstTrial = true }: CreateFirs
             </Label>
           </div>
         </div>
+      </Card>
+
+      {/* Team Assignment */}
+      <Card className="p-6">
+        <h4 className="text-lg font-semibold mb-4">Team Assignment</h4>
+        <TeamMemberAssignment 
+          organizationId={organizationId}
+          currentUserId={user?.id}
+          onAssignmentsChange={(assignments) => updateField('teamAssignments', assignments)}
+        />
       </Card>
 
       <div className="flex justify-end">
