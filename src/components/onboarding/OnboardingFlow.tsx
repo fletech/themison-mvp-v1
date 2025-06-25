@@ -113,12 +113,7 @@ export function OnboardingFlow() {
         throw new Error('No organization or member ID available');
       }
 
-      // Use member email as PI contact if auto-assigning as PI
-      const piContact = trialData.autoAssignAsPI && currentMemberEmail 
-        ? currentMemberEmail 
-        : trialData.pi_contact;
-
-      // Create the trial
+      // Create the trial without pi_contact field
       const { data: trial, error: trialError } = await supabase
         .from('trials')
         .insert({
@@ -127,7 +122,6 @@ export function OnboardingFlow() {
           phase: trialData.phase,
           sponsor: trialData.sponsor,
           location: trialData.location,
-          pi_contact: piContact,
           study_start: trialData.study_start,
           estimated_close_out: trialData.estimated_close_out,
           organization_id: organizationId,

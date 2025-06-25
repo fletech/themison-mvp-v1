@@ -89,11 +89,7 @@ export function AdminSetupFlow({ member, organization }: AdminSetupFlowProps) {
         throw new Error('No organization or member ID available');
       }
 
-      const piContact = trialData.autoAssignAsPI && member.email 
-        ? member.email 
-        : trialData.pi_contact;
-
-      // Create the trial
+      // Create the trial without pi_contact field
       const { data: trial, error: trialError } = await supabase
         .from('trials')
         .insert({
@@ -102,7 +98,6 @@ export function AdminSetupFlow({ member, organization }: AdminSetupFlowProps) {
           phase: trialData.phase,
           sponsor: trialData.sponsor,
           location: trialData.location,
-          pi_contact: piContact,
           study_start: trialData.study_start,
           estimated_close_out: trialData.estimated_close_out,
           organization_id: organization.id,
