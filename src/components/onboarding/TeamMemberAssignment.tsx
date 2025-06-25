@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -34,15 +33,14 @@ export function TeamMemberAssignment({
 }: TeamMemberAssignmentProps) {
   const [assignments, setAssignments] = useState<TeamAssignment[]>([]);
 
-  // Fetch confirmed members (including current user)
+  // Fetch all confirmed members (removed onboarding_completed filter)
   const { data: members = [] } = useQuery({
     queryKey: ['confirmed-members', organizationId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('members')
         .select('id, name, email, profile_id')
-        .eq('organization_id', organizationId)
-        .eq('onboarding_completed', true);
+        .eq('organization_id', organizationId);
       
       if (error) throw error;
       return data || [];
