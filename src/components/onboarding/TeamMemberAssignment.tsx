@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -35,16 +34,28 @@ export function TeamMemberAssignment({
 }: TeamMemberAssignmentProps) {
   const [assignments, setAssignments] = useState<TeamAssignment[]>([]);
 
+  console.log('🔧 TeamMemberAssignment - Component initialized with:', {
+    organizationId,
+    currentUserId,
+    autoAssignAsPI
+  });
+
   // Fetch all confirmed members (removed onboarding_completed filter)
   const { data: members = [] } = useQuery({
     queryKey: ['confirmed-members', organizationId],
     queryFn: async () => {
+      console.log('🔍 TeamMemberAssignment - Fetching members for organization:', organizationId);
       const { data, error } = await supabase
         .from('members')
         .select('id, name, email, profile_id')
         .eq('organization_id', organizationId);
       
-      if (error) throw error;
+      if (error) {
+        console.error('❌ TeamMemberAssignment - Error fetching members:', error);
+        throw error;
+      }
+      
+      console.log('✅ TeamMemberAssignment - Fetched members:', data);
       return data || [];
     },
     enabled: !!organizationId
@@ -54,13 +65,19 @@ export function TeamMemberAssignment({
   const { data: roles = [] } = useQuery({
     queryKey: ['organization-roles', organizationId],
     queryFn: async () => {
+      console.log('🔍 TeamMemberAssignment - Fetching roles for organization:', organizationId);
       const { data, error } = await supabase
         .from('roles')
         .select('id, name, permission_level')
         .eq('organization_id', organizationId)
         .order('name');
       
-      if (error) throw error;
+      if (error) {
+        console.error('❌ TeamMemberAssignment - Error fetching roles:', error);
+        throw error;
+      }
+      
+      console.log('✅ TeamMemberAssignment - Fetched roles:', data);
       return data || [];
     },
     enabled: !!organizationId
@@ -72,16 +89,28 @@ export function TeamMemberAssignment({
     role.name.toLowerCase().includes('pi')
   );
 
+  console.log('🔍 TeamMemberAssignment - PI Role found:', piRole);
+
   // Find current user member info
   const currentUserMember = members.find(member => member.profile_id === currentUserId);
+  console.log('🔍 TeamMemberAssignment - Current user member:', currentUserMember);
 
   // Effect to handle auto-assign PI checkbox changes
   useEffect(() => {
+    console.log('🔄 TeamMemberAssignment - Auto-assign PI effect triggered:', {
+      autoAssignAsPI,
+      piRole: piRole?.id,
+      currentUserMember: currentUserMember?.id,
+      currentAssignments: assignments.length
+    });
+
     if (autoAssignAsPI && piRole && currentUserMember) {
       // Check if current user is already assigned as PI
       const existingPIAssignment = assignments.find(assignment => 
         assignment.memberId === currentUserMember.id && assignment.roleId === piRole.id
       );
+
+      console.log('🔍 TeamMemberAssignment - Existing PI assignment:', existingPIAssignment);
 
       if (!existingPIAssignment) {
         // Add new assignment for current user as PI
@@ -93,6 +122,7 @@ export function TeamMemberAssignment({
           roleName: piRole.name
         };
 
+        console.log('➕ TeamMemberAssignment - Adding PI assignment:', newPIAssignment);
         const updatedAssignments = [...assignments, newPIAssignment];
         setAssignments(updatedAssignments);
         onAssignmentsChange(updatedAssignments);
@@ -104,6 +134,7 @@ export function TeamMemberAssignment({
       );
       
       if (updatedAssignments.length !== assignments.length) {
+        console.log('➖ TeamMemberAssignment - Removing PI assignment');
         setAssignments(updatedAssignments);
         onAssignmentsChange(updatedAssignments);
       }
@@ -111,9 +142,12 @@ export function TeamMemberAssignment({
   }, [autoAssignAsPI, piRole, currentUserMember, assignments, onAssignmentsChange]);
 
   const addAssignment = () => {
+    console.log('➕ TeamMemberAssignment - Adding new assignment');
     const availableMembers = members.filter(
       member => !assignments.find(a => a.memberId === member.id)
     );
+    
+    console.log('🔍 TeamMemberAssignment - Available members for new assignment:', availableMembers.length);
     
     if (availableMembers.length === 0) return;
     
@@ -132,11 +166,13 @@ export function TeamMemberAssignment({
 
   const removeAssignment = (index: number) => {
     const assignment = assignments[index];
+    console.log('➖ TeamMemberAssignment - Removing assignment at index:', index, assignment);
     
     // If removing the current user's PI assignment, also uncheck the auto-assign checkbox
     if (autoAssignAsPI && piRole && currentUserMember && 
         assignment.memberId === currentUserMember.id && 
         assignment.roleId === piRole.id) {
+      console.log('🔄 TeamMemberAssignment - Unchecking auto-assign PI due to removal');
       onAutoAssignPIChange(false);
     }
     
@@ -146,6 +182,8 @@ export function TeamMemberAssignment({
   };
 
   const updateAssignment = (index: number, field: keyof TeamAssignment, value: string) => {
+    console.log('🔄 TeamMemberAssignment - Updating assignment:', { index, field, value });
+    
     const updatedAssignments = [...assignments];
     updatedAssignments[index] = { ...updatedAssignments[index], [field]: value };
     
@@ -155,6 +193,10 @@ export function TeamMemberAssignment({
       if (member) {
         updatedAssignments[index].memberName = member.name;
         updatedAssignments[index].memberEmail = member.email;
+        console.log('🔄 TeamMemberAssignment - Updated member info:', {
+          memberName: member.name,
+          memberEmail: member.email
+        });
       }
     }
     
@@ -163,6 +205,9 @@ export function TeamMemberAssignment({
       const role = roles.find(r => r.id === value);
       if (role) {
         updatedAssignments[index].roleName = role.name;
+        console.log('🔄 TeamMemberAssignment - Updated role info:', {
+          roleName: role.name
+        });
       }
     }
     
@@ -195,6 +240,13 @@ export function TeamMemberAssignment({
     return member?.profile_id === currentUserId && 
            role && (role.name.toLowerCase().includes('principal investigator') || 
                    role.name.toLowerCase().includes('pi'));
+  });
+
+  console.log('🔍 TeamMemberAssignment - Current state summary:', {
+    assignmentsCount: assignments.length,
+    hasPIAssigned,
+    currentUserAssignedAsPI,
+    autoAssignAsPI
   });
 
   return (
@@ -353,4 +405,3 @@ export function TeamMemberAssignment({
     </div>
   );
 }
-

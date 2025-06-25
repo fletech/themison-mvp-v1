@@ -53,7 +53,7 @@ export function OnboardingFlow() {
         email: member.email,
         organization_id: organizationId,
         initial_role: member.role,
-        invited_by: currentMemberId, // Using member_id instead of profile_id
+        invited_by: currentMemberId,
         status: 'pending'
       }));
 
@@ -108,9 +108,14 @@ export function OnboardingFlow() {
   // Create trial and complete onboarding mutation
   const createTrialMutation = useMutation({
     mutationFn: async (trialData: any) => {
-      console.log('OnboardingFlow - Received trialData:', trialData);
+      console.log('🔄 OnboardingFlow - Starting trial creation process');
+      console.log('📝 OnboardingFlow - Received trialData:', JSON.stringify(trialData, null, 2));
       
       if (!organizationId || !currentMemberId) {
+        console.error('❌ OnboardingFlow - Missing required IDs:', {
+          organizationId,
+          currentMemberId
+        });
         throw new Error('No organization or member ID available');
       }
 
@@ -128,9 +133,10 @@ export function OnboardingFlow() {
         status: 'planning'
       };
 
-      console.log('OnboardingFlow - Inserting trial with data:', trialInsertData);
+      console.log('📋 OnboardingFlow - Trial insert data prepared:', JSON.stringify(trialInsertData, null, 2));
 
       // Create the trial without pi_contact field
+      console.log('🚀 OnboardingFlow - Inserting trial into database...');
       const { data: trial, error: trialError } = await supabase
         .from('trials')
         .insert(trialInsertData)
@@ -138,26 +144,43 @@ export function OnboardingFlow() {
         .single();
 
       if (trialError) {
-        console.error('OnboardingFlow - Trial creation error:', trialError);
+        console.error('❌ OnboardingFlow - Trial creation error:', trialError);
         throw trialError;
       }
 
-      console.log('OnboardingFlow - Trial created successfully:', trial);
+      console.log('✅ OnboardingFlow - Trial created successfully:', trial);
 
-      // If auto-assign as PI, add user to trial team
+      // Auto-assign PI logic
       if (trialData.autoAssignAsPI) {
+        console.log('👨‍⚕️ OnboardingFlow - Auto-assigning current user as PI...');
+        
         // Find PI role (look for Principal Investigator roles first)
-        const { data: piRole } = await supabase
+        console.log('🔍 OnboardingFlow - Searching for PI role in organization:', organizationId);
+        const { data: piRole, error: piRoleError } = await supabase
           .from('roles')
-          .select('id')
+          .select('id, name')
           .eq('organization_id', organizationId)
           .or('name.ilike.%PI%,name.ilike.%Principal Investigator%')
           .order('name')
           .limit(1)
           .single();
 
+        if (piRoleError) {
+          console.error('❌ OnboardingFlow - Error finding PI role:', piRoleError);
+        }
+
+        console.log('🔍 OnboardingFlow - PI role search result:', piRole);
+
         if (piRole) {
-          await supabase
+          console.log('👨‍⚕️ OnboardingFlow - Inserting PI assignment:', {
+            trial_id: trial.id,
+            member_id: currentMemberId,
+            role_id: piRole.id,
+            is_active: true,
+            start_date: new Date().toISOString().split('T')[0]
+          });
+
+          const { error: piAssignError } = await supabase
             .from('trial_members')
             .insert({
               trial_id: trial.id,
@@ -167,17 +190,38 @@ export function OnboardingFlow() {
               start_date: new Date().toISOString().split('T')[0]
             });
 
-          console.log('Auto-assigned user as PI to trial');
+          if (piAssignError) {
+            console.error('❌ OnboardingFlow - Error assigning PI:', piAssignError);
+          } else {
+            console.log('✅ OnboardingFlow - Auto-assigned user as PI to trial');
+          }
         } else {
-          console.warn('No PI role found for auto-assignment');
+          console.warn('⚠️ OnboardingFlow - No PI role found for auto-assignment');
         }
       }
 
-      // Assign team members to trial
+      // Team assignments logic
+      console.log('👥 OnboardingFlow - Processing team assignments...');
+      console.log('📋 OnboardingFlow - Team assignments data:', JSON.stringify(trialData.teamAssignments, null, 2));
+
       if (trialData.teamAssignments && trialData.teamAssignments.length > 0) {
-        const teamAssignments = trialData.teamAssignments
-          .filter((assignment: any) => assignment.memberId && assignment.roleId)
-          .map((assignment: any) => ({
+        console.log(`👥 OnboardingFlow - Found ${trialData.teamAssignments.length} team assignments to process`);
+        
+        const validAssignments = trialData.teamAssignments.filter((assignment: any) => {
+          const isValid = assignment.memberId && assignment.roleId;
+          console.log('🔍 OnboardingFlow - Assignment validation:', {
+            assignment,
+            isValid,
+            hasMemberId: !!assignment.memberId,
+            hasRoleId: !!assignment.roleId
+          });
+          return isValid;
+        });
+
+        console.log(`✅ OnboardingFlow - ${validAssignments.length} valid assignments out of ${trialData.teamAssignments.length}`);
+
+        if (validAssignments.length > 0) {
+          const teamAssignments = validAssignments.map((assignment: any) => ({
             trial_id: trial.id,
             member_id: assignment.memberId,
             role_id: assignment.roleId,
@@ -185,34 +229,57 @@ export function OnboardingFlow() {
             start_date: new Date().toISOString().split('T')[0]
           }));
 
-        if (teamAssignments.length > 0) {
-          await supabase
+          console.log('📋 OnboardingFlow - Prepared team assignments for insert:', JSON.stringify(teamAssignments, null, 2));
+
+          console.log('🚀 OnboardingFlow - Inserting team assignments into trial_members...');
+          const { data: insertedAssignments, error: assignmentError } = await supabase
             .from('trial_members')
-            .insert(teamAssignments);
+            .insert(teamAssignments)
+            .select();
           
-          console.log(`Assigned ${teamAssignments.length} team members to trial`);
+          if (assignmentError) {
+            console.error('❌ OnboardingFlow - Error inserting team assignments:', assignmentError);
+            console.error('❌ OnboardingFlow - Failed assignments data:', JSON.stringify(teamAssignments, null, 2));
+          } else {
+            console.log('✅ OnboardingFlow - Team assignments inserted successfully:', insertedAssignments);
+            console.log(`✅ OnboardingFlow - Assigned ${teamAssignments.length} team members to trial`);
+          }
+        } else {
+          console.warn('⚠️ OnboardingFlow - No valid team assignments to insert');
         }
+      } else {
+        console.log('ℹ️ OnboardingFlow - No team assignments provided');
       }
 
       // Mark onboarding as completed
-      await supabase
+      console.log('🏁 OnboardingFlow - Marking onboarding as completed...');
+      const { error: onboardingError } = await supabase
         .from('members')
         .update({ onboarding_completed: true })
         .eq('profile_id', user?.id);
 
+      if (onboardingError) {
+        console.error('❌ OnboardingFlow - Error updating onboarding status:', onboardingError);
+      } else {
+        console.log('✅ OnboardingFlow - Onboarding marked as completed');
+      }
+
+      console.log('🎉 OnboardingFlow - Trial creation process completed successfully');
       return trial;
     },
     onSuccess: () => {
+      console.log('🎉 OnboardingFlow - Trial creation mutation succeeded');
       toast.success('Trial created successfully! Welcome to THEMISON!');
       navigate('/dashboard');
     },
     onError: (error) => {
-      console.error('OnboardingFlow - Trial creation failed:', error);
+      console.error('💥 OnboardingFlow - Trial creation mutation failed:', error);
       toast.error('Failed to create trial: ' + error.message);
     }
   });
 
   const handleStep1Continue = (members: any[]) => {
+    console.log('📝 OnboardingFlow - Step 1 completed with members:', members);
     setInvitedMembers(members);
     if (members.length > 0) {
       sendInvitationsMutation.mutate(members);
@@ -221,13 +288,15 @@ export function OnboardingFlow() {
   };
 
   const handleStep2Continue = (roles: any[]) => {
+    console.log('📝 OnboardingFlow - Step 2 completed with roles:', roles);
     setCustomRoles(roles);
     createRolesMutation.mutate(roles);
     setCurrentStep(3);
   };
 
   const handleStep3Complete = (trialData: any) => {
-    console.log('OnboardingFlow - handleStep3Complete called with:', trialData);
+    console.log('📝 OnboardingFlow - Step 3 completed, triggering trial creation');
+    console.log('📋 OnboardingFlow - handleStep3Complete called with:', JSON.stringify(trialData, null, 2));
     createTrialMutation.mutate(trialData);
   };
 
