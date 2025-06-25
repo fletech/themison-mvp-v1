@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -147,28 +148,27 @@ export function AdminSetupFlow({ member, organization }: AdminSetupFlowProps) {
         console.log('🔍 AdminSetupFlow - PI role search result:', piRole);
 
         if (piRole) {
-          console.log('👨‍⚕️ AdminSetupFlow - Inserting PI assignment:', {
+          const piAssignmentData = {
             trial_id: trial.id,
             member_id: member.id,
             role_id: piRole.id,
             is_active: true,
             start_date: new Date().toISOString().split('T')[0]
-          });
+          };
 
-          const { error: piAssignError } = await supabase
+          console.log('👨‍⚕️ AdminSetupFlow - Inserting PI assignment:', JSON.stringify(piAssignmentData, null, 2));
+
+          const { data: piAssignmentResult, error: piAssignError } = await supabase
             .from('trial_members')
-            .insert({
-              trial_id: trial.id,
-              member_id: member.id,
-              role_id: piRole.id,
-              is_active: true,
-              start_date: new Date().toISOString().split('T')[0]
-            });
+            .insert(piAssignmentData)
+            .select();
 
           if (piAssignError) {
             console.error('❌ AdminSetupFlow - Error assigning PI:', piAssignError);
+            console.error('❌ AdminSetupFlow - PI assignment data that failed:', JSON.stringify(piAssignmentData, null, 2));
           } else {
             console.log('✅ AdminSetupFlow - Auto-assigned user as PI to trial');
+            console.log('✅ AdminSetupFlow - PI assignment result:', piAssignmentResult);
           }
         } else {
           console.warn('⚠️ AdminSetupFlow - No PI role found for auto-assignment');
@@ -207,18 +207,29 @@ export function AdminSetupFlow({ member, organization }: AdminSetupFlowProps) {
           console.log('📋 AdminSetupFlow - Prepared team assignments for insert:', JSON.stringify(teamAssignments, null, 2));
 
           console.log('🚀 AdminSetupFlow - Inserting team assignments into trial_members...');
-          const { data: insertedAssignments, error: assignmentError } = await supabase
-            .from('trial_members')
-            .insert(teamAssignments)
-            .select();
-
-          if (assignmentError) {
-            console.error('❌ AdminSetupFlow - Error inserting team assignments:', assignmentError);
-            console.error('❌ AdminSetupFlow - Failed assignments data:', JSON.stringify(teamAssignments, null, 2));
-          } else {
-            console.log('✅ AdminSetupFlow - Team assignments inserted successfully:', insertedAssignments);
-            console.log(`✅ AdminSetupFlow - Assigned ${teamAssignments.length} team members to trial`);
+          
+          // Insert each assignment individually to better track errors
+          const insertResults = [];
+          for (let i = 0; i < teamAssignments.length; i++) {
+            const assignment = teamAssignments[i];
+            console.log(`🔄 AdminSetupFlow - Inserting assignment ${i + 1}/${teamAssignments.length}:`, assignment);
+            
+            const { data: insertedAssignment, error: assignmentError } = await supabase
+              .from('trial_members')
+              .insert(assignment)
+              .select();
+            
+            if (assignmentError) {
+              console.error(`❌ AdminSetupFlow - Error inserting assignment ${i + 1}:`, assignmentError);
+              console.error(`❌ AdminSetupFlow - Failed assignment data:`, JSON.stringify(assignment, null, 2));
+            } else {
+              console.log(`✅ AdminSetupFlow - Assignment ${i + 1} inserted successfully:`, insertedAssignment);
+              insertResults.push(insertedAssignment[0]);
+            }
           }
+
+          console.log(`📊 AdminSetupFlow - Final results: ${insertResults.length}/${teamAssignments.length} assignments inserted successfully`);
+          console.log('📋 AdminSetupFlow - All inserted assignments:', insertResults);
         } else {
           console.warn('⚠️ AdminSetupFlow - No valid team assignments to insert');
         }
