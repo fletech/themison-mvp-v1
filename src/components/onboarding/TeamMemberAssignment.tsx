@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -248,9 +249,11 @@ export function TeamMemberAssignment({
                             
                             // Disable PI role if:
                             // 1. Auto-assign is ON and this is the current user (because they're already auto-assigned)
-                            // 2. There's already another PI assigned and this isn't that assignment
+                            // 2. Auto-assign is ON and this is NOT the current user (because PI is auto-assigned to current user)
+                            // 3. There's already another PI assigned and this isn't that assignment
                             const isDisabled = isPIRole && (
                               (autoAssignAsPI && isCurrentUserAssigning) ||
+                              (autoAssignAsPI && !isCurrentUserAssigning) ||
                               (hasPIAssigned && assignment.roleId !== role.id)
                             );
                             
@@ -263,7 +266,8 @@ export function TeamMemberAssignment({
                               >
                                 {role.name}
                                 {isPIRole && autoAssignAsPI && isCurrentUserAssigning && ' (Auto-assigned to you)'}
-                                {isPIRole && hasPIAssigned && assignment.roleId !== role.id && ' (Already assigned to another member)'}
+                                {isPIRole && autoAssignAsPI && !isCurrentUserAssigning && ' (Auto-assigned to current user)'}
+                                {isPIRole && hasPIAssigned && assignment.roleId !== role.id && !autoAssignAsPI && ' (Already assigned to another member)'}
                               </SelectItem>
                             );
                           })}
@@ -289,3 +293,4 @@ export function TeamMemberAssignment({
     </div>
   );
 }
+
