@@ -442,10 +442,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      can_user_manage_trial_members: {
-        Args: { user_id: string; trial_id: string }
-        Returns: boolean
-      }
       create_trial_with_members: {
         Args: { trial_data: Json; team_assignments: Json[] }
         Returns: string
@@ -482,6 +478,10 @@ export type Database = {
       is_themison_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      user_belongs_to_organization: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       user_can_access_trial: {
         Args: { trial_id_param: string }
