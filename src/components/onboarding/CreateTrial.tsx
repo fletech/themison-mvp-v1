@@ -48,31 +48,11 @@ export function CreateTrial({ onComplete, isFirstTrial = true, organizationId }:
     teamAssignments: []
   });
 
-  console.log('🔧 CreateTrial - Component initialized with organizationId:', organizationId);
-  console.log('🔧 CreateTrial - Current trialData state:', JSON.stringify(trialData, null, 2));
-
   const updateField = (field: keyof TrialData, value: string | boolean | any[]) => {
-    console.log('🔄 CreateTrial - Updating field:', field, 'with value:', value);
-    setTrialData(prev => {
-      const updated = { ...prev, [field]: value };
-      console.log('🔄 CreateTrial - Updated trialData:', JSON.stringify(updated, null, 2));
-      return updated;
-    });
+    setTrialData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleComplete = () => {
-    console.log('🚀 CreateTrial - handleComplete triggered');
-    console.log('📋 CreateTrial - Final trialData being sent:', JSON.stringify(trialData, null, 2));
-    console.log('👥 CreateTrial - Team assignments count:', trialData.teamAssignments.length);
-    console.log('👨‍⚕️ CreateTrial - Auto-assign as PI:', trialData.autoAssignAsPI);
-    
-    if (trialData.teamAssignments.length > 0) {
-      console.log('👥 CreateTrial - Team assignments details:');
-      trialData.teamAssignments.forEach((assignment, index) => {
-        console.log(`  ${index + 1}. Member: ${assignment.memberName} (${assignment.memberId}) -> Role: ${assignment.roleName} (${assignment.roleId})`);
-      });
-    }
-    
     onComplete(trialData);
   };
 
@@ -201,14 +181,8 @@ export function CreateTrial({ onComplete, isFirstTrial = true, organizationId }:
           organizationId={organizationId}
           currentUserId={user?.id}
           autoAssignAsPI={trialData.autoAssignAsPI}
-          onAutoAssignPIChange={(checked) => {
-            console.log('🔄 CreateTrial - Auto-assign PI changed to:', checked);
-            updateField('autoAssignAsPI', checked);
-          }}
-          onAssignmentsChange={(assignments) => {
-            console.log('🔄 CreateTrial - Team assignments changed:', assignments);
-            updateField('teamAssignments', assignments);
-          }}
+          onAutoAssignPIChange={(checked) => updateField('autoAssignAsPI', checked)}
+          onAssignmentsChange={(assignments) => updateField('teamAssignments', assignments)}
         />
       </Card>
 

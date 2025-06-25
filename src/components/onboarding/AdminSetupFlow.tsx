@@ -82,21 +82,14 @@ export function AdminSetupFlow({ member, organization }: AdminSetupFlowProps) {
     }
   });
 
-  // Create trial and complete onboarding mutation
+  // Create trial mutation - separado en pasos
   const createTrialMutation = useMutation({
     mutationFn: async (trialData: any) => {
-      console.log('🔄 AdminSetupFlow - Starting trial creation process');
-      console.log('📝 AdminSetupFlow - Received trialData:', JSON.stringify(trialData, null, 2));
-      
       if (!organization.id || !member.id) {
-        console.error('❌ AdminSetupFlow - Missing required IDs:', {
-          organizationId: organization.id,
-          memberId: member.id
-        });
         throw new Error('No organization or member ID available');
       }
 
-      // Prepare trial data - explicitly exclude pi_contact
+      // PASO 1: Crear el trial
       const trialInsertData = {
         name: trialData.name,
         description: trialData.description,
@@ -110,135 +103,53 @@ export function AdminSetupFlow({ member, organization }: AdminSetupFlowProps) {
         status: 'planning'
       };
 
-      console.log('📋 AdminSetupFlow - Trial insert data prepared:', JSON.stringify(trialInsertData, null, 2));
-
-      // Create the trial without pi_contact field
-      console.log('🚀 AdminSetupFlow - Inserting trial into database...');
       const { data: trial, error: trialError } = await supabase
         .from('trials')
         .insert(trialInsertData)
         .select()
         .single();
 
-      if (trialError) {
-        console.error('❌ AdminSetupFlow - Trial creation error:', trialError);
-        throw trialError;
-      }
+      if (trialError) throw trialError;
 
-      console.log('✅ AdminSetupFlow - Trial created successfully:', trial);
-
-      // Auto-assign as PI if requested
+      // PASO 2: Asignar PI si se solicitó
       if (trialData.autoAssignAsPI) {
-        console.log('👨‍⚕️ AdminSetupFlow - Auto-assigning current user as PI...');
-        
-        console.log('🔍 AdminSetupFlow - Searching for PI role in organization:', organization.id);
-        const { data: piRole, error: piRoleError } = await supabase
+        const { data: piRole } = await supabase
           .from('roles')
-          .select('id, name')
+          .select('id')
           .eq('organization_id', organization.id)
           .or('name.ilike.%PI%,name.ilike.%Principal Investigator%')
-          .order('name')
           .limit(1)
           .single();
 
-        if (piRoleError) {
-          console.error('❌ AdminSetupFlow - Error finding PI role:', piRoleError);
-        }
-
-        console.log('🔍 AdminSetupFlow - PI role search result:', piRole);
-
         if (piRole) {
-          const piAssignmentData = {
-            trial_id: trial.id,
-            member_id: member.id,
-            role_id: piRole.id,
-            is_active: true,
-            start_date: new Date().toISOString().split('T')[0]
-          };
-
-          console.log('👨‍⚕️ AdminSetupFlow - Inserting PI assignment:', JSON.stringify(piAssignmentData, null, 2));
-
-          const { data: piAssignmentResult, error: piAssignError } = await supabase
+          await supabase
             .from('trial_members')
-            .insert(piAssignmentData)
-            .select();
-
-          if (piAssignError) {
-            console.error('❌ AdminSetupFlow - Error assigning PI:', piAssignError);
-            console.error('❌ AdminSetupFlow - PI assignment data that failed:', JSON.stringify(piAssignmentData, null, 2));
-          } else {
-            console.log('✅ AdminSetupFlow - Auto-assigned user as PI to trial');
-            console.log('✅ AdminSetupFlow - PI assignment result:', piAssignmentResult);
-          }
-        } else {
-          console.warn('⚠️ AdminSetupFlow - No PI role found for auto-assignment');
+            .insert({
+              trial_id: trial.id,
+              member_id: member.id,
+              role_id: piRole.id,
+              is_active: true,
+              start_date: new Date().toISOString().split('T')[0]
+            });
         }
       }
 
-      // Team assignments logic
-      console.log('👥 AdminSetupFlow - Processing team assignments...');
-      console.log('📋 AdminSetupFlow - Team assignments data:', JSON.stringify(trialData.teamAssignments, null, 2));
-
+      // PASO 3: Asignar miembros del equipo
       if (trialData.teamAssignments && trialData.teamAssignments.length > 0) {
-        console.log(`👥 AdminSetupFlow - Found ${trialData.teamAssignments.length} team assignments to process`);
-        
-        const validAssignments = trialData.teamAssignments.filter((assignment: any) => {
-          const isValid = assignment.memberId && assignment.roleId;
-          console.log('🔍 AdminSetupFlow - Assignment validation:', {
-            assignment,
-            isValid,
-            hasMemberId: !!assignment.memberId,
-            hasRoleId: !!assignment.roleId
-          });
-          return isValid;
-        });
+        const teamAssignments = trialData.teamAssignments.map((assignment: any) => ({
+          trial_id: trial.id,
+          member_id: assignment.memberId,
+          role_id: assignment.roleId,
+          is_active: true,
+          start_date: new Date().toISOString().split('T')[0]
+        }));
 
-        console.log(`✅ AdminSetupFlow - ${validAssignments.length} valid assignments out of ${trialData.teamAssignments.length}`);
-
-        if (validAssignments.length > 0) {
-          const teamAssignments = validAssignments.map((assignment: any) => ({
-            trial_id: trial.id,
-            member_id: assignment.memberId,
-            role_id: assignment.roleId,
-            is_active: true,
-            start_date: new Date().toISOString().split('T')[0]
-          }));
-
-          console.log('📋 AdminSetupFlow - Prepared team assignments for insert:', JSON.stringify(teamAssignments, null, 2));
-
-          console.log('🚀 AdminSetupFlow - Inserting team assignments into trial_members...');
-          
-          // Insert each assignment individually to better track errors
-          const insertResults = [];
-          for (let i = 0; i < teamAssignments.length; i++) {
-            const assignment = teamAssignments[i];
-            console.log(`🔄 AdminSetupFlow - Inserting assignment ${i + 1}/${teamAssignments.length}:`, assignment);
-            
-            const { data: insertedAssignment, error: assignmentError } = await supabase
-              .from('trial_members')
-              .insert(assignment)
-              .select();
-            
-            if (assignmentError) {
-              console.error(`❌ AdminSetupFlow - Error inserting assignment ${i + 1}:`, assignmentError);
-              console.error(`❌ AdminSetupFlow - Failed assignment data:`, JSON.stringify(assignment, null, 2));
-            } else {
-              console.log(`✅ AdminSetupFlow - Assignment ${i + 1} inserted successfully:`, insertedAssignment);
-              insertResults.push(insertedAssignment[0]);
-            }
-          }
-
-          console.log(`📊 AdminSetupFlow - Final results: ${insertResults.length}/${teamAssignments.length} assignments inserted successfully`);
-          console.log('📋 AdminSetupFlow - All inserted assignments:', insertResults);
-        } else {
-          console.warn('⚠️ AdminSetupFlow - No valid team assignments to insert');
-        }
-      } else {
-        console.log('ℹ️ AdminSetupFlow - No team assignments provided');
+        await supabase
+          .from('trial_members')
+          .insert(teamAssignments);
       }
 
-      // Complete onboarding for both member and organization
-      console.log('🏁 AdminSetupFlow - Completing onboarding...');
+      // PASO 4: Completar onboarding
       const updatePromises = [
         supabase.from('members')
           .update({ onboarding_completed: true })
@@ -248,31 +159,20 @@ export function AdminSetupFlow({ member, organization }: AdminSetupFlowProps) {
           .eq('id', organization.id)
       ];
 
-      const results = await Promise.allSettled(updatePromises);
-      results.forEach((result, index) => {
-        if (result.status === 'rejected') {
-          console.error(`❌ AdminSetupFlow - Error updating ${index === 0 ? 'member' : 'organization'} onboarding:`, result.reason);
-        } else {
-          console.log(`✅ AdminSetupFlow - Updated ${index === 0 ? 'member' : 'organization'} onboarding successfully`);
-        }
-      });
+      await Promise.all(updatePromises);
 
-      console.log('🎉 AdminSetupFlow - Trial creation process completed successfully');
       return trial;
     },
     onSuccess: () => {
-      console.log('🎉 AdminSetupFlow - Trial creation mutation succeeded');
       toast.success('Setup completed! Welcome to THEMISON!');
       navigate('/dashboard');
     },
     onError: (error) => {
-      console.error('💥 AdminSetupFlow - Trial creation mutation failed:', error);
       toast.error('Failed to complete setup: ' + error.message);
     }
   });
 
   const handleStep1Continue = (members: any[]) => {
-    console.log('📝 AdminSetupFlow - Step 1 completed with members:', members);
     if (members.length > 0) {
       sendInvitationsMutation.mutate(members);
     }
@@ -280,14 +180,11 @@ export function AdminSetupFlow({ member, organization }: AdminSetupFlowProps) {
   };
 
   const handleStep2Continue = (roles: any[]) => {
-    console.log('📝 AdminSetupFlow - Step 2 completed with roles:', roles);
     createRolesMutation.mutate(roles);
     setCurrentStep(3);
   };
 
   const handleStep3Complete = (trialData: any) => {
-    console.log('📝 AdminSetupFlow - Step 3 completed, triggering trial creation');
-    console.log('📋 AdminSetupFlow - handleStep3Complete called with:', JSON.stringify(trialData, null, 2));
     createTrialMutation.mutate(trialData);
   };
 
