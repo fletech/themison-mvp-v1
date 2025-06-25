@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -117,9 +116,17 @@ export function TeamMemberAssignment({
     onAssignmentsChange(updatedAssignments);
   };
 
-  const availableMembers = members.filter(
-    member => !assignments.find(a => a.memberId === member.id)
-  );
+  // Available members should include ALL members, not filtered by assignments yet
+  // The filtering happens in the Select component to show available options
+  const getAvailableMembersForAssignment = (currentAssignmentId?: string) => {
+    return members.filter(member => {
+      // Don't show members already assigned, except for the current assignment being edited
+      const isAlreadyAssigned = assignments.some((assignment, index) => 
+        assignment.memberId === member.id && assignments.findIndex(a => a === assignment) !== (currentAssignmentId ? parseInt(currentAssignmentId) : -1)
+      );
+      return !isAlreadyAssigned;
+    });
+  };
 
   // Find the Principal Investigator role
   const piRole = roles.find(role => 
@@ -157,7 +164,7 @@ export function TeamMemberAssignment({
           variant="outline" 
           size="sm"
           onClick={addAssignment}
-          disabled={availableMembers.length === 0}
+          disabled={members.length === 0 || assignments.length >= members.length}
         >
           <UserPlus className="h-4 w-4 mr-2" />
           Add Member
@@ -180,77 +187,83 @@ export function TeamMemberAssignment({
         </Card>
       ) : (
         <div className="space-y-3">
-          {assignments.map((assignment, index) => (
-            <Card key={index} className="p-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor={`member-${index}`}>Team Member</Label>
-                  <Select
-                    value={assignment.memberId}
-                    onValueChange={(value) => updateAssignment(index, 'memberId', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select member" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {assignment.memberId && (
-                        <SelectItem value={assignment.memberId}>
-                          {assignment.memberName} ({assignment.memberEmail})
-                        </SelectItem>
-                      )}
-                      {availableMembers.map(member => (
-                        <SelectItem key={member.id} value={member.id}>
-                          {member.name} ({member.email})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex items-end space-x-2">
-                  <div className="flex-1">
-                    <Label htmlFor={`role-${index}`}>Trial Role</Label>
+          {assignments.map((assignment, index) => {
+            const availableMembersForThisAssignment = getAvailableMembersForAssignment(index.toString());
+            
+            return (
+              <Card key={index} className="p-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor={`member-${index}`}>Team Member</Label>
                     <Select
-                      value={assignment.roleId}
-                      onValueChange={(value) => updateAssignment(index, 'roleId', value)}
+                      value={assignment.memberId}
+                      onValueChange={(value) => updateAssignment(index, 'memberId', value)}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select role" />
+                        <SelectValue placeholder="Select member" />
                       </SelectTrigger>
                       <SelectContent>
-                        {roles.map(role => {
-                          const isPIRole = piRole && role.id === piRole.id;
-                          const isDisabled = isPIRole && (autoAssignAsPI || currentUserAssignedAsPI);
-                          
-                          return (
-                            <SelectItem 
-                              key={role.id} 
-                              value={role.id}
-                              disabled={isDisabled}
-                              className={isDisabled ? 'text-gray-400 cursor-not-allowed' : ''}
-                            >
-                              {role.name}
-                              {isDisabled && autoAssignAsPI && ' (Already auto-assigned to you)'}
-                              {isDisabled && currentUserAssignedAsPI && !autoAssignAsPI && ' (Already assigned in team)'}
-                            </SelectItem>
-                          );
-                        })}
+                        {/* Show currently selected member even if not in available list */}
+                        {assignment.memberId && !availableMembersForThisAssignment.find(m => m.id === assignment.memberId) && (
+                          <SelectItem value={assignment.memberId}>
+                            {assignment.memberName} ({assignment.memberEmail})
+                          </SelectItem>
+                        )}
+                        {/* Show available members */}
+                        {availableMembersForThisAssignment.map(member => (
+                          <SelectItem key={member.id} value={member.id}>
+                            {member.name} ({member.email})
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
-                  
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    onClick={() => removeAssignment(index)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+
+                  <div className="flex items-end space-x-2">
+                    <div className="flex-1">
+                      <Label htmlFor={`role-${index}`}>Trial Role</Label>
+                      <Select
+                        value={assignment.roleId}
+                        onValueChange={(value) => updateAssignment(index, 'roleId', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {roles.map(role => {
+                            const isPIRole = piRole && role.id === piRole.id;
+                            const isDisabled = isPIRole && (autoAssignAsPI || currentUserAssignedAsPI);
+                            
+                            return (
+                              <SelectItem 
+                                key={role.id} 
+                                value={role.id}
+                                disabled={isDisabled}
+                                className={isDisabled ? 'text-gray-400 cursor-not-allowed' : ''}
+                              >
+                                {role.name}
+                                {isDisabled && autoAssignAsPI && ' (Already auto-assigned to you)'}
+                                {isDisabled && currentUserAssignedAsPI && !autoAssignAsPI && ' (Already assigned in team)'}
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => removeAssignment(index)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>

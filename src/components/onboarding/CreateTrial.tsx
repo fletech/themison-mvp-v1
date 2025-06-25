@@ -44,7 +44,7 @@ export function CreateTrial({ onComplete, isFirstTrial = true, organizationId }:
     location: '',
     study_start: '',
     estimated_close_out: '',
-    autoAssignAsPI: true,
+    autoAssignAsPI: false,
     teamAssignments: []
   });
 
