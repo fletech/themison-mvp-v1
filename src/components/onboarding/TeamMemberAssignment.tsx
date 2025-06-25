@@ -1,6 +1,6 @@
 
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -66,6 +66,50 @@ export function TeamMemberAssignment({
     enabled: !!organizationId
   });
 
+  // Find the Principal Investigator role
+  const piRole = roles.find(role => 
+    role.name.toLowerCase().includes('principal investigator') || 
+    role.name.toLowerCase().includes('pi')
+  );
+
+  // Find current user member info
+  const currentUserMember = members.find(member => member.profile_id === currentUserId);
+
+  // Effect to handle auto-assign PI checkbox changes
+  useEffect(() => {
+    if (autoAssignAsPI && piRole && currentUserMember) {
+      // Check if current user is already assigned as PI
+      const existingPIAssignment = assignments.find(assignment => 
+        assignment.memberId === currentUserMember.id && assignment.roleId === piRole.id
+      );
+
+      if (!existingPIAssignment) {
+        // Add new assignment for current user as PI
+        const newPIAssignment: TeamAssignment = {
+          memberId: currentUserMember.id,
+          memberName: currentUserMember.name,
+          memberEmail: currentUserMember.email,
+          roleId: piRole.id,
+          roleName: piRole.name
+        };
+
+        const updatedAssignments = [...assignments, newPIAssignment];
+        setAssignments(updatedAssignments);
+        onAssignmentsChange(updatedAssignments);
+      }
+    } else if (!autoAssignAsPI && piRole && currentUserMember) {
+      // Remove auto-assigned PI assignment when unchecking
+      const updatedAssignments = assignments.filter(assignment => 
+        !(assignment.memberId === currentUserMember.id && assignment.roleId === piRole.id)
+      );
+      
+      if (updatedAssignments.length !== assignments.length) {
+        setAssignments(updatedAssignments);
+        onAssignmentsChange(updatedAssignments);
+      }
+    }
+  }, [autoAssignAsPI, piRole, currentUserMember, assignments, onAssignmentsChange]);
+
   const addAssignment = () => {
     const availableMembers = members.filter(
       member => !assignments.find(a => a.memberId === member.id)
@@ -87,6 +131,15 @@ export function TeamMemberAssignment({
   };
 
   const removeAssignment = (index: number) => {
+    const assignment = assignments[index];
+    
+    // If removing the current user's PI assignment, also uncheck the auto-assign checkbox
+    if (autoAssignAsPI && piRole && currentUserMember && 
+        assignment.memberId === currentUserMember.id && 
+        assignment.roleId === piRole.id) {
+      onAutoAssignPIChange(false);
+    }
+    
     const updatedAssignments = assignments.filter((_, i) => i !== index);
     setAssignments(updatedAssignments);
     onAssignmentsChange(updatedAssignments);
@@ -127,12 +180,6 @@ export function TeamMemberAssignment({
       return !isAlreadyAssigned;
     });
   };
-
-  // Find the Principal Investigator role
-  const piRole = roles.find(role => 
-    role.name.toLowerCase().includes('principal investigator') || 
-    role.name.toLowerCase().includes('pi')
-  );
 
   // Check if there's already a PI assigned in the assignments
   const hasPIAssigned = assignments.some(assignment => {
@@ -202,15 +249,19 @@ export function TeamMemberAssignment({
         <div className="space-y-3">
           {assignments.map((assignment, index) => {
             const availableMembersForThisAssignment = getAvailableMembersForAssignment(index);
+            const isAutoAssignedPI = autoAssignAsPI && piRole && currentUserMember && 
+                                   assignment.memberId === currentUserMember.id && 
+                                   assignment.roleId === piRole.id;
             
             return (
-              <Card key={index} className="p-4">
+              <Card key={index} className={`p-4 ${isAutoAssignedPI ? 'bg-blue-50 border-blue-200' : ''}`}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor={`member-${index}`}>Team Member</Label>
                     <Select
                       value={assignment.memberId}
                       onValueChange={(value) => updateAssignment(index, 'memberId', value)}
+                      disabled={isAutoAssignedPI}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select member" />
@@ -230,6 +281,9 @@ export function TeamMemberAssignment({
                         ))}
                       </SelectContent>
                     </Select>
+                    {isAutoAssignedPI && (
+                      <p className="text-xs text-blue-600 mt-1">Auto-assigned via checkbox above</p>
+                    )}
                   </div>
 
                   <div className="flex items-end space-x-2">
@@ -238,6 +292,7 @@ export function TeamMemberAssignment({
                       <Select
                         value={assignment.roleId}
                         onValueChange={(value) => updateAssignment(index, 'roleId', value)}
+                        disabled={isAutoAssignedPI}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select role" />
@@ -273,6 +328,9 @@ export function TeamMemberAssignment({
                           })}
                         </SelectContent>
                       </Select>
+                      {isAutoAssignedPI && (
+                        <p className="text-xs text-blue-600 mt-1">Auto-assigned via checkbox above</p>
+                      )}
                     </div>
                     
                     <Button
@@ -280,6 +338,8 @@ export function TeamMemberAssignment({
                       variant="outline"
                       size="icon"
                       onClick={() => removeAssignment(index)}
+                      disabled={isAutoAssignedPI}
+                      className={isAutoAssignedPI ? 'opacity-50 cursor-not-allowed' : ''}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
