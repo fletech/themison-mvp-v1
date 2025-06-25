@@ -7,8 +7,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { FileText, Sparkles } from 'lucide-react';
 import { Card } from '@/components/ui/card';
-import { TeamMemberAssignment } from './TeamMemberAssignment';
+import { TrialMemberSelector } from './TrialMemberSelector';
 import { useAuth } from '@/hooks/useAuth';
+
+interface SelectedMember {
+  memberId: string;
+  memberName: string;
+  memberEmail: string;
+  roleId: string;
+  roleName: string;
+}
 
 interface TrialData {
   name: string;
@@ -18,14 +26,7 @@ interface TrialData {
   location: string;
   study_start: string;
   estimated_close_out: string;
-  autoAssignAsPI: boolean;
-  teamAssignments: Array<{
-    memberId: string;
-    memberName: string;
-    memberEmail: string;
-    roleId: string;
-    roleName: string;
-  }>;
+  selectedMembers: SelectedMember[];
 }
 
 interface CreateTrialProps {
@@ -44,15 +45,19 @@ export function CreateTrial({ onComplete, isFirstTrial = true, organizationId }:
     location: '',
     study_start: '',
     estimated_close_out: '',
-    autoAssignAsPI: false,
-    teamAssignments: []
+    selectedMembers: []
   });
 
-  const updateField = (field: keyof TrialData, value: string | boolean | any[]) => {
+  const updateField = (field: keyof TrialData, value: string | SelectedMember[]) => {
     setTrialData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleMembersChange = (members: SelectedMember[]) => {
+    updateField('selectedMembers', members);
+  };
+
   const handleComplete = () => {
+    console.log('🚀 CreateTrial - Completing trial creation with data:', trialData);
     onComplete(trialData);
   };
 
@@ -177,12 +182,10 @@ export function CreateTrial({ onComplete, isFirstTrial = true, organizationId }:
       {/* Team Assignment */}
       <Card className="p-6">
         <h4 className="text-lg font-semibold mb-4">Team Assignment</h4>
-        <TeamMemberAssignment 
+        <TrialMemberSelector 
           organizationId={organizationId}
           currentUserId={user?.id}
-          autoAssignAsPI={trialData.autoAssignAsPI}
-          onAutoAssignPIChange={(checked) => updateField('autoAssignAsPI', checked)}
-          onAssignmentsChange={(assignments) => updateField('teamAssignments', assignments)}
+          onMembersChange={handleMembersChange}
         />
       </Card>
 

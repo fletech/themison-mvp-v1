@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -82,14 +81,16 @@ export function AdminSetupFlow({ member, organization }: AdminSetupFlowProps) {
     }
   });
 
-  // Create trial mutation - separado en pasos
+  // Create trial mutation - refactored to use single batch insert
   const createTrialMutation = useMutation({
     mutationFn: async (trialData: any) => {
       if (!organization.id || !member.id) {
         throw new Error('No organization or member ID available');
       }
 
-      // PASO 1: Crear el trial
+      console.log('🚀 AdminSetupFlow - Creating trial with data:', trialData);
+
+      // STEP 1: Create the trial
       const trialInsertData = {
         name: trialData.name,
         description: trialData.description,
@@ -103,53 +104,52 @@ export function AdminSetupFlow({ member, organization }: AdminSetupFlowProps) {
         status: 'planning'
       };
 
+      console.log('📝 AdminSetupFlow - Creating trial with data:', trialInsertData);
+
       const { data: trial, error: trialError } = await supabase
         .from('trials')
         .insert(trialInsertData)
         .select()
         .single();
 
-      if (trialError) throw trialError;
+      if (trialError) {
+        console.error('❌ AdminSetupFlow - Trial creation error:', trialError);
+        throw trialError;
+      }
 
-      // PASO 2: Asignar PI si se solicitó
-      if (trialData.autoAssignAsPI) {
-        const { data: piRole } = await supabase
-          .from('roles')
-          .select('id')
-          .eq('organization_id', organization.id)
-          .or('name.ilike.%PI%,name.ilike.%Principal Investigator%')
-          .limit(1)
-          .single();
+      console.log('✅ AdminSetupFlow - Trial created successfully:', trial);
 
-        if (piRole) {
-          await supabase
+      // STEP 2: Batch insert all selected members if any
+      if (trialData.selectedMembers && trialData.selectedMembers.length > 0) {
+        console.log('👥 AdminSetupFlow - Preparing batch insert for members:', trialData.selectedMembers);
+
+        const memberAssignments = trialData.selectedMembers
+          .filter((member: any) => member.memberId && member.roleId) // Only include complete assignments
+          .map((member: any) => ({
+            trial_id: trial.id,
+            member_id: member.memberId,
+            role_id: member.roleId,
+            is_active: true,
+            start_date: new Date().toISOString().split('T')[0]
+          }));
+
+        console.log('📋 AdminSetupFlow - Member assignments to insert:', memberAssignments);
+
+        if (memberAssignments.length > 0) {
+          const { error: membersError } = await supabase
             .from('trial_members')
-            .insert({
-              trial_id: trial.id,
-              member_id: member.id,
-              role_id: piRole.id,
-              is_active: true,
-              start_date: new Date().toISOString().split('T')[0]
-            });
+            .insert(memberAssignments);
+
+          if (membersError) {
+            console.error('❌ AdminSetupFlow - Member assignments error:', membersError);
+            throw membersError;
+          }
+
+          console.log('✅ AdminSetupFlow - Member assignments created successfully');
         }
       }
 
-      // PASO 3: Asignar miembros del equipo
-      if (trialData.teamAssignments && trialData.teamAssignments.length > 0) {
-        const teamAssignments = trialData.teamAssignments.map((assignment: any) => ({
-          trial_id: trial.id,
-          member_id: assignment.memberId,
-          role_id: assignment.roleId,
-          is_active: true,
-          start_date: new Date().toISOString().split('T')[0]
-        }));
-
-        await supabase
-          .from('trial_members')
-          .insert(teamAssignments);
-      }
-
-      // PASO 4: Completar onboarding
+      // STEP 3: Complete onboarding for both member and organization
       const updatePromises = [
         supabase.from('members')
           .update({ onboarding_completed: true })
@@ -161,6 +161,8 @@ export function AdminSetupFlow({ member, organization }: AdminSetupFlowProps) {
 
       await Promise.all(updatePromises);
 
+      console.log('✅ AdminSetupFlow - Onboarding marked as completed');
+
       return trial;
     },
     onSuccess: () => {
@@ -168,6 +170,7 @@ export function AdminSetupFlow({ member, organization }: AdminSetupFlowProps) {
       navigate('/dashboard');
     },
     onError: (error) => {
+      console.error('❌ AdminSetupFlow - Create trial mutation error:', error);
       toast.error('Failed to complete setup: ' + error.message);
     }
   });
@@ -185,6 +188,7 @@ export function AdminSetupFlow({ member, organization }: AdminSetupFlowProps) {
   };
 
   const handleStep3Complete = (trialData: any) => {
+    console.log('🎯 AdminSetupFlow - Completing step 3 with trial data:', trialData);
     createTrialMutation.mutate(trialData);
   };
 
