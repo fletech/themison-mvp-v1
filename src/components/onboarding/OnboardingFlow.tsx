@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
@@ -100,16 +101,14 @@ export function OnboardingFlow() {
     }
   });
 
-  // Create trial mutation - refactored to use single batch insert
+  // Create trial mutation - separado en dos pasos
   const createTrialMutation = useMutation({
     mutationFn: async (trialData: any) => {
       if (!organizationId || !currentMemberId) {
         throw new Error('No organization or member ID available');
       }
 
-      console.log('🚀 OnboardingFlow - Creating trial with data:', trialData);
-
-      // STEP 1: Create the trial
+      // PASO 1: Crear el trial
       const trialInsertData = {
         name: trialData.name,
         description: trialData.description,
@@ -123,58 +122,57 @@ export function OnboardingFlow() {
         status: 'planning'
       };
 
-      console.log('📝 OnboardingFlow - Creating trial with data:', trialInsertData);
-
       const { data: trial, error: trialError } = await supabase
         .from('trials')
         .insert(trialInsertData)
         .select()
         .single();
 
-      if (trialError) {
-        console.error('❌ OnboardingFlow - Trial creation error:', trialError);
-        throw trialError;
-      }
+      if (trialError) throw trialError;
 
-      console.log('✅ OnboardingFlow - Trial created successfully:', trial);
+      // PASO 2: Asignar PI si se solicitó
+      if (trialData.autoAssignAsPI) {
+        const { data: piRole } = await supabase
+          .from('roles')
+          .select('id')
+          .eq('organization_id', organizationId)
+          .or('name.ilike.%PI%,name.ilike.%Principal Investigator%')
+          .limit(1)
+          .single();
 
-      // STEP 2: Batch insert all selected members if any
-      if (trialData.selectedMembers && trialData.selectedMembers.length > 0) {
-        console.log('👥 OnboardingFlow - Preparing batch insert for members:', trialData.selectedMembers);
-
-        const memberAssignments = trialData.selectedMembers
-          .filter((member: any) => member.memberId && member.roleId) // Only include complete assignments
-          .map((member: any) => ({
-            trial_id: trial.id,
-            member_id: member.memberId,
-            role_id: member.roleId,
-            is_active: true,
-            start_date: new Date().toISOString().split('T')[0]
-          }));
-
-        console.log('📋 OnboardingFlow - Member assignments to insert:', memberAssignments);
-
-        if (memberAssignments.length > 0) {
-          const { error: membersError } = await supabase
+        if (piRole) {
+          await supabase
             .from('trial_members')
-            .insert(memberAssignments);
-
-          if (membersError) {
-            console.error('❌ OnboardingFlow - Member assignments error:', membersError);
-            throw membersError;
-          }
-
-          console.log('✅ OnboardingFlow - Member assignments created successfully');
+            .insert({
+              trial_id: trial.id,
+              member_id: currentMemberId,
+              role_id: piRole.id,
+              is_active: true,
+              start_date: new Date().toISOString().split('T')[0]
+            });
         }
       }
 
-      // STEP 3: Mark onboarding as completed
+      // PASO 3: Asignar miembros del equipo
+      if (trialData.teamAssignments && trialData.teamAssignments.length > 0) {
+        const teamAssignments = trialData.teamAssignments.map((assignment: any) => ({
+          trial_id: trial.id,
+          member_id: assignment.memberId,
+          role_id: assignment.roleId,
+          is_active: true,
+          start_date: new Date().toISOString().split('T')[0]
+        }));
+
+        await supabase
+          .from('trial_members')
+          .insert(teamAssignments);
+      }
+
+      // PASO 4: Marcar onboarding como completado
       await supabase
         .from('members')
         .update({ onboarding_completed: true })
         .eq('profile_id', user?.id);
-
-      console.log('✅ OnboardingFlow - Onboarding marked as completed');
 
       return trial;
     },
@@ -183,7 +181,6 @@ export function OnboardingFlow() {
       navigate('/dashboard');
     },
     onError: (error) => {
-      console.error('❌ OnboardingFlow - Create trial mutation error:', error);
       toast.error('Failed to create trial: ' + error.message);
     }
   });
@@ -201,7 +198,6 @@ export function OnboardingFlow() {
   };
 
   const handleStep3Complete = (trialData: any) => {
-    console.log('🎯 OnboardingFlow - Completing step 3 with trial data:', trialData);
     createTrialMutation.mutate(trialData);
   };
 
