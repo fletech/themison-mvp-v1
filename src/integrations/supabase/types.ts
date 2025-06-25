@@ -390,7 +390,6 @@ export type Database = {
           name: string
           organization_id: string
           phase: string
-          pi_contact: string | null
           sponsor: string
           status: string | null
           study_start: string | null
@@ -407,7 +406,6 @@ export type Database = {
           name: string
           organization_id: string
           phase: string
-          pi_contact?: string | null
           sponsor: string
           status?: string | null
           study_start?: string | null
@@ -424,7 +422,6 @@ export type Database = {
           name?: string
           organization_id?: string
           phase?: string
-          pi_contact?: string | null
           sponsor?: string
           status?: string | null
           study_start?: string | null

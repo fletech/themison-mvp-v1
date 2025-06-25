@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
 import { FileText, Sparkles } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { TeamMemberAssignment } from './TeamMemberAssignment';
@@ -17,7 +16,6 @@ interface TrialData {
   phase: string;
   sponsor: string;
   location: string;
-  pi_contact: string;
   study_start: string;
   estimated_close_out: string;
   autoAssignAsPI: boolean;
@@ -44,7 +42,6 @@ export function CreateTrial({ onComplete, isFirstTrial = true, organizationId }:
     phase: '',
     sponsor: '',
     location: '',
-    pi_contact: '',
     study_start: '',
     estimated_close_out: '',
     autoAssignAsPI: true,
@@ -145,16 +142,6 @@ export function CreateTrial({ onComplete, isFirstTrial = true, organizationId }:
             </div>
 
             <div>
-              <Label htmlFor="pi_contact">Principal Investigator Contact</Label>
-              <Input
-                id="pi_contact"
-                placeholder="PI email or phone"
-                value={trialData.pi_contact}
-                onChange={(e) => updateField('pi_contact', e.target.value)}
-              />
-            </div>
-
-            <div>
               <Label htmlFor="study_start">Study Start Date</Label>
               <Input
                 id="study_start"
@@ -185,17 +172,6 @@ export function CreateTrial({ onComplete, isFirstTrial = true, organizationId }:
               rows={3}
             />
           </div>
-
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="autoAssignPI"
-              checked={trialData.autoAssignAsPI}
-              onCheckedChange={(checked) => updateField('autoAssignAsPI', checked as boolean)}
-            />
-            <Label htmlFor="autoAssignPI" className="text-sm">
-              Auto-assign me as Principal Investigator for this trial
-            </Label>
-          </div>
         </div>
       </Card>
 
@@ -205,6 +181,8 @@ export function CreateTrial({ onComplete, isFirstTrial = true, organizationId }:
         <TeamMemberAssignment 
           organizationId={organizationId}
           currentUserId={user?.id}
+          autoAssignAsPI={trialData.autoAssignAsPI}
+          onAutoAssignPIChange={(checked) => updateField('autoAssignAsPI', checked)}
           onAssignmentsChange={(assignments) => updateField('teamAssignments', assignments)}
         />
       </Card>

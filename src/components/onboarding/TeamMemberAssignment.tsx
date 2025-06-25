@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Trash2, UserPlus } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,12 +21,16 @@ interface TeamMemberAssignmentProps {
   organizationId: string;
   onAssignmentsChange: (assignments: TeamAssignment[]) => void;
   currentUserId?: string;
+  autoAssignAsPI: boolean;
+  onAutoAssignPIChange: (checked: boolean) => void;
 }
 
 export function TeamMemberAssignment({ 
   organizationId, 
   onAssignmentsChange, 
-  currentUserId 
+  currentUserId,
+  autoAssignAsPI,
+  onAutoAssignPIChange
 }: TeamMemberAssignmentProps) {
   const [assignments, setAssignments] = useState<TeamAssignment[]>([]);
 
@@ -117,22 +122,28 @@ export function TeamMemberAssignment({
     member => !assignments.find(a => a.memberId === member.id)
   );
 
-  if (members.length === 0) {
-    return (
-      <Card className="p-4">
-        <div className="text-center text-gray-500">
-          <UserPlus className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-          <p>No confirmed team members available to assign.</p>
-          <p className="text-sm mt-1">Members will appear here once they accept their invitations.</p>
-        </div>
-      </Card>
-    );
-  }
+  // Find the Principal Investigator role
+  const piRole = roles.find(role => 
+    role.name.toLowerCase().includes('principal investigator') || 
+    role.name.toLowerCase().includes('pi')
+  );
 
   return (
     <div className="space-y-4">
+      {/* PI Auto-assignment checkbox */}
+      <div className="flex items-center space-x-2 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <Checkbox
+          id="autoAssignPI"
+          checked={autoAssignAsPI}
+          onCheckedChange={onAutoAssignPIChange}
+        />
+        <Label htmlFor="autoAssignPI" className="text-sm font-medium">
+          Auto-assign me as Principal Investigator for this trial
+        </Label>
+      </div>
+
       <div className="flex items-center justify-between">
-        <Label className="text-base font-medium">Assign Team Members to Trial</Label>
+        <Label className="text-base font-medium">Assign Additional Team Members</Label>
         <Button 
           type="button"
           variant="outline" 
@@ -145,10 +156,18 @@ export function TeamMemberAssignment({
         </Button>
       </div>
 
-      {assignments.length === 0 ? (
+      {members.length === 0 ? (
+        <Card className="p-4">
+          <div className="text-center text-gray-500">
+            <UserPlus className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+            <p>No confirmed team members available to assign.</p>
+            <p className="text-sm mt-1">Members will appear here once they accept their invitations.</p>
+          </div>
+        </Card>
+      ) : assignments.length === 0 ? (
         <Card className="p-4">
           <p className="text-sm text-gray-600 text-center">
-            No team members assigned yet. Click "Add Member" to assign roles to your team.
+            No additional team members assigned yet. Click "Add Member" to assign roles to your team.
           </p>
         </Card>
       ) : (
@@ -191,11 +210,22 @@ export function TeamMemberAssignment({
                         <SelectValue placeholder="Select role" />
                       </SelectTrigger>
                       <SelectContent>
-                        {roles.map(role => (
-                          <SelectItem key={role.id} value={role.id}>
-                            {role.name}
-                          </SelectItem>
-                        ))}
+                        {roles.map(role => {
+                          const isPIRole = piRole && role.id === piRole.id;
+                          const isDisabled = isPIRole && autoAssignAsPI;
+                          
+                          return (
+                            <SelectItem 
+                              key={role.id} 
+                              value={role.id}
+                              disabled={isDisabled}
+                              className={isDisabled ? 'text-gray-400 cursor-not-allowed' : ''}
+                            >
+                              {role.name}
+                              {isDisabled && ' (Already assigned to you)'}
+                            </SelectItem>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
                   </div>
