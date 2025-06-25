@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -12,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { FileText, Users, Shield, Eye, Plus, UserPlus, Settings, ChevronDown, ChevronUp } from 'lucide-react';
 import { InviteMembers } from './InviteMembers';
 import { CreateCustomRoles } from './CreateCustomRoles';
-import { CreateFirstTrial } from './CreateFirstTrial';
+import { CreateTrial } from './CreateTrial';
 
 interface AdminOverviewProps {
   member: any;
@@ -606,7 +605,7 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
             <DialogHeader>
               <DialogTitle>Create New Trial</DialogTitle>
             </DialogHeader>
-            <CreateFirstTrial 
+            <CreateTrial 
               onComplete={handleCreateTrial} 
               isFirstTrial={trialsCount === 0}
             />
