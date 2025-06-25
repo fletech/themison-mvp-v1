@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -82,36 +81,17 @@ export function AdminSetupFlow({ member, organization }: AdminSetupFlowProps) {
     }
   });
 
-  // Create trial mutation - separado en pasos
+  // Create trial mutation using the new stored procedure
   const createTrialMutation = useMutation({
     mutationFn: async (trialData: any) => {
       if (!organization.id || !member.id) {
         throw new Error('No organization or member ID available');
       }
 
-      // PASO 1: Crear el trial
-      const trialInsertData = {
-        name: trialData.name,
-        description: trialData.description,
-        phase: trialData.phase,
-        sponsor: trialData.sponsor,
-        location: trialData.location,
-        study_start: trialData.study_start,
-        estimated_close_out: trialData.estimated_close_out,
-        organization_id: organization.id,
-        created_by: user?.id,
-        status: 'planning'
-      };
-
-      const { data: trial, error: trialError } = await supabase
-        .from('trials')
-        .insert(trialInsertData)
-        .select()
-        .single();
-
-      if (trialError) throw trialError;
-
-      // PASO 2: Asignar PI si se solicitó
+      // Prepare team assignments including PI if checked
+      let teamAssignments = [...(trialData.teamAssignments || [])];
+      
+      // Add PI assignment if requested
       if (trialData.autoAssignAsPI) {
         const { data: piRole } = await supabase
           .from('roles')
@@ -122,34 +102,32 @@ export function AdminSetupFlow({ member, organization }: AdminSetupFlowProps) {
           .single();
 
         if (piRole) {
-          await supabase
-            .from('trial_members')
-            .insert({
-              trial_id: trial.id,
-              member_id: member.id,
-              role_id: piRole.id,
-              is_active: true,
-              start_date: new Date().toISOString().split('T')[0]
-            });
+          teamAssignments.push({
+            member_id: member.id,
+            role_id: piRole.id,
+            is_active: true,
+            start_date: new Date().toISOString().split('T')[0]
+          });
         }
       }
 
-      // PASO 3: Asignar miembros del equipo
-      if (trialData.teamAssignments && trialData.teamAssignments.length > 0) {
-        const teamAssignments = trialData.teamAssignments.map((assignment: any) => ({
-          trial_id: trial.id,
-          member_id: assignment.memberId,
-          role_id: assignment.roleId,
-          is_active: true,
-          start_date: new Date().toISOString().split('T')[0]
-        }));
+      // Use the stored procedure to create trial with members atomically
+      const { data: trialId, error: trialError } = await supabase.rpc('create_trial_with_members', {
+        trial_data: {
+          name: trialData.name,
+          description: trialData.description,
+          phase: trialData.phase,
+          sponsor: trialData.sponsor,
+          location: trialData.location,
+          study_start: trialData.study_start,
+          estimated_close_out: trialData.estimated_close_out
+        },
+        team_assignments: teamAssignments
+      });
 
-        await supabase
-          .from('trial_members')
-          .insert(teamAssignments);
-      }
+      if (trialError) throw trialError;
 
-      // PASO 4: Completar onboarding
+      // Complete onboarding for both member and organization
       const updatePromises = [
         supabase.from('members')
           .update({ onboarding_completed: true })
@@ -161,7 +139,7 @@ export function AdminSetupFlow({ member, organization }: AdminSetupFlowProps) {
 
       await Promise.all(updatePromises);
 
-      return trial;
+      return trialId;
     },
     onSuccess: () => {
       toast.success('Setup completed! Welcome to THEMISON!');
