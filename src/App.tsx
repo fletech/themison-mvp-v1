@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,7 +10,9 @@ import { supabase } from "@/integrations/supabase/client";
 import Index from "./pages/Index";
 import SignUp from "./pages/auth/SignUp";
 import SignIn from "./pages/auth/SignIn";
-import DashboardPage from "./pages/DashboardPage";
+import { DashboardPage } from "./pages/DashboardPage";
+import { TrialsPage } from "./pages/TrialsPage";
+import { OrganizationPage } from "./pages/OrganizationPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
@@ -20,26 +21,26 @@ const queryClient = new QueryClient();
 
 function OnboardingRedirect({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-  
+
   const { data: memberData, isLoading } = useQuery({
-    queryKey: ['user-member-status', user?.id],
+    queryKey: ["user-member-status", user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
-      
+
       const { data, error } = await supabase
-        .from('members')
-        .select('onboarding_completed')
-        .eq('profile_id', user.id)
+        .from("members")
+        .select("onboarding_completed")
+        .eq("profile_id", user.id)
         .single();
-      
+
       if (error) {
-        console.error('Error fetching member status:', error);
+        console.error("Error fetching member status:", error);
         return null;
       }
-      
+
       return data;
     },
-    enabled: !!user?.id
+    enabled: !!user?.id,
   });
 
   if (loading || isLoading) {
@@ -71,28 +72,60 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <Index />} />
-      <Route path="/auth/sign-up" element={user ? <Navigate to="/dashboard" replace /> : <SignUp />} />
-      <Route path="/auth/sign-in" element={user ? <Navigate to="/dashboard" replace /> : <SignIn />} />
+      <Route
+        path="/"
+        element={user ? <Navigate to="/dashboard" replace /> : <Index />}
+      />
+      <Route
+        path="/auth/sign-up"
+        element={user ? <Navigate to="/dashboard" replace /> : <SignUp />}
+      />
+      <Route
+        path="/auth/sign-in"
+        element={user ? <Navigate to="/dashboard" replace /> : <SignIn />}
+      />
       {/* Legacy routes for backwards compatibility */}
-      <Route path="/auth" element={user ? <Navigate to="/dashboard" replace /> : <Auth />} />
-      <Route 
-        path="/onboarding" 
+      <Route
+        path="/auth"
+        element={user ? <Navigate to="/dashboard" replace /> : <Auth />}
+      />
+      <Route
+        path="/onboarding"
         element={
           <ProtectedRoute>
             <OnboardingPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/dashboard" 
+      <Route
+        path="/dashboard"
         element={
           <ProtectedRoute>
             <OnboardingRedirect>
               <DashboardPage />
             </OnboardingRedirect>
           </ProtectedRoute>
-        } 
+        }
+      />
+      <Route
+        path="/trials"
+        element={
+          <ProtectedRoute>
+            <OnboardingRedirect>
+              <TrialsPage />
+            </OnboardingRedirect>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/organization"
+        element={
+          <ProtectedRoute>
+            <OnboardingRedirect>
+              <OrganizationPage />
+            </OnboardingRedirect>
+          </ProtectedRoute>
+        }
       />
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />

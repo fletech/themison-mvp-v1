@@ -1,38 +1,44 @@
-
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useMutation } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
-import { toast } from 'sonner';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Users, Clock, CheckCircle } from 'lucide-react';
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Users, Clock, CheckCircle } from "lucide-react";
 
 interface StaffOnboardingProps {
   member: any;
   organization: any;
 }
 
-export function StaffOnboarding({ member, organization }: StaffOnboardingProps) {
+export function StaffOnboarding({
+  member,
+  organization,
+}: StaffOnboardingProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   // Complete onboarding mutation
   const completeOnboardingMutation = useMutation({
     mutationFn: async () => {
       await supabase
-        .from('members')
+        .from("members")
         .update({ onboarding_completed: true })
-        .eq('profile_id', user?.id);
+        .eq("profile_id", user?.id);
     },
     onSuccess: () => {
-      toast.success('Welcome to the team!');
-      navigate('/dashboard');
+      toast.success("Welcome to the team!");
+      // Invalidate queries to ensure state is updated
+      queryClient.invalidateQueries({ queryKey: ["user-member-status"] });
+      queryClient.invalidateQueries({ queryKey: ["member"] });
+      navigate("/dashboard");
     },
     onError: (error) => {
-      toast.error('Failed to complete onboarding: ' + error.message);
-    }
+      toast.error("Failed to complete onboarding: " + error.message);
+    },
   });
 
   const handleGoToDashboard = () => {
@@ -61,10 +67,12 @@ export function StaffOnboarding({ member, organization }: StaffOnboardingProps) 
               <div className="text-left">
                 <h3 className="font-medium text-blue-900 mb-2">What's Next?</h3>
                 <p className="text-sm text-blue-700 mb-3">
-                  You'll be able to participate in clinical trials when an administrator assigns you to specific studies.
+                  You'll be able to participate in clinical trials when an
+                  administrator assigns you to specific studies.
                 </p>
                 <p className="text-sm text-blue-700">
-                  Once assigned, you'll receive notifications and be able to access trial data according to your assigned role permissions.
+                  Once assigned, you'll receive notifications and be able to
+                  access trial data according to your assigned role permissions.
                 </p>
               </div>
             </div>
@@ -85,12 +93,14 @@ export function StaffOnboarding({ member, organization }: StaffOnboardingProps) 
             </div>
           </div>
 
-          <Button 
+          <Button
             onClick={handleGoToDashboard}
             className="bg-blue-600 hover:bg-blue-700 px-8 py-3"
             disabled={completeOnboardingMutation.isPending}
           >
-            {completeOnboardingMutation.isPending ? 'Setting up...' : 'Go to Dashboard'}
+            {completeOnboardingMutation.isPending
+              ? "Setting up..."
+              : "Go to Dashboard"}
           </Button>
         </Card>
       </div>

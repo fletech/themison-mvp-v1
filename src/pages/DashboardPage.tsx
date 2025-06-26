@@ -1,9 +1,8 @@
+import React from "react";
+import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
+import { Dashboard } from "@/components/dashboard/Dashboard";
 
-import React from 'react';
-import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
-import { Dashboard } from '@/components/dashboard/Dashboard';
-
-export default function DashboardPage() {
+export function DashboardPage() {
   return (
     <DashboardLayout>
       <Dashboard />

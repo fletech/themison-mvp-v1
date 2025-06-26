@@ -1,14 +1,19 @@
-
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { FileText, Sparkles } from 'lucide-react';
-import { Card } from '@/components/ui/card';
-import { TeamMemberAssignment } from './TeamMemberAssignment';
-import { useAuth } from '@/hooks/useAuth';
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { FileText, Sparkles } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { TeamMemberAssignment } from "./TeamMemberAssignment";
+import { useAuth } from "@/hooks/useAuth";
 
 interface TrialData {
   name: string;
@@ -34,40 +39,48 @@ interface CreateTrialProps {
   organizationId: string;
 }
 
-export function CreateTrial({ onComplete, isFirstTrial = true, organizationId }: CreateTrialProps) {
+export function CreateTrial({
+  onComplete,
+  isFirstTrial = true,
+  organizationId,
+}: CreateTrialProps) {
   const { user } = useAuth();
   const [trialData, setTrialData] = useState<TrialData>({
-    name: '',
-    description: '',
-    phase: '',
-    sponsor: '',
-    location: '',
-    study_start: '',
-    estimated_close_out: '',
+    name: "",
+    description: "",
+    phase: "",
+    sponsor: "",
+    location: "",
+    study_start: "",
+    estimated_close_out: "",
     autoAssignAsPI: false,
-    teamAssignments: []
+    teamAssignments: [],
   });
 
-  const updateField = (field: keyof TrialData, value: string | boolean | any[]) => {
-    setTrialData(prev => ({ ...prev, [field]: value }));
+  const updateField = (
+    field: keyof TrialData,
+    value: string | boolean | any[]
+  ) => {
+    setTrialData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleComplete = () => {
     onComplete(trialData);
   };
 
-  const isValid = trialData.name.trim() && 
-                  trialData.phase && 
-                  trialData.sponsor.trim() && 
-                  trialData.location.trim();
+  const isValid =
+    trialData.name.trim() &&
+    trialData.phase &&
+    trialData.sponsor.trim() &&
+    trialData.location.trim();
 
   const phases = [
-    'Preclinical',
-    'Phase I',
-    'Phase II',
-    'Phase III',
-    'Phase IV',
-    'Expanded Access'
+    "Preclinical",
+    "Phase I",
+    "Phase II",
+    "Phase III",
+    "Phase IV",
+    "Expanded Access",
   ];
 
   return (
@@ -77,13 +90,12 @@ export function CreateTrial({ onComplete, isFirstTrial = true, organizationId }:
           <Sparkles className="h-5 w-5 text-purple-600 mt-0.5" />
           <div>
             <h3 className="font-medium text-purple-900">
-              {isFirstTrial ? 'Create Your First Trial' : 'Create New Trial'}
+              {isFirstTrial ? "Create Your First Trial" : "Create New Trial"}
             </h3>
             <p className="text-sm text-purple-700 mt-1">
-              {isFirstTrial 
-                ? 'Set up your first clinical trial to get started. You can add more trials later from the dashboard.'
-                : 'Add a new clinical trial to your organization.'
-              }
+              {isFirstTrial
+                ? "Set up your first clinical trial to get started. You can add more trials later from the dashboard."
+                : "Add a new clinical trial to your organization."}
             </p>
           </div>
         </div>
@@ -100,22 +112,24 @@ export function CreateTrial({ onComplete, isFirstTrial = true, organizationId }:
                 id="name"
                 placeholder="Enter the official trial name"
                 value={trialData.name}
-                onChange={(e) => updateField('name', e.target.value)}
+                onChange={(e) => updateField("name", e.target.value)}
               />
             </div>
 
             <div>
               <Label htmlFor="phase">Phase *</Label>
-              <Select 
-                value={trialData.phase} 
-                onValueChange={(value) => updateField('phase', value)}
+              <Select
+                value={trialData.phase}
+                onValueChange={(value) => updateField("phase", value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select phase" />
                 </SelectTrigger>
                 <SelectContent>
-                  {phases.map(phase => (
-                    <SelectItem key={phase} value={phase}>{phase}</SelectItem>
+                  {phases.map((phase) => (
+                    <SelectItem key={phase} value={phase}>
+                      {phase}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -127,7 +141,7 @@ export function CreateTrial({ onComplete, isFirstTrial = true, organizationId }:
                 id="sponsor"
                 placeholder="Trial sponsor organization"
                 value={trialData.sponsor}
-                onChange={(e) => updateField('sponsor', e.target.value)}
+                onChange={(e) => updateField("sponsor", e.target.value)}
               />
             </div>
 
@@ -137,7 +151,7 @@ export function CreateTrial({ onComplete, isFirstTrial = true, organizationId }:
                 id="study_start"
                 type="date"
                 value={trialData.study_start}
-                onChange={(e) => updateField('study_start', e.target.value)}
+                onChange={(e) => updateField("study_start", e.target.value)}
               />
             </div>
 
@@ -147,7 +161,9 @@ export function CreateTrial({ onComplete, isFirstTrial = true, organizationId }:
                 id="estimated_close_out"
                 type="date"
                 value={trialData.estimated_close_out}
-                onChange={(e) => updateField('estimated_close_out', e.target.value)}
+                onChange={(e) =>
+                  updateField("estimated_close_out", e.target.value)
+                }
               />
             </div>
             <div>
@@ -156,7 +172,7 @@ export function CreateTrial({ onComplete, isFirstTrial = true, organizationId }:
                 id="location"
                 placeholder="Study location/site"
                 value={trialData.location}
-                onChange={(e) => updateField('location', e.target.value)}
+                onChange={(e) => updateField("location", e.target.value)}
               />
             </div>
           </div>
@@ -167,7 +183,7 @@ export function CreateTrial({ onComplete, isFirstTrial = true, organizationId }:
               id="description"
               placeholder="Brief description of the trial objectives and methodology..."
               value={trialData.description}
-              onChange={(e) => updateField('description', e.target.value)}
+              onChange={(e) => updateField("description", e.target.value)}
               rows={3}
             />
           </div>
@@ -177,23 +193,27 @@ export function CreateTrial({ onComplete, isFirstTrial = true, organizationId }:
       {/* Team Assignment */}
       <Card className="p-6">
         <h4 className="text-lg font-semibold mb-4">Team Assignment</h4>
-        <TeamMemberAssignment 
+        <TeamMemberAssignment
           organizationId={organizationId}
           currentUserId={user?.id}
           autoAssignAsPI={trialData.autoAssignAsPI}
-          onAutoAssignPIChange={(checked) => updateField('autoAssignAsPI', checked)}
-          onAssignmentsChange={(assignments) => updateField('teamAssignments', assignments)}
+          onAutoAssignPIChange={(checked) =>
+            updateField("autoAssignAsPI", checked)
+          }
+          onAssignmentsChange={(assignments) =>
+            updateField("teamAssignments", assignments)
+          }
         />
       </Card>
 
       <div className="flex justify-end">
-        <Button 
+        <Button
           onClick={handleComplete}
           disabled={!isValid}
           className="bg-blue-600 hover:bg-blue-700"
         >
           <FileText className="h-4 w-4 mr-2" />
-          {isFirstTrial ? 'Complete Setup & Go to Dashboard' : 'Create Trial'}
+          {isFirstTrial ? "Complete Setup & Go to Dashboard" : "Create Trial"}
         </Button>
       </div>
     </div>
