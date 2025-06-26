@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useOnboardingData } from "@/hooks/useOnboardingData";
+import { useOnboardingMutations } from "@/hooks/useOnboardingMutations";
 import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,9 +34,6 @@ interface AdminOverviewProps {
 }
 
 export function AdminOverview({ member, organization }: AdminOverviewProps) {
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
   const { toast } = useToast();
 
   // Dialog states
@@ -50,238 +47,57 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
 
   const INITIAL_DISPLAY_LIMIT = 5;
 
-  console.log("AdminOverview props:", { member, organization });
+  // Use centralized hooks
+  const { metrics, isLoading: metricsLoading } = useOnboardingData();
 
-  // Get organization metrics
-  const { data: metrics, isLoading } = useQuery({
-    queryKey: ["organization-metrics", organization?.id],
+  // Fetch pending invitations separately for display
+  const { data: pendingInvitations = [] } = useQuery({
+    queryKey: ["pending-invitations", organization?.id],
     queryFn: async () => {
-      if (!organization?.id) {
-        console.log("No organization ID available for metrics");
-        return {
-          trials: [],
-          members: [],
-          roles: [],
-        };
-      }
+      if (!organization?.id) return [];
 
-      console.log("Fetching metrics for organization:", organization.id);
+      const { data, error } = await supabase
+        .from("invitations")
+        .select("id, name, email, initial_role, invited_at")
+        .eq("organization_id", organization.id)
+        .eq("status", "pending")
+        .order("invited_at", { ascending: false });
 
-      const [trialsResult, membersResult, rolesResult] = await Promise.all([
-        supabase
-          .from("trials")
-          .select("id, name, status, phase, sponsor, created_at")
-          .eq("organization_id", organization.id),
-        supabase
-          .from("members")
-          .select("id, name, email, default_role")
-          .eq("organization_id", organization.id),
-        supabase
-          .from("roles")
-          .select("*")
-          .eq("organization_id", organization.id),
-      ]);
-
-      console.log("Metrics fetched:", {
-        trialsResult,
-        membersResult,
-        rolesResult,
-      });
-
-      if (trialsResult.error)
-        console.error("Trials error:", trialsResult.error);
-      if (membersResult.error)
-        console.error("Members error:", membersResult.error);
-      if (rolesResult.error) console.error("Roles error:", rolesResult.error);
-
-      return {
-        trials: trialsResult.data || [],
-        members: membersResult.data || [],
-        roles: rolesResult.data || [],
-      };
+      if (error) throw error;
+      return data || [];
     },
     enabled: !!organization?.id,
   });
 
-  // Send invitations mutation
-  const sendInvitationsMutation = useMutation({
-    mutationFn: async (members: any[]) => {
-      if (!organization?.id || !member?.id) {
-        throw new Error("No organization or member ID available");
-      }
-
-      const invitations = members.map((m) => ({
-        name: m.name,
-        email: m.email,
-        organization_id: organization.id,
-        initial_role: m.role,
-        invited_by: member.id,
-        status: "pending",
-      }));
-
-      const { error } = await supabase.from("invitations").insert(invitations);
-
-      if (error) throw error;
-      return invitations;
-    },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "New members invited successfully!",
-      });
-      setShowInviteDialog(false);
-      queryClient.invalidateQueries({ queryKey: ["organization-metrics"] });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to send invitations: " + error.message,
-        variant: "destructive",
-      });
-    },
+  const {
+    sendInvitationsMutation,
+    createRolesMutation,
+    createTrialMutation,
+    completeOnboardingMutation,
+  } = useOnboardingMutations({
+    organizationId: organization?.id,
+    memberId: member?.id,
   });
 
-  // Create roles mutation
-  const createRolesMutation = useMutation({
-    mutationFn: async (roles: any[]) => {
-      if (!organization?.id || !user?.id) {
-        throw new Error("No organization ID available");
-      }
+  console.log("AdminOverview props:", { member, organization });
 
-      const rolesToCreate = roles.map((role) => ({
-        name: role.name,
-        description: role.description,
-        permission_level: role.permission_level,
-        organization_id: organization.id,
-        created_by: user.id,
-      }));
+  // Use metrics from centralized hook
+  const isLoading = metricsLoading;
 
-      const { error } = await supabase.from("roles").insert(rolesToCreate);
-
-      if (error) throw error;
-      return rolesToCreate;
-    },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "New custom roles created successfully!",
-      });
-      setShowRolesDialog(false);
-      queryClient.invalidateQueries({ queryKey: ["organization-metrics"] });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to create roles: " + error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Create trial mutation
-  const createTrialMutation = useMutation({
-    mutationFn: async (trialData: any) => {
-      if (!organization?.id || !member?.id) {
-        throw new Error("Missing organization or member information");
-      }
-
-      // Preparar team_assignments (MISMA lógica que OnboardingFlow)
-      let teamAssignments = [...(trialData.teamAssignments || [])];
-
-      // Add PI assignment if requested
-      if (trialData.autoAssignAsPI) {
-        const { data: piRole } = await supabase
-          .from("roles")
-          .select("id")
-          .eq("organization_id", organization.id)
-          .or("name.ilike.%PI%,name.ilike.%Principal Investigator%")
-          .limit(1)
-          .single();
-
-        if (piRole) {
-          teamAssignments.push({
-            member_id: member.id,
-            role_id: piRole.id,
-            is_active: true,
-            start_date: new Date().toISOString().split("T")[0],
-          });
-        }
-      }
-
-      // Usar RPC function (IGUAL que OnboardingFlow)
-      const { data: trialId, error } = await supabase.rpc(
-        "create_trial_with_members",
-        {
-          trial_data: {
-            name: trialData.name,
-            description: trialData.description,
-            phase: trialData.phase,
-            sponsor: trialData.sponsor,
-            location: trialData.location,
-            study_start: trialData.study_start,
-            estimated_close_out: trialData.estimated_close_out,
-          },
-          team_assignments: teamAssignments,
-        }
-      );
-
-      if (error) throw error;
-      return trialId;
-    },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "New trial created successfully!",
-      });
-      setShowTrialDialog(false);
-      queryClient.invalidateQueries({ queryKey: ["organization-metrics"] });
-    },
-    onError: (error) => {
-      console.error("Create trial mutation error:", error);
-      toast({
-        title: "Error",
-        description: "Failed to create trial: " + error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Complete onboarding mutation
-  const completeOnboardingMutation = useMutation({
-    mutationFn: async () => {
-      console.log("Completing onboarding for user:", user?.id);
-      const { error } = await supabase
-        .from("members")
-        .update({ onboarding_completed: true })
-        .eq("profile_id", user?.id);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      console.log("Onboarding completed successfully");
-      // Invalidate queries to ensure state is updated
-      queryClient.invalidateQueries({ queryKey: ["user-member-status"] });
-      queryClient.invalidateQueries({ queryKey: ["member"] });
-      navigate("/dashboard");
-    },
-    onError: (error) => {
-      console.error("Failed to complete onboarding:", error);
-      toast({
-        title: "Error",
-        description: "Failed to complete onboarding: " + error.message,
-        variant: "destructive",
-      });
-    },
-  });
+  // All mutations now handled by useOnboardingMutations hook
 
   const handleGoToDashboard = () => {
     console.log("Go to dashboard clicked");
-    completeOnboardingMutation.mutate();
+    completeOnboardingMutation.mutate({});
   };
 
   const handleInviteMembers = (members: any[]) => {
     if (members.length > 0) {
-      sendInvitationsMutation.mutate(members);
+      sendInvitationsMutation.mutate(members, {
+        onSuccess: () => {
+          setShowInviteDialog(false);
+        },
+      });
     } else {
       setShowInviteDialog(false);
     }
@@ -289,7 +105,11 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
 
   const handleCreateRoles = (roles: any[]) => {
     if (roles.length > 0) {
-      createRolesMutation.mutate(roles);
+      createRolesMutation.mutate(roles, {
+        onSuccess: () => {
+          setShowRolesDialog(false);
+        },
+      });
     } else {
       setShowRolesDialog(false);
     }
@@ -297,7 +117,7 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
 
   const handleCreateTrial = (trialData: any) => {
     console.log("handleCreateTrial called with:", trialData);
-    console.log("Available data:", { organization, member, user });
+    console.log("Available data:", { organization, member });
 
     // Check if we have all required data before proceeding
     if (!organization?.id) {
@@ -319,7 +139,11 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
       return;
     }
 
-    createTrialMutation.mutate(trialData);
+    createTrialMutation.mutate(trialData, {
+      onSuccess: () => {
+        setShowTrialDialog(false);
+      },
+    });
   };
 
   // Show loading if metrics are still loading or if we don't have organization data
@@ -333,14 +157,36 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
 
   const trialsCount = metrics?.trials?.length || 0;
   const membersCount = metrics?.members?.length || 0;
+  const pendingCount = pendingInvitations?.length || 0;
+  const totalTeamCount = membersCount + pendingCount;
   const rolesCount = metrics?.roles?.length || 0;
+
+  // Combine confirmed members and pending invitations
+  const combinedTeamMembers = [
+    ...(metrics?.members || []).map((member) => ({
+      id: member.id,
+      name: member.name,
+      email: member.email,
+      type: "confirmed" as const,
+      role: member.default_role,
+      date: new Date().toISOString(), // Use current date as fallback
+    })),
+    ...(pendingInvitations || []).map((invitation) => ({
+      id: invitation.id,
+      name: invitation.name,
+      email: invitation.email,
+      type: "pending" as const,
+      role: invitation.initial_role,
+      date: invitation.invited_at,
+    })),
+  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const displayedTrials = showAllTrials
     ? metrics?.trials
     : metrics?.trials?.slice(0, INITIAL_DISPLAY_LIMIT);
   const displayedMembers = showAllMembers
-    ? metrics?.members
-    : metrics?.members?.slice(0, INITIAL_DISPLAY_LIMIT);
+    ? combinedTeamMembers
+    : combinedTeamMembers?.slice(0, INITIAL_DISPLAY_LIMIT);
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -355,6 +201,99 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
             available.
           </p>
         </div>
+
+        {/* Team Members Section */}
+        <Card className="mb-8">
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+                  <Users className="h-5 w-5 mr-2" />
+                  Team Members
+                </h2>
+                <Badge
+                  variant="secondary"
+                  className="bg-gray-100 text-gray-800 font-medium px-2 py-1 rounded-full"
+                >
+                  {totalTeamCount}
+                </Badge>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => setShowInviteDialog(true)}
+                className="border-gray-500 text-gray hover:bg-blue-100"
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                Invite Team Members
+              </Button>
+            </div>
+
+            {totalTeamCount > 0 ? (
+              <div className="space-y-3">
+                {displayedMembers?.map((teamMember) => (
+                  <div
+                    key={teamMember.id}
+                    className="flex items-center justify-between p-3 border rounded-lg"
+                  >
+                    <div>
+                      <p className="font-medium text-gray-900">
+                        {teamMember.name}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        {teamMember.email}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        variant={
+                          teamMember.role === "admin" ? "default" : "secondary"
+                        }
+                      >
+                        {teamMember.role}
+                      </Badge>
+                      {teamMember.type === "pending" && (
+                        <Badge
+                          variant="outline"
+                          className="border-red-200 text-red-500 bg-red-50"
+                        >
+                          pending
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                {totalTeamCount > INITIAL_DISPLAY_LIMIT && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => setShowAllMembers(!showAllMembers)}
+                    className="w-full mt-4"
+                  >
+                    {showAllMembers ? (
+                      <>
+                        <ChevronUp className="h-4 w-4 mr-2" />
+                        Show Less
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="h-4 w-4 mr-2" />
+                        Show {totalTeamCount - INITIAL_DISPLAY_LIMIT} More Team
+                        Members
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p>
+                  No team members yet. Invite members to start collaborating!
+                </p>
+              </div>
+            )}
+          </div>
+        </Card>
 
         {/* Clinical Trials Section */}
         <Card className="mb-8">
@@ -391,21 +330,11 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
                           {trial.name}
                         </h3>
                         <p className="text-sm text-gray-600">
-                          {trial.phase} • {trial.sponsor}
+                          • {trial.sponsor}
                         </p>
                       </div>
                       <div className="text-right">
-                        <Badge
-                          variant={
-                            trial.status === "active"
-                              ? "default"
-                              : trial.status === "planning"
-                              ? "secondary"
-                              : "outline"
-                          }
-                        >
-                          {trial.status}
-                        </Badge>
+                        <Badge variant={"secondary"}>{trial.phase}</Badge>
                         <p className="text-xs text-gray-500 mt-1">
                           Created:{" "}
                           {new Date(trial.created_at).toLocaleDateString()}
@@ -446,90 +375,6 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
           </div>
         </Card>
 
-        {/* Team Members Section */}
-        <Card className="mb-8">
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <h2 className="text-xl font-semibold text-gray-900 flex items-center">
-                  <Users className="h-5 w-5 mr-2" />
-                  Team Members
-                </h2>
-                <Badge
-                  variant="secondary"
-                  className="bg-green-100 text-green-800 font-medium px-2 py-1 rounded-full"
-                >
-                  {membersCount}
-                </Badge>
-              </div>
-              <Button
-                variant="outline"
-                onClick={() => setShowInviteDialog(true)}
-                className="border-green-500 text-green-600 hover:bg-green-50"
-              >
-                <UserPlus className="h-4 w-4 mr-2" />
-                Invite Team Members
-              </Button>
-            </div>
-
-            {membersCount > 0 ? (
-              <div className="space-y-3">
-                {displayedMembers?.map((teamMember) => (
-                  <div
-                    key={teamMember.id}
-                    className="flex items-center justify-between p-3 border rounded-lg"
-                  >
-                    <div>
-                      <p className="font-medium text-gray-900">
-                        {teamMember.name}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        {teamMember.email}
-                      </p>
-                    </div>
-                    <Badge
-                      variant={
-                        teamMember.default_role === "admin"
-                          ? "default"
-                          : "secondary"
-                      }
-                    >
-                      {teamMember.default_role}
-                    </Badge>
-                  </div>
-                ))}
-
-                {membersCount > INITIAL_DISPLAY_LIMIT && (
-                  <Button
-                    variant="ghost"
-                    onClick={() => setShowAllMembers(!showAllMembers)}
-                    className="w-full mt-4"
-                  >
-                    {showAllMembers ? (
-                      <>
-                        <ChevronUp className="h-4 w-4 mr-2" />
-                        Show Less
-                      </>
-                    ) : (
-                      <>
-                        <ChevronDown className="h-4 w-4 mr-2" />
-                        Show {membersCount - INITIAL_DISPLAY_LIMIT} More Members
-                      </>
-                    )}
-                  </Button>
-                )}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p>
-                  No team members yet. Invite members to start collaborating!
-                </p>
-              </div>
-            )}
-          </div>
-        </Card>
-
         {/* Available Roles Section */}
         <Card className="mb-8">
           <div className="p-6">
@@ -541,7 +386,7 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
                 </h2>
                 <Badge
                   variant="secondary"
-                  className="bg-purple-100 text-purple-800 font-medium px-2 py-1 rounded-full"
+                  className="bg-gray-100 text-gray-800 font-medium px-2 py-1 rounded-full"
                 >
                   {rolesCount}
                 </Badge>
@@ -549,7 +394,7 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
               <Button
                 variant="outline"
                 onClick={() => setShowRolesDialog(true)}
-                className="border-purple-500 text-purple-600 hover:bg-purple-50"
+                className="border-gray-500 text-gray hover:bg-blue-100"
               >
                 <Settings className="h-4 w-4 mr-2" />
                 Add Custom Roles
@@ -559,23 +404,22 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
             {rolesCount > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {metrics?.roles?.map((role) => (
-                  <div key={role.id} className="border rounded-lg p-4">
-                    <h3 className="font-medium text-gray-900">{role.name}</h3>
-                    <p className="text-sm text-gray-600 mt-1">
-                      {role.description}
-                    </p>
-                    <Badge
-                      variant={
-                        role.permission_level === "admin"
-                          ? "destructive"
-                          : role.permission_level === "edit"
-                          ? "default"
-                          : "secondary"
-                      }
-                      className="mt-2"
-                    >
-                      {role.permission_level}
-                    </Badge>
+                  <div
+                    key={role.id}
+                    className="border rounded-lg p-4 flex flex-col justify-between"
+                  >
+                    <div className="mb-4 h-auto">
+                      <h3 className="font-medium text-gray-900">{role.name}</h3>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {role.description}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 mt-2 ">
+                      <small className=" text-gray-500">Permission of</small>
+                      <Badge variant={"outline"} className="bg-blue-50">
+                        {role.permission_level}
+                      </Badge>
+                    </div>
                   </div>
                 ))}
               </div>

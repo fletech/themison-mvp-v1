@@ -23,6 +23,7 @@ import { useLocation, Link } from "react-router-dom";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
+  count?: number;
   title?: string;
   showSearch?: boolean;
   showCreateButton?: boolean;
@@ -38,6 +39,7 @@ export function DashboardLayout({
 }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, signOut } = useAuth();
+  //member
   const { toast } = useToast();
   const location = useLocation();
 
@@ -47,6 +49,8 @@ export function DashboardLayout({
       title: "Signed out",
       description: "You have been signed out successfully",
     });
+    // Force redirect to home page after logout
+    window.location.href = "/";
   };
 
   const navigationItems = [

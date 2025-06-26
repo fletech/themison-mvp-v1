@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { User, Users } from "lucide-react";
 
 interface Trial {
   id: string;
@@ -113,6 +114,23 @@ export function TrialsPage() {
     "Registry",
   ];
 
+  const headerColors = [
+    "bg-red-100",
+    "bg-blue-100",
+    "bg-green-100",
+    "bg-yellow-100",
+    "bg-purple-100",
+    "bg-orange-100",
+    "bg-pink-100",
+    "bg-teal-100",
+    "bg-gray-100",
+    "bg-indigo-100",
+    "bg-lime-100",
+    "bg-amber-100",
+    "bg-cyan-100",
+    "bg-fuchsia-100",
+  ];
+
   // Dynamic locations from trials data
   const locations = [
     "All places",
@@ -175,11 +193,6 @@ export function TrialsPage() {
       onCreateClick={handleCreateTrial}
     >
       <div className="space-y-6">
-        {/* Trial count */}
-        <div className="text-sm text-gray-600">
-          {trials.length} Active Trials
-        </div>
-
         {/* Filters */}
         <div className="space-y-4">
           {/* Phase filters */}
@@ -251,7 +264,7 @@ export function TrialsPage() {
               </Card>
             </div>
           ) : (
-            filteredTrials.map((trial) => {
+            filteredTrials.map((trial, index) => {
               const { piName, memberCount } = getTrialInfo(trial.id);
 
               return (
@@ -260,7 +273,7 @@ export function TrialsPage() {
                   className="w-full max-w-sm overflow-hidden hover:shadow-lg transition-shadow"
                 >
                   {/* Card Image/Header */}
-                  <div className="h-48 bg-gray-500 relative">
+                  <div className={`h-36 ${headerColors[index]} relative`}>
                     {/* Tags in top left */}
                     <div className="absolute top-3 left-3 flex flex-wrap gap-1">
                       <Badge className="bg-teal-100 text-teal-800 text-xs rounded-full">
@@ -294,12 +307,12 @@ export function TrialsPage() {
 
                     {/* Trial Details */}
                     <div className="space-y-2 text-sm">
-                      <div className="flex items-center text-gray-600">
-                        <div className="w-3 h-3 rounded-full border border-gray-400 mr-2"></div>
+                      <div className="flex items-center text-gray-600 font-medium">
+                        <User className="w-3 h-3 mr-2" />
                         <span>{piName}</span>
                       </div>
                       <div className="flex items-center text-gray-600">
-                        <div className="w-3 h-3 rounded-full border border-gray-400 mr-2"></div>
+                        <Users className="w-3 h-3 mr-2" />
                         <span>+{memberCount} members</span>
                       </div>
                     </div>

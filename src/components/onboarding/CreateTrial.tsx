@@ -25,11 +25,13 @@ interface TrialData {
   estimated_close_out: string;
   autoAssignAsPI: boolean;
   teamAssignments: Array<{
-    memberId: string;
+    memberId?: string; // For confirmed members
+    invitationId?: string; // For pending invitations
     memberName: string;
     memberEmail: string;
     roleId: string;
     roleName: string;
+    type: "confirmed" | "pending";
   }>;
 }
 

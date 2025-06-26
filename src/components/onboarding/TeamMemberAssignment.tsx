@@ -1,20 +1,27 @@
-
-import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Trash2, UserPlus } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import React, { useState, useEffect } from "react";
+import { Card } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Trash2, UserPlus } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface TeamAssignment {
-  memberId: string;
+  memberId?: string; // For confirmed members
+  invitationId?: string; // For pending invitations
   memberName: string;
   memberEmail: string;
   roleId: string;
   roleName: string;
+  type: "confirmed" | "pending";
 }
 
 interface TeamMemberAssignmentProps {
@@ -25,67 +32,91 @@ interface TeamMemberAssignmentProps {
   onAutoAssignPIChange: (checked: boolean) => void;
 }
 
-export function TeamMemberAssignment({ 
-  organizationId, 
-  onAssignmentsChange, 
+export function TeamMemberAssignment({
+  organizationId,
+  onAssignmentsChange,
   currentUserId,
   autoAssignAsPI,
-  onAutoAssignPIChange
+  onAutoAssignPIChange,
 }: TeamMemberAssignmentProps) {
   const [assignments, setAssignments] = useState<TeamAssignment[]>([]);
 
   // Fetch all confirmed members (removed onboarding_completed filter)
   const { data: members = [] } = useQuery({
-    queryKey: ['confirmed-members', organizationId],
+    queryKey: ["confirmed-members", organizationId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('members')
-        .select('id, name, email, profile_id')
-        .eq('organization_id', organizationId);
-      
+        .from("members")
+        .select("id, name, email, profile_id")
+        .eq("organization_id", organizationId);
+
       if (error) {
         throw error;
       }
-      
+
       return data || [];
     },
-    enabled: !!organizationId
+    enabled: !!organizationId,
+  });
+
+  // Fetch pending invitations
+  const { data: pendingInvitations = [] } = useQuery({
+    queryKey: ["pending-invitations", organizationId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("invitations")
+        .select("id, name, email")
+        .eq("organization_id", organizationId)
+        .eq("status", "pending");
+
+      if (error) {
+        throw error;
+      }
+
+      return data || [];
+    },
+    enabled: !!organizationId,
   });
 
   // Fetch available roles for this organization
   const { data: roles = [] } = useQuery({
-    queryKey: ['organization-roles', organizationId],
+    queryKey: ["organization-roles", organizationId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('roles')
-        .select('id, name, permission_level')
-        .eq('organization_id', organizationId)
-        .order('name');
-      
+        .from("roles")
+        .select("id, name, permission_level")
+        .eq("organization_id", organizationId)
+        .order("name");
+
       if (error) {
         throw error;
       }
-      
+
       return data || [];
     },
-    enabled: !!organizationId
+    enabled: !!organizationId,
   });
 
   // Find the Principal Investigator role
-  const piRole = roles.find(role => 
-    role.name.toLowerCase().includes('principal investigator') || 
-    role.name.toLowerCase().includes('pi')
+  const piRole = roles.find(
+    (role) =>
+      role.name.toLowerCase().includes("principal investigator") ||
+      role.name.toLowerCase().includes("pi")
   );
 
   // Find current user member info
-  const currentUserMember = members.find(member => member.profile_id === currentUserId);
+  const currentUserMember = members.find(
+    (member) => member.profile_id === currentUserId
+  );
 
   // Effect to handle auto-assign PI checkbox changes
   useEffect(() => {
     if (autoAssignAsPI && piRole && currentUserMember) {
       // Check if current user is already assigned as PI
-      const existingPIAssignment = assignments.find(assignment => 
-        assignment.memberId === currentUserMember.id && assignment.roleId === piRole.id
+      const existingPIAssignment = assignments.find(
+        (assignment) =>
+          assignment.memberId === currentUserMember.id &&
+          assignment.roleId === piRole.id
       );
 
       if (!existingPIAssignment) {
@@ -95,7 +126,8 @@ export function TeamMemberAssignment({
           memberName: currentUserMember.name,
           memberEmail: currentUserMember.email,
           roleId: piRole.id,
-          roleName: piRole.name
+          roleName: piRole.name,
+          type: "confirmed",
         };
 
         const updatedAssignments = [...assignments, newPIAssignment];
@@ -104,32 +136,67 @@ export function TeamMemberAssignment({
       }
     } else if (!autoAssignAsPI && piRole && currentUserMember) {
       // Remove auto-assigned PI assignment when unchecking
-      const updatedAssignments = assignments.filter(assignment => 
-        !(assignment.memberId === currentUserMember.id && assignment.roleId === piRole.id)
+      const updatedAssignments = assignments.filter(
+        (assignment) =>
+          !(
+            assignment.memberId === currentUserMember.id &&
+            assignment.roleId === piRole.id
+          )
       );
-      
+
       if (updatedAssignments.length !== assignments.length) {
         setAssignments(updatedAssignments);
         onAssignmentsChange(updatedAssignments);
       }
     }
-  }, [autoAssignAsPI, piRole, currentUserMember, assignments, onAssignmentsChange]);
+  }, [
+    autoAssignAsPI,
+    piRole,
+    currentUserMember,
+    assignments,
+    onAssignmentsChange,
+  ]);
+
+  // Combine members and pending invitations into a single list
+  const combinedAvailableUsers = [
+    ...members.map((member) => ({
+      id: member.id,
+      name: member.name,
+      email: member.email,
+      type: "confirmed" as const,
+      profile_id: member.profile_id,
+    })),
+    ...pendingInvitations.map((invitation) => ({
+      id: invitation.id,
+      name: invitation.name,
+      email: invitation.email,
+      type: "pending" as const,
+      profile_id: null,
+    })),
+  ];
 
   const addAssignment = () => {
-    const availableMembers = members.filter(
-      member => !assignments.find(a => a.memberId === member.id)
+    const availableUsers = combinedAvailableUsers.filter(
+      (user) =>
+        !assignments.find(
+          (a) =>
+            (a.memberId === user.id && user.type === "confirmed") ||
+            (a.invitationId === user.id && user.type === "pending")
+        )
     );
-    
-    if (availableMembers.length === 0) return;
-    
+
+    if (availableUsers.length === 0) return;
+
     const newAssignment: TeamAssignment = {
-      memberId: '',
-      memberName: '',
-      memberEmail: '',
-      roleId: '',
-      roleName: ''
+      memberId: "",
+      invitationId: "",
+      memberName: "",
+      memberEmail: "",
+      roleId: "",
+      roleName: "",
+      type: "confirmed",
     };
-    
+
     const updatedAssignments = [...assignments, newAssignment];
     setAssignments(updatedAssignments);
     onAssignmentsChange(updatedAssignments);
@@ -137,69 +204,99 @@ export function TeamMemberAssignment({
 
   const removeAssignment = (index: number) => {
     const assignment = assignments[index];
-    
+
     // If removing the current user's PI assignment, also uncheck the auto-assign checkbox
-    if (autoAssignAsPI && piRole && currentUserMember && 
-        assignment.memberId === currentUserMember.id && 
-        assignment.roleId === piRole.id) {
+    if (
+      autoAssignAsPI &&
+      piRole &&
+      currentUserMember &&
+      assignment.memberId === currentUserMember.id &&
+      assignment.roleId === piRole.id
+    ) {
       onAutoAssignPIChange(false);
     }
-    
+
     const updatedAssignments = assignments.filter((_, i) => i !== index);
     setAssignments(updatedAssignments);
     onAssignmentsChange(updatedAssignments);
   };
 
-  const updateAssignment = (index: number, field: keyof TeamAssignment, value: string) => {
+  const updateAssignment = (
+    index: number,
+    field: keyof TeamAssignment,
+    value: string
+  ) => {
     const updatedAssignments = [...assignments];
-    updatedAssignments[index] = { ...updatedAssignments[index], [field]: value };
-    
-    // If updating member, also update name and email
-    if (field === 'memberId') {
-      const member = members.find(m => m.id === value);
-      if (member) {
-        updatedAssignments[index].memberName = member.name;
-        updatedAssignments[index].memberEmail = member.email;
+    updatedAssignments[index] = {
+      ...updatedAssignments[index],
+      [field]: value,
+    };
+
+    // If updating user selection, determine if it's a member or invitation
+    if (field === "memberId" || field === "invitationId") {
+      const user = combinedAvailableUsers.find((u) => u.id === value);
+      if (user) {
+        if (user.type === "confirmed") {
+          updatedAssignments[index].memberId = value;
+          updatedAssignments[index].invitationId = "";
+          updatedAssignments[index].type = "confirmed";
+        } else {
+          updatedAssignments[index].memberId = "";
+          updatedAssignments[index].invitationId = value;
+          updatedAssignments[index].type = "pending";
+        }
+        updatedAssignments[index].memberName = user.name;
+        updatedAssignments[index].memberEmail = user.email;
       }
     }
-    
+
     // If updating role, also update role name
-    if (field === 'roleId') {
-      const role = roles.find(r => r.id === value);
+    if (field === "roleId") {
+      const role = roles.find((r) => r.id === value);
       if (role) {
         updatedAssignments[index].roleName = role.name;
       }
     }
-    
+
     setAssignments(updatedAssignments);
     onAssignmentsChange(updatedAssignments);
   };
 
-  // Get available members for a specific assignment
-  const getAvailableMembersForAssignment = (currentAssignmentIndex: number) => {
-    return members.filter(member => {
-      // Check if this member is already assigned in OTHER assignments (not the current one being edited)
-      const isAlreadyAssigned = assignments.some((assignment, index) => 
-        assignment.memberId === member.id && index !== currentAssignmentIndex
-      );
+  // Get available users (members + invitations) for a specific assignment
+  const getAvailableUsersForAssignment = (currentAssignmentIndex: number) => {
+    return combinedAvailableUsers.filter((user) => {
+      // Check if this user is already assigned in OTHER assignments (not the current one being edited)
+      const isAlreadyAssigned = assignments.some((assignment, index) => {
+        if (index === currentAssignmentIndex) return false;
+        return (
+          (assignment.memberId === user.id && user.type === "confirmed") ||
+          (assignment.invitationId === user.id && user.type === "pending")
+        );
+      });
       return !isAlreadyAssigned;
     });
   };
 
   // Check if there's already a PI assigned in the assignments
-  const hasPIAssigned = assignments.some(assignment => {
-    const role = roles.find(r => r.id === assignment.roleId);
-    return role && (role.name.toLowerCase().includes('principal investigator') || 
-                   role.name.toLowerCase().includes('pi'));
+  const hasPIAssigned = assignments.some((assignment) => {
+    const role = roles.find((r) => r.id === assignment.roleId);
+    return (
+      role &&
+      (role.name.toLowerCase().includes("principal investigator") ||
+        role.name.toLowerCase().includes("pi"))
+    );
   });
 
   // Check if current user is assigned as PI in the assignments
-  const currentUserAssignedAsPI = assignments.some(assignment => {
-    const member = members.find(m => m.id === assignment.memberId);
-    const role = roles.find(r => r.id === assignment.roleId);
-    return member?.profile_id === currentUserId && 
-           role && (role.name.toLowerCase().includes('principal investigator') || 
-                   role.name.toLowerCase().includes('pi'));
+  const currentUserAssignedAsPI = assignments.some((assignment) => {
+    const member = members.find((m) => m.id === assignment.memberId);
+    const role = roles.find((r) => r.id === assignment.roleId);
+    return (
+      member?.profile_id === currentUserId &&
+      role &&
+      (role.name.toLowerCase().includes("principal investigator") ||
+        role.name.toLowerCase().includes("pi"))
+    );
   });
 
   return (
@@ -224,70 +321,109 @@ export function TeamMemberAssignment({
 
       <div className="flex items-center justify-between">
         <Label className="text-base font-medium">Assign Team Members</Label>
-        <Button 
+        <Button
           type="button"
-          variant="outline" 
+          variant="outline"
           size="sm"
           onClick={addAssignment}
-          disabled={members.length === 0 || assignments.length >= members.length}
+          disabled={
+            combinedAvailableUsers.length === 0 ||
+            assignments.length >= combinedAvailableUsers.length
+          }
         >
           <UserPlus className="h-4 w-4 mr-2" />
           Add Member
         </Button>
       </div>
 
-      {members.length === 0 ? (
+      {combinedAvailableUsers.length === 0 ? (
         <Card className="p-4">
           <div className="text-center text-gray-500">
             <UserPlus className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-            <p>No team members available to assign.</p>
-            <p className="text-sm mt-1">Members will appear here once they accept their invitations.</p>
+            <p>No team members or invitations available to assign.</p>
+            <p className="text-sm mt-1">
+              Send invitations or wait for members to accept their invitations.
+            </p>
           </div>
         </Card>
       ) : assignments.length === 0 ? (
         <Card className="p-4">
           <p className="text-sm text-gray-600 text-center">
-            No team members assigned yet. Click "Add Member" to assign roles to your team.
+            No team members assigned yet. Click "Add Member" to assign roles to
+            your team.
           </p>
         </Card>
       ) : (
         <div className="space-y-3">
           {assignments.map((assignment, index) => {
-            const availableMembersForThisAssignment = getAvailableMembersForAssignment(index);
-            const isAutoAssignedPI = autoAssignAsPI && piRole && currentUserMember && 
-                                   assignment.memberId === currentUserMember.id && 
-                                   assignment.roleId === piRole.id;
-            
+            const availableUsersForThisAssignment =
+              getAvailableUsersForAssignment(index);
+            const isAutoAssignedPI =
+              autoAssignAsPI &&
+              piRole &&
+              currentUserMember &&
+              assignment.memberId === currentUserMember.id &&
+              assignment.roleId === piRole.id;
+
             return (
-              <Card key={index} className={`p-4 ${isAutoAssignedPI ? 'bg-blue-50 border-blue-200' : ''}`}>
+              <Card
+                key={index}
+                className={`p-4 ${
+                  isAutoAssignedPI ? "bg-blue-50 border-blue-200" : ""
+                }`}
+              >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor={`member-${index}`}>Team Member</Label>
                     <Select
-                      value={assignment.memberId}
-                      onValueChange={(value) => updateAssignment(index, 'memberId', value)}
+                      value={
+                        assignment.memberId || assignment.invitationId || ""
+                      }
+                      onValueChange={(value) =>
+                        updateAssignment(index, "memberId", value)
+                      }
                       disabled={isAutoAssignedPI}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select member" />
                       </SelectTrigger>
                       <SelectContent>
-                        {/* Show currently selected member even if not in available list */}
-                        {assignment.memberId && !availableMembersForThisAssignment.find(m => m.id === assignment.memberId) && (
-                          <SelectItem value={assignment.memberId}>
-                            {assignment.memberName} ({assignment.memberEmail})
-                          </SelectItem>
-                        )}
-                        {/* Show available members */}
-                        {availableMembersForThisAssignment.map(member => (
-                          <SelectItem key={member.id} value={member.id}>
-                            {member.name} ({member.email})
+                        {/* Show currently selected user even if not in available list */}
+                        {(assignment.memberId || assignment.invitationId) &&
+                          !availableUsersForThisAssignment.find(
+                            (u) =>
+                              u.id ===
+                              (assignment.memberId || assignment.invitationId)
+                          ) && (
+                            <SelectItem
+                              value={
+                                assignment.memberId ||
+                                assignment.invitationId ||
+                                ""
+                              }
+                            >
+                              {assignment.memberName} ({assignment.memberEmail})
+                              -{" "}
+                              {assignment.type === "confirmed"
+                                ? "✅ Confirmed"
+                                : "⏳ Pending"}
+                            </SelectItem>
+                          )}
+                        {/* Show available users (members + invitations) */}
+                        {availableUsersForThisAssignment.map((user) => (
+                          <SelectItem key={user.id} value={user.id}>
+                            {user.name} ({user.email}) -{" "}
+                            {user.type === "confirmed"
+                              ? "✅ Confirmed"
+                              : "⏳ Pending"}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                     {isAutoAssignedPI && (
-                      <p className="text-xs text-blue-600 mt-1">Auto-assigned via checkbox above</p>
+                      <p className="text-xs text-blue-600 mt-1">
+                        Auto-assigned via checkbox above
+                      </p>
                     )}
                   </div>
 
@@ -296,55 +432,78 @@ export function TeamMemberAssignment({
                       <Label htmlFor={`role-${index}`}>Trial Role</Label>
                       <Select
                         value={assignment.roleId}
-                        onValueChange={(value) => updateAssignment(index, 'roleId', value)}
+                        onValueChange={(value) =>
+                          updateAssignment(index, "roleId", value)
+                        }
                         disabled={isAutoAssignedPI}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select role" />
                         </SelectTrigger>
                         <SelectContent>
-                          {roles.map(role => {
+                          {roles.map((role) => {
                             const isPIRole = piRole && role.id === piRole.id;
-                            const isCurrentUserAssigning = members.find(m => m.id === assignment.memberId)?.profile_id === currentUserId;
-                            
+                            const isCurrentUserAssigning =
+                              members.find((m) => m.id === assignment.memberId)
+                                ?.profile_id === currentUserId;
+
                             // Disable PI role if:
                             // 1. Auto-assign is ON and this is the current user (because they're already auto-assigned)
                             // 2. Auto-assign is ON and this is NOT the current user (because PI is auto-assigned to current user)
                             // 3. There's already another PI assigned and this isn't that assignment
-                            const isDisabled = isPIRole && (
-                              (autoAssignAsPI && isCurrentUserAssigning) ||
-                              (autoAssignAsPI && !isCurrentUserAssigning) ||
-                              (hasPIAssigned && assignment.roleId !== role.id)
-                            );
-                            
+                            const isDisabled =
+                              isPIRole &&
+                              ((autoAssignAsPI && isCurrentUserAssigning) ||
+                                (autoAssignAsPI && !isCurrentUserAssigning) ||
+                                (hasPIAssigned &&
+                                  assignment.roleId !== role.id));
+
                             return (
-                              <SelectItem 
-                                key={role.id} 
+                              <SelectItem
+                                key={role.id}
                                 value={role.id}
                                 disabled={isDisabled}
-                                className={isDisabled ? 'text-gray-400 cursor-not-allowed' : ''}
+                                className={
+                                  isDisabled
+                                    ? "text-gray-400 cursor-not-allowed"
+                                    : ""
+                                }
                               >
                                 {role.name}
-                                {isPIRole && autoAssignAsPI && isCurrentUserAssigning && ' (Auto-assigned to you)'}
-                                {isPIRole && autoAssignAsPI && !isCurrentUserAssigning && ' (Auto-assigned to current user)'}
-                                {isPIRole && hasPIAssigned && assignment.roleId !== role.id && !autoAssignAsPI && ' (Already assigned to another member)'}
+                                {isPIRole &&
+                                  autoAssignAsPI &&
+                                  isCurrentUserAssigning &&
+                                  " (Auto-assigned to you)"}
+                                {isPIRole &&
+                                  autoAssignAsPI &&
+                                  !isCurrentUserAssigning &&
+                                  " (Auto-assigned to current user)"}
+                                {isPIRole &&
+                                  hasPIAssigned &&
+                                  assignment.roleId !== role.id &&
+                                  !autoAssignAsPI &&
+                                  " (Already assigned to another member)"}
                               </SelectItem>
                             );
                           })}
                         </SelectContent>
                       </Select>
                       {isAutoAssignedPI && (
-                        <p className="text-xs text-blue-600 mt-1">Auto-assigned via checkbox above</p>
+                        <p className="text-xs text-blue-600 mt-1">
+                          Auto-assigned via checkbox above
+                        </p>
                       )}
                     </div>
-                    
+
                     <Button
                       type="button"
                       variant="outline"
                       size="icon"
                       onClick={() => removeAssignment(index)}
                       disabled={isAutoAssignedPI}
-                      className={isAutoAssignedPI ? 'opacity-50 cursor-not-allowed' : ''}
+                      className={
+                        isAutoAssignedPI ? "opacity-50 cursor-not-allowed" : ""
+                      }
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

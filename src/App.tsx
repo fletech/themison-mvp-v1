@@ -15,7 +15,6 @@ import { TrialsPage } from "./pages/TrialsPage";
 import { OrganizationPage } from "./pages/OrganizationPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import NotFound from "./pages/NotFound";
-import Auth from "./pages/Auth";
 
 const queryClient = new QueryClient();
 
@@ -84,10 +83,16 @@ function AppRoutes() {
         path="/auth/sign-in"
         element={user ? <Navigate to="/dashboard" replace /> : <SignIn />}
       />
-      {/* Legacy routes for backwards compatibility */}
+      {/* Redirect /auth to sign-in as default */}
       <Route
         path="/auth"
-        element={user ? <Navigate to="/dashboard" replace /> : <Auth />}
+        element={
+          user ? (
+            <Navigate to="/dashboard" replace />
+          ) : (
+            <Navigate to="/auth/sign-in" replace />
+          )
+        }
       />
       <Route
         path="/onboarding"

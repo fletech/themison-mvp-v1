@@ -1,15 +1,15 @@
-
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 export function LoginForm() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const { signIn } = useAuth();
   const { toast } = useToast();
@@ -20,7 +20,7 @@ export function LoginForm() {
     setLoading(true);
 
     const { error } = await signIn(email, password);
-    
+
     if (error) {
       toast({
         title: "Authentication Error",
@@ -33,7 +33,7 @@ export function LoginForm() {
         description: "You have successfully signed in.",
       });
     }
-    
+
     setLoading(false);
   };
 
@@ -54,9 +54,8 @@ export function LoginForm() {
 
       <div>
         <Label htmlFor="password">Password</Label>
-        <Input
+        <PasswordInput
           id="password"
-          type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
@@ -65,20 +64,20 @@ export function LoginForm() {
         />
       </div>
 
-      <Button 
-        type="submit" 
-        className="w-full bg-blue-600 hover:bg-blue-700" 
+      <Button
+        type="submit"
+        className="w-full bg-blue-600 hover:bg-blue-700"
         disabled={loading}
       >
-        {loading ? 'Signing in...' : 'Sign In'}
+        {loading ? "Signing in..." : "Sign In"}
       </Button>
 
       <div className="text-center">
         <p className="text-sm text-gray-600">
-          Don't have an account?{' '}
+          Don't have an account?{" "}
           <button
             type="button"
-            onClick={() => navigate('/auth/sign-up')}
+            onClick={() => navigate("/auth/sign-up")}
             className="text-blue-600 hover:text-blue-500 font-medium"
           >
             Sign up here

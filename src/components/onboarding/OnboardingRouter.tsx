@@ -1,57 +1,19 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useOnboardingData } from "@/hooks/useOnboardingData";
 import { AdminSetupFlow } from "./AdminSetupFlow";
 import { AdminOverview } from "./AdminOverview";
 import { StaffOnboarding } from "./StaffOnboarding";
 
 export function OnboardingRouter() {
-  const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Get member information
-  const { data: member, isLoading: memberLoading } = useQuery({
-    queryKey: ["member", user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-
-      const { data, error } = await supabase
-        .from("members")
-        .select(
-          "id, name, email, onboarding_completed, default_role, organization_id"
-        )
-        .eq("profile_id", user.id)
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!user?.id,
-  });
-
-  // Get organization information
-  const { data: organization, isLoading: orgLoading } = useQuery({
-    queryKey: ["organization", member?.organization_id],
-    queryFn: async () => {
-      if (!member?.organization_id) return null;
-
-      const { data, error } = await supabase
-        .from("organizations")
-        .select("onboarding_completed, name, id")
-        .eq("id", member.organization_id)
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!member?.organization_id,
-  });
+  // Use centralized data hook
+  const { member, organization, isLoading } = useOnboardingData();
 
   // Check if onboarding is completed and redirect
   useEffect(() => {
-    if (!memberLoading && !orgLoading && member) {
+    if (!isLoading && member) {
       // For staff members, just check if their onboarding is completed
       if (member.default_role === "staff" && member.onboarding_completed) {
         navigate("/dashboard", { replace: true });
@@ -68,9 +30,9 @@ export function OnboardingRouter() {
         return;
       }
     }
-  }, [member, organization, memberLoading, orgLoading, navigate]);
+  }, [member, organization, isLoading, navigate]);
 
-  if (memberLoading || orgLoading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
