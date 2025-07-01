@@ -5,9 +5,11 @@ import { Plus, Users, FileText, Clock } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export function Dashboard() {
   const { user } = useAuth();
+  const { canCreateTrials, canInviteMembers, canViewStats } = usePermissions();
 
   // Fetch user's organization ID
   const { data: member } = useQuery({
@@ -115,28 +117,30 @@ export function Dashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <Card key={stat.name} className="p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <stat.icon className={`h-8 w-8 ${stat.color}`} />
+      {/* Stats Grid - Only visible to admin */}
+      {canViewStats && (
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {stats.map((stat) => (
+            <Card key={stat.name} className="p-6">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <stat.icon className={`h-8 w-8 ${stat.color}`} />
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">
+                      {stat.name}
+                    </dt>
+                    <dd className="text-lg font-medium text-gray-900">
+                      {stat.value}
+                    </dd>
+                  </dl>
+                </div>
               </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    {stat.name}
-                  </dt>
-                  <dd className="text-lg font-medium text-gray-900">
-                    {stat.value}
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -145,26 +149,43 @@ export function Dashboard() {
             Quick Actions
           </h3>
           <div className="space-y-3">
-            <Button className="w-full justify-start bg-blue-600 hover:bg-blue-700">
-              <Plus className="h-4 w-4 mr-2" />
-              Create New Trial
-            </Button>
-            <Button variant="outline" className="w-full justify-start">
-              <Users className="h-4 w-4 mr-2" />
-              Invite Team Member
-            </Button>
+            {canCreateTrials && (
+              <Button className="w-full justify-start bg-blue-600 hover:bg-blue-700">
+                <Plus className="h-4 w-4 mr-2" />
+                Create New Trial
+              </Button>
+            )}
+            {canInviteMembers && (
+              <Button variant="outline" className="w-full justify-start">
+                <Users className="h-4 w-4 mr-2" />
+                Invite Team Member
+              </Button>
+            )}
+            {/* Show message if user has no quick actions available */}
+            {!canCreateTrials && !canInviteMembers && (
+              <div className="text-sm text-gray-500">
+                <p>Welcome to your dashboard!</p>
+                <p className="mt-2">
+                  Access your assigned trials from the Trials section.
+                </p>
+              </div>
+            )}
           </div>
         </Card>
 
-        <Card className="p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">
-            Recent Activity
-          </h3>
-          <div className="text-sm text-gray-500">
-            <p>No recent activity to show.</p>
-            <p className="mt-2">Start by creating your first clinical trial!</p>
-          </div>
-        </Card>
+        {canViewStats && (
+          <Card className="p-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">
+              Recent Activity
+            </h3>
+            <div className="text-sm text-gray-500">
+              <p>No recent activity to show.</p>
+              <p className="mt-2">
+                Start by creating your first clinical trial!
+              </p>
+            </div>
+          </Card>
+        )}
       </div>
     </div>
   );

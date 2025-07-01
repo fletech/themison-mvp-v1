@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useOrganization } from "@/hooks/useOrganization";
+import { usePermissions } from "@/hooks/usePermissions";
 import {
   Users,
   UserPlus,
@@ -142,6 +143,7 @@ interface MemberCardProps {
 }
 
 function MemberCard({ member, onRemove, onUpdateRole }: MemberCardProps) {
+  const { canManageMembers } = usePermissions();
   const [showActions, setShowActions] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -193,38 +195,40 @@ function MemberCard({ member, onRemove, onUpdateRole }: MemberCardProps) {
             {member.default_role}
           </span>
 
-          <div className="relative">
-            <button
-              onClick={() => setShowActions(!showActions)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              disabled={loading}
-            >
-              <MoreHorizontal className="h-4 w-4 text-gray-500" />
-            </button>
+          {canManageMembers && (
+            <div className="relative">
+              <button
+                onClick={() => setShowActions(!showActions)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                disabled={loading}
+              >
+                <MoreHorizontal className="h-4 w-4 text-gray-500" />
+              </button>
 
-            {showActions && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
-                <button
-                  onClick={() => {
-                    // Handle edit role
-                    setShowActions(false);
-                  }}
-                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
-                >
-                  <Edit className="h-4 w-4" />
-                  <span>Edit Role</span>
-                </button>
-                <button
-                  onClick={handleRemove}
-                  className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
-                  disabled={loading}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  <span>Remove Member</span>
-                </button>
-              </div>
-            )}
-          </div>
+              {showActions && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
+                  <button
+                    onClick={() => {
+                      // Handle edit role
+                      setShowActions(false);
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                  >
+                    <Edit className="h-4 w-4" />
+                    <span>Edit Role</span>
+                  </button>
+                  <button
+                    onClick={handleRemove}
+                    className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
+                    disabled={loading}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    <span>Remove Member</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -261,6 +265,7 @@ export function MembersManagement() {
     updateMemberRole,
     stats,
   } = useOrganization();
+  const { canInviteMembers, canViewStats } = usePermissions();
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
@@ -307,57 +312,61 @@ export function MembersManagement() {
               Manage your organization's team members and their roles
             </p>
           </div>
-          <Button
-            onClick={() => setShowInviteModal(true)}
-            className="flex items-center space-x-2"
-          >
-            <UserPlus className="h-4 w-4" />
-            <span>Invite Member</span>
-          </Button>
+          {canInviteMembers && (
+            <Button
+              onClick={() => setShowInviteModal(true)}
+              className="flex items-center space-x-2"
+            >
+              <UserPlus className="h-4 w-4" />
+              <span>Invite Member</span>
+            </Button>
+          )}
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white rounded-xl p-6 border border-gray-100">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Users className="h-5 w-5 text-blue-600" />
+        {/* Stats - Only visible to admin */}
+        {canViewStats && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white rounded-xl p-6 border border-gray-100">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Users className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Total Members</p>
+                  <p className="text-xl font-bold text-gray-900">
+                    {stats.totalMembers}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-gray-600">Total Members</p>
-                <p className="text-xl font-bold text-gray-900">
-                  {stats.totalMembers}
-                </p>
+            </div>
+            <div className="bg-white rounded-xl p-6 border border-gray-100">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <Check className="h-5 w-5 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Active Members</p>
+                  <p className="text-xl font-bold text-gray-900">
+                    {members.filter((m) => m.onboarding_completed).length}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-xl p-6 border border-gray-100">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-orange-100 rounded-lg">
+                  <Mail className="h-5 w-5 text-orange-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Pending Invites</p>
+                  <p className="text-xl font-bold text-gray-900">
+                    {stats.totalInvitations}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-xl p-6 border border-gray-100">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <Check className="h-5 w-5 text-green-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Active Members</p>
-                <p className="text-xl font-bold text-gray-900">
-                  {members.filter((m) => m.onboarding_completed).length}
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white rounded-xl p-6 border border-gray-100">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-orange-100 rounded-lg">
-                <Mail className="h-5 w-5 text-orange-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Pending Invites</p>
-                <p className="text-xl font-bold text-gray-900">
-                  {stats.totalInvitations}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+        )}
 
         {/* Filters */}
         <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
@@ -397,7 +406,7 @@ export function MembersManagement() {
                 ? "Try adjusting your search or filter criteria"
                 : "Start by inviting team members to your organization"}
             </p>
-            {!searchTerm && roleFilter === "all" && (
+            {!searchTerm && roleFilter === "all" && canInviteMembers && (
               <Button onClick={() => setShowInviteModal(true)}>
                 <UserPlus className="h-4 w-4 mr-2" />
                 Invite First Member

@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useOnboardingData } from "@/hooks/useOnboardingData";
+import { usePermissions } from "@/hooks/usePermissions";
 import { User, Users, UserCheck } from "lucide-react";
 
 export function TrialsPage() {
@@ -18,6 +19,9 @@ export function TrialsPage() {
     getUserRoleInTrial,
     userTrialAssignments,
   } = useOnboardingData();
+
+  // Get permissions for current user
+  const { canCreateTrials, canViewAllTrials } = usePermissions();
 
   const trials = metrics?.trials || [];
   const trialMembers = userTrialAssignments || [];
@@ -65,7 +69,11 @@ export function TrialsPage() {
       activePhase === "All phases" || trial.phase === activePhase;
     const locationMatch =
       activeLocation === "All places" || trial.location === activeLocation;
-    return phaseMatch && locationMatch;
+
+    // Staff users can only see trials they are assigned to
+    const accessMatch = canViewAllTrials || isUserAssignedToTrial(trial.id);
+
+    return phaseMatch && locationMatch && accessMatch;
   });
 
   // Get PI and member count for a trial
@@ -83,7 +91,7 @@ export function TrialsPage() {
       <DashboardLayout
         title="Trials"
         showSearch={true}
-        showCreateButton={true}
+        showCreateButton={canCreateTrials}
         onCreateClick={handleCreateTrial}
       >
         <div className="space-y-4">
@@ -105,7 +113,7 @@ export function TrialsPage() {
     <DashboardLayout
       title="Trials"
       showSearch={true}
-      showCreateButton={true}
+      showCreateButton={canCreateTrials}
       onCreateClick={handleCreateTrial}
     >
       <div className="space-y-6">

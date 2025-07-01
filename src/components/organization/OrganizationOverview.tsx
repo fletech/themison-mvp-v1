@@ -1,5 +1,6 @@
 import React from "react";
 import { useOrganization } from "@/hooks/useOrganization";
+import { usePermissions } from "@/hooks/usePermissions";
 import {
   Building2,
   Users,
@@ -113,36 +114,45 @@ function OrganizationHeader({ organization }: OrganizationHeaderProps) {
 }
 
 function QuickActions() {
+  const { canInviteMembers, canManageRoles, canViewInvitations } =
+    usePermissions();
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">
         Quick Actions
       </h3>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <button className="flex items-center space-x-3 p-4 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors group">
-          <Users className="h-5 w-5 text-blue-600 group-hover:scale-110 transition-transform" />
-          <span className="text-sm font-medium text-blue-900">
-            Invite Members
-          </span>
-        </button>
-        <button className="flex items-center space-x-3 p-4 rounded-xl bg-green-50 hover:bg-green-100 transition-colors group">
-          <Shield className="h-5 w-5 text-green-600 group-hover:scale-110 transition-transform" />
-          <span className="text-sm font-medium text-green-900">
-            Manage Roles
-          </span>
-        </button>
+        {canInviteMembers && (
+          <button className="flex items-center space-x-3 p-4 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors group">
+            <Users className="h-5 w-5 text-blue-600 group-hover:scale-110 transition-transform" />
+            <span className="text-sm font-medium text-blue-900">
+              Invite Members
+            </span>
+          </button>
+        )}
+        {canManageRoles && (
+          <button className="flex items-center space-x-3 p-4 rounded-xl bg-green-50 hover:bg-green-100 transition-colors group">
+            <Shield className="h-5 w-5 text-green-600 group-hover:scale-110 transition-transform" />
+            <span className="text-sm font-medium text-green-900">
+              Manage Roles
+            </span>
+          </button>
+        )}
         <button className="flex items-center space-x-3 p-4 rounded-xl bg-purple-50 hover:bg-purple-100 transition-colors group">
           <FileText className="h-5 w-5 text-purple-600 group-hover:scale-110 transition-transform" />
           <span className="text-sm font-medium text-purple-900">
             View Trials
           </span>
         </button>
-        <button className="flex items-center space-x-3 p-4 rounded-xl bg-orange-50 hover:bg-orange-100 transition-colors group">
-          <Mail className="h-5 w-5 text-orange-600 group-hover:scale-110 transition-transform" />
-          <span className="text-sm font-medium text-orange-900">
-            Invitations
-          </span>
-        </button>
+        {canViewInvitations && (
+          <button className="flex items-center space-x-3 p-4 rounded-xl bg-orange-50 hover:bg-orange-100 transition-colors group">
+            <Mail className="h-5 w-5 text-orange-600 group-hover:scale-110 transition-transform" />
+            <span className="text-sm font-medium text-orange-900">
+              Invitations
+            </span>
+          </button>
+        )}
       </div>
     </div>
   );
@@ -150,6 +160,7 @@ function QuickActions() {
 
 export function OrganizationOverview() {
   const { organization, stats, loading, error } = useOrganization();
+  const { canViewStats } = usePermissions();
 
   if (loading) {
     return (
@@ -201,68 +212,72 @@ export function OrganizationOverview() {
         {/* Organization Header */}
         <OrganizationHeader organization={organization} />
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatCard
-            title="Team Members"
-            value={stats.totalMembers}
-            icon={Users}
-            description="Active members in organization"
-            color="bg-blue-500"
-            trend={{ value: 12, isPositive: true }}
-          />
-          <StatCard
-            title="Active Trials"
-            value={stats.totalTrials}
-            icon={FileText}
-            description="Currently running trials"
-            color="bg-green-500"
-            trend={{ value: 8, isPositive: true }}
-          />
-          <StatCard
-            title="Custom Roles"
-            value={stats.totalRoles}
-            icon={Shield}
-            description="Defined access roles"
-            color="bg-purple-500"
-          />
-          <StatCard
-            title="Pending Invites"
-            value={stats.totalInvitations}
-            icon={Mail}
-            description="Outstanding invitations"
-            color="bg-orange-500"
-          />
-        </div>
+        {/* Stats Grid - Only visible to admin */}
+        {canViewStats && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <StatCard
+              title="Team Members"
+              value={stats.totalMembers}
+              icon={Users}
+              description="Active members in organization"
+              color="bg-blue-500"
+              trend={{ value: 12, isPositive: true }}
+            />
+            <StatCard
+              title="Active Trials"
+              value={stats.totalTrials}
+              icon={FileText}
+              description="Currently running trials"
+              color="bg-green-500"
+              trend={{ value: 8, isPositive: true }}
+            />
+            <StatCard
+              title="Custom Roles"
+              value={stats.totalRoles}
+              icon={Shield}
+              description="Defined access roles"
+              color="bg-purple-500"
+            />
+            <StatCard
+              title="Pending Invites"
+              value={stats.totalInvitations}
+              icon={Mail}
+              description="Outstanding invitations"
+              color="bg-orange-500"
+            />
+          </div>
+        )}
 
         {/* Quick Actions */}
         <QuickActions />
 
-        {/* Recent Activity Placeholder */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Recent Activity
-          </h3>
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="flex items-center space-x-4 p-4 bg-gray-50 rounded-xl"
-              >
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">
-                    Activity placeholder {i}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    This is where recent activity would appear
-                  </p>
+        {/* Recent Activity Placeholder - Only visible to admin */}
+        {canViewStats && (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Recent Activity
+            </h3>
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="flex items-center space-x-4 p-4 bg-gray-50 rounded-xl"
+                >
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-900">
+                      Activity placeholder {i}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      This is where recent activity would appear
+                    </p>
+                  </div>
+                  <span className="text-xs text-gray-400">2h ago</span>
                 </div>
-                <span className="text-xs text-gray-400">2h ago</span>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </ErrorBoundary>
   );
