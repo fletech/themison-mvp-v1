@@ -23,6 +23,7 @@ import {
   Settings,
   ChevronDown,
   ChevronUp,
+  UserCheck,
 } from "lucide-react";
 import { InviteMembers } from "./InviteMembers";
 import { CreateCustomRoles } from "./CreateCustomRoles";
@@ -47,8 +48,13 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
 
   const INITIAL_DISPLAY_LIMIT = 5;
 
-  // Use centralized hooks
-  const { metrics, isLoading: metricsLoading } = useOnboardingData();
+  // Use centralized hooks with new trial assignment functions
+  const {
+    metrics,
+    isLoading: metricsLoading,
+    isUserAssignedToTrial,
+    getUserRoleInTrial,
+  } = useOnboardingData();
 
   // Fetch pending invitations separately for display
   const { data: pendingInvitations = [] } = useQuery({
@@ -322,27 +328,54 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
 
             {trialsCount > 0 ? (
               <div className="space-y-3">
-                {displayedTrials?.map((trial) => (
-                  <div key={trial.id} className="border rounded-lg p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-medium text-gray-900">
-                          {trial.name}
-                        </h3>
-                        <p className="text-sm text-gray-600">
-                          • {trial.sponsor}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <Badge variant={"secondary"}>{trial.phase}</Badge>
-                        <p className="text-xs text-gray-500 mt-1">
-                          Created:{" "}
-                          {new Date(trial.created_at).toLocaleDateString()}
-                        </p>
+                {displayedTrials?.map((trial) => {
+                  const isAssigned = isUserAssignedToTrial(trial.id);
+                  const userRole = getUserRoleInTrial(trial.id);
+
+                  return (
+                    <div
+                      key={trial.id}
+                      className={`border rounded-lg p-4 ${
+                        isAssigned ? "bg-blue-50 border-blue-200" : ""
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-medium text-gray-900">
+                              {trial.name}
+                            </h3>
+                            {isAssigned && (
+                              <Badge
+                                variant="outline"
+                                className="bg-blue-100 text-blue-800 border-blue-300"
+                              >
+                                <UserCheck className="h-3 w-3 mr-1" />
+                                Assigned
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-600">
+                            • {trial.sponsor}
+                          </p>
+                          {isAssigned && userRole && (
+                            <p className="text-xs text-blue-700 mt-1">
+                              Your role: {userRole.name} (
+                              {userRole.permission_level})
+                            </p>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <Badge variant={"secondary"}>{trial.phase}</Badge>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Created:{" "}
+                            {new Date(trial.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
 
                 {trialsCount > INITIAL_DISPLAY_LIMIT && (
                   <Button

@@ -44,6 +44,9 @@ export function useOnboardingMutations({
         queryKey: ["pending-invitations-count"],
       });
       queryClient.invalidateQueries({
+        queryKey: ["pending-invitations", organizationId],
+      });
+      queryClient.invalidateQueries({
         queryKey: ["organization-metrics"],
       });
     },

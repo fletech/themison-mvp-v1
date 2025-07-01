@@ -51,6 +51,28 @@ export function useOnboardingData() {
     enabled: !!member?.organization_id,
   });
 
+  // Get trial assignments for current user
+  const {
+    data: userTrialAssignments = [],
+    isLoading: assignmentsLoading,
+    error: assignmentsError,
+  } = useQuery({
+    queryKey: ["user-trial-assignments", member?.id],
+    queryFn: async () => {
+      if (!member?.id) return [];
+
+      const { data, error } = await supabase
+        .from("trial_members")
+        .select("trial_id, role_id, is_active, roles(name, permission_level)")
+        .eq("member_id", member.id)
+        .eq("is_active", true);
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!member?.id,
+  });
+
   // Get organization metrics (for AdminOverview)
   const {
     data: metrics,
@@ -72,7 +94,9 @@ export function useOnboardingData() {
       const [trialsResult, membersResult, rolesResult] = await Promise.all([
         supabase
           .from("trials")
-          .select("id, name, status, phase, sponsor, created_at")
+          .select(
+            "id, name, status, phase, sponsor, location, description, created_at"
+          )
           .eq("organization_id", organization.id),
         supabase
           .from("members")
@@ -129,6 +153,21 @@ export function useOnboardingData() {
     enabled: !!user?.id,
   });
 
+  // Helper function to check if user is assigned to a trial
+  const isUserAssignedToTrial = (trialId: string) => {
+    return userTrialAssignments.some(
+      (assignment) => assignment.trial_id === trialId
+    );
+  };
+
+  // Helper function to get user's role in a trial
+  const getUserRoleInTrial = (trialId: string) => {
+    const assignment = userTrialAssignments.find(
+      (assignment) => assignment.trial_id === trialId
+    );
+    return assignment?.roles || null;
+  };
+
   const isLoading = memberLoading || organizationLoading;
   const hasError = memberError || organizationError;
 
@@ -137,15 +176,21 @@ export function useOnboardingData() {
     member,
     organization,
     metrics,
+    userTrialAssignments,
 
     // Compatibility data for existing components
     memberData,
+
+    // Helper functions
+    isUserAssignedToTrial,
+    getUserRoleInTrial,
 
     // Loading states
     isLoading,
     memberLoading,
     organizationLoading,
     metricsLoading,
+    assignmentsLoading,
     memberDataLoading,
 
     // Error states
@@ -153,6 +198,7 @@ export function useOnboardingData() {
     memberError,
     organizationError,
     metricsError,
+    assignmentsError,
     memberDataError,
 
     // Computed values

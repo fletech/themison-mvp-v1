@@ -1,0 +1,269 @@
+import React from "react";
+import { useOrganization } from "@/hooks/useOrganization";
+import {
+  Building2,
+  Users,
+  FileText,
+  Shield,
+  Mail,
+  Calendar,
+  TrendingUp,
+  AlertCircle,
+} from "lucide-react";
+import { format } from "date-fns";
+import { LoadingSpinner } from "./LoadingSpinner.tsx";
+import { ErrorBoundary } from "./ErrorBoundary.tsx";
+
+interface StatCardProps {
+  title: string;
+  value: number;
+  icon: React.ElementType;
+  description: string;
+  trend?: {
+    value: number;
+    isPositive: boolean;
+  };
+  color: string;
+}
+
+function StatCard({
+  title,
+  value,
+  icon: Icon,
+  description,
+  trend,
+  color,
+}: StatCardProps) {
+  return (
+    <div className="relative overflow-hidden bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300">
+      <div className="p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className={`p-3 rounded-xl ${color}`}>
+              <Icon className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600">{title}</p>
+              <p className="text-2xl font-bold text-gray-900">{value}</p>
+            </div>
+          </div>
+          {trend && (
+            <div
+              className={`flex items-center space-x-1 ${
+                trend.isPositive ? "text-green-600" : "text-red-600"
+              }`}
+            >
+              <TrendingUp
+                className={`h-4 w-4 ${trend.isPositive ? "" : "rotate-180"}`}
+              />
+              <span className="text-sm font-medium">{trend.value}%</span>
+            </div>
+          )}
+        </div>
+        <p className="mt-2 text-sm text-gray-500">{description}</p>
+      </div>
+      <div
+        className={`h-1 ${color
+          .replace("bg-", "from-")
+          .replace("-500", "-400")} bg-gradient-to-r to-transparent`}
+      />
+    </div>
+  );
+}
+
+interface OrganizationHeaderProps {
+  organization: NonNullable<ReturnType<typeof useOrganization>["organization"]>;
+}
+
+function OrganizationHeader({ organization }: OrganizationHeaderProps) {
+  return (
+    <div className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-2xl p-8 border border-blue-200">
+      <div className="flex items-start justify-between">
+        <div className="flex items-center space-x-4">
+          <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-4 rounded-2xl shadow-lg">
+            <Building2 className="h-8 w-8 text-white" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">
+              {organization.name}
+            </h1>
+            <div className="flex items-center space-x-4 mt-2">
+              <div className="flex items-center space-x-1 text-gray-600">
+                <Calendar className="h-4 w-4" />
+                <span className="text-sm">
+                  Created{" "}
+                  {format(new Date(organization.created_at!), "MMM dd, yyyy")}
+                </span>
+              </div>
+              <div
+                className={`px-3 py-1 rounded-full text-xs font-medium ${
+                  organization.onboarding_completed
+                    ? "bg-green-100 text-green-800"
+                    : "bg-orange-100 text-orange-800"
+                }`}
+              >
+                {organization.onboarding_completed ? "Active" : "Setup Pending"}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function QuickActions() {
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        Quick Actions
+      </h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <button className="flex items-center space-x-3 p-4 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors group">
+          <Users className="h-5 w-5 text-blue-600 group-hover:scale-110 transition-transform" />
+          <span className="text-sm font-medium text-blue-900">
+            Invite Members
+          </span>
+        </button>
+        <button className="flex items-center space-x-3 p-4 rounded-xl bg-green-50 hover:bg-green-100 transition-colors group">
+          <Shield className="h-5 w-5 text-green-600 group-hover:scale-110 transition-transform" />
+          <span className="text-sm font-medium text-green-900">
+            Manage Roles
+          </span>
+        </button>
+        <button className="flex items-center space-x-3 p-4 rounded-xl bg-purple-50 hover:bg-purple-100 transition-colors group">
+          <FileText className="h-5 w-5 text-purple-600 group-hover:scale-110 transition-transform" />
+          <span className="text-sm font-medium text-purple-900">
+            View Trials
+          </span>
+        </button>
+        <button className="flex items-center space-x-3 p-4 rounded-xl bg-orange-50 hover:bg-orange-100 transition-colors group">
+          <Mail className="h-5 w-5 text-orange-600 group-hover:scale-110 transition-transform" />
+          <span className="text-sm font-medium text-orange-900">
+            Invitations
+          </span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export function OrganizationOverview() {
+  const { organization, stats, loading, error } = useOrganization();
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <div className="text-center">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            Something went wrong
+          </h3>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!organization) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <div className="text-center">
+          <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            No Organization Found
+          </h3>
+          <p className="text-gray-600">
+            You don't seem to belong to any organization yet.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <ErrorBoundary>
+      <div className="space-y-8">
+        {/* Organization Header */}
+        <OrganizationHeader organization={organization} />
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StatCard
+            title="Team Members"
+            value={stats.totalMembers}
+            icon={Users}
+            description="Active members in organization"
+            color="bg-blue-500"
+            trend={{ value: 12, isPositive: true }}
+          />
+          <StatCard
+            title="Active Trials"
+            value={stats.totalTrials}
+            icon={FileText}
+            description="Currently running trials"
+            color="bg-green-500"
+            trend={{ value: 8, isPositive: true }}
+          />
+          <StatCard
+            title="Custom Roles"
+            value={stats.totalRoles}
+            icon={Shield}
+            description="Defined access roles"
+            color="bg-purple-500"
+          />
+          <StatCard
+            title="Pending Invites"
+            value={stats.totalInvitations}
+            icon={Mail}
+            description="Outstanding invitations"
+            color="bg-orange-500"
+          />
+        </div>
+
+        {/* Quick Actions */}
+        <QuickActions />
+
+        {/* Recent Activity Placeholder */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Recent Activity
+          </h3>
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="flex items-center space-x-4 p-4 bg-gray-50 rounded-xl"
+              >
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-900">
+                    Activity placeholder {i}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    This is where recent activity would appear
+                  </p>
+                </div>
+                <span className="text-xs text-gray-400">2h ago</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </ErrorBoundary>
+  );
+}

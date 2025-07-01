@@ -40,6 +40,7 @@ export function TeamMemberAssignment({
   onAutoAssignPIChange,
 }: TeamMemberAssignmentProps) {
   const [assignments, setAssignments] = useState<TeamAssignment[]>([]);
+  const [autoAssignedPIId, setAutoAssignedPIId] = useState<string | null>(null); // Track auto-assigned PI
 
   // Fetch all confirmed members (removed onboarding_completed filter)
   const { data: members = [] } = useQuery({
@@ -112,34 +113,45 @@ export function TeamMemberAssignment({
   // Effect to handle auto-assign PI checkbox changes
   useEffect(() => {
     if (autoAssignAsPI && piRole && currentUserMember) {
-      // Check if current user is already assigned as PI
-      const existingPIAssignment = assignments.find(
-        (assignment) =>
-          assignment.memberId === currentUserMember.id &&
-          assignment.roleId === piRole.id
+      // Check if current user is already assigned with any role
+      const existingUserAssignmentIndex = assignments.findIndex(
+        (assignment) => assignment.memberId === currentUserMember.id
       );
 
-      if (!existingPIAssignment) {
-        // Add new assignment for current user as PI
-        const newPIAssignment: TeamAssignment = {
-          memberId: currentUserMember.id,
-          memberName: currentUserMember.name,
-          memberEmail: currentUserMember.email,
-          roleId: piRole.id,
-          roleName: piRole.name,
-          type: "confirmed",
-        };
+      const newPIAssignment: TeamAssignment = {
+        memberId: currentUserMember.id,
+        memberName: currentUserMember.name,
+        memberEmail: currentUserMember.email,
+        roleId: piRole.id,
+        roleName: piRole.name,
+        type: "confirmed",
+      };
 
-        const updatedAssignments = [...assignments, newPIAssignment];
-        setAssignments(updatedAssignments);
-        onAssignmentsChange(updatedAssignments);
+      let updatedAssignments;
+      if (existingUserAssignmentIndex !== -1) {
+        // Replace existing assignment with PI role
+        updatedAssignments = [...assignments];
+        updatedAssignments[existingUserAssignmentIndex] = newPIAssignment;
+      } else {
+        // Add new assignment for current user as PI
+        updatedAssignments = [...assignments, newPIAssignment];
       }
-    } else if (!autoAssignAsPI && piRole && currentUserMember) {
-      // Remove auto-assigned PI assignment when unchecking
+
+      setAssignments(updatedAssignments);
+      onAssignmentsChange(updatedAssignments);
+      // Track this as auto-assigned
+      setAutoAssignedPIId(currentUserMember.id);
+    } else if (
+      !autoAssignAsPI &&
+      piRole &&
+      currentUserMember &&
+      autoAssignedPIId
+    ) {
+      // Only remove PI assignment if it was auto-assigned (not manually assigned)
       const updatedAssignments = assignments.filter(
         (assignment) =>
           !(
-            assignment.memberId === currentUserMember.id &&
+            assignment.memberId === autoAssignedPIId &&
             assignment.roleId === piRole.id
           )
       );
@@ -147,6 +159,7 @@ export function TeamMemberAssignment({
       if (updatedAssignments.length !== assignments.length) {
         setAssignments(updatedAssignments);
         onAssignmentsChange(updatedAssignments);
+        setAutoAssignedPIId(null);
       }
     }
   }, [
@@ -155,6 +168,7 @@ export function TeamMemberAssignment({
     currentUserMember,
     assignments,
     onAssignmentsChange,
+    autoAssignedPIId,
   ]);
 
   // Combine members and pending invitations into a single list
@@ -205,15 +219,15 @@ export function TeamMemberAssignment({
   const removeAssignment = (index: number) => {
     const assignment = assignments[index];
 
-    // If removing the current user's PI assignment, also uncheck the auto-assign checkbox
+    // If removing the current user's PI assignment, also uncheck the auto-assign checkbox and clear the auto-assigned ID
     if (
-      autoAssignAsPI &&
       piRole &&
       currentUserMember &&
       assignment.memberId === currentUserMember.id &&
       assignment.roleId === piRole.id
     ) {
       onAutoAssignPIChange(false);
+      setAutoAssignedPIId(null);
     }
 
     const updatedAssignments = assignments.filter((_, i) => i !== index);
@@ -255,6 +269,28 @@ export function TeamMemberAssignment({
       const role = roles.find((r) => r.id === value);
       if (role) {
         updatedAssignments[index].roleName = role.name;
+
+        // Check if user is manually assigning themselves as PI
+        const isPIRole = piRole && role.id === piRole.id;
+        const assignment = updatedAssignments[index];
+        const isCurrentUser =
+          currentUserMember && assignment.memberId === currentUserMember.id;
+
+        if (isPIRole && isCurrentUser && !autoAssignAsPI) {
+          // User manually assigned themselves as PI, auto-check the checkbox
+          onAutoAssignPIChange(true);
+          setAutoAssignedPIId(currentUserMember.id);
+
+          // Remove any other assignment for the current user (avoid duplicates)
+          const finalAssignments = updatedAssignments.filter(
+            (_, i) =>
+              i === index ||
+              updatedAssignments[i].memberId !== currentUserMember.id
+          );
+          setAssignments(finalAssignments);
+          onAssignmentsChange(finalAssignments);
+          return; // Early return to avoid setting assignments twice
+        }
       }
     }
 

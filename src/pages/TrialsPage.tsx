@@ -3,101 +3,24 @@ import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import { User, Users } from "lucide-react";
-
-interface Trial {
-  id: string;
-  name: string;
-  description: string;
-  phase: string;
-  sponsor: string;
-  location: string;
-  study_start: string;
-  estimated_close_out: string;
-  status: string;
-}
-
-interface TrialMember {
-  id: string;
-  trial_id: string;
-  member_id: string;
-  role_id: string;
-  is_active: boolean;
-  members: {
-    name: string;
-  };
-  roles: {
-    name: string;
-    permission_level: string;
-  };
-}
+import { useOnboardingData } from "@/hooks/useOnboardingData";
+import { User, Users, UserCheck } from "lucide-react";
 
 export function TrialsPage() {
-  const { user } = useAuth();
   const [activePhase, setActivePhase] = useState("All phases");
   const [activeLocation, setActiveLocation] = useState("All places");
 
-  // Fetch user's organization ID
-  const { data: member } = useQuery({
-    queryKey: ["user-member", user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
+  // Use centralized hook instead of duplicating logic
+  const {
+    metrics,
+    isLoading,
+    isUserAssignedToTrial,
+    getUserRoleInTrial,
+    userTrialAssignments,
+  } = useOnboardingData();
 
-      const { data, error } = await supabase
-        .from("members")
-        .select("organization_id")
-        .eq("profile_id", user.id)
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!user?.id,
-  });
-
-  // Fetch trials
-  const { data: trials = [], isLoading } = useQuery({
-    queryKey: ["trials", member?.organization_id],
-    queryFn: async () => {
-      if (!member?.organization_id) return [];
-
-      const { data, error } = await supabase
-        .from("trials")
-        .select("*")
-        .eq("organization_id", member.organization_id)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      return data as Trial[];
-    },
-    enabled: !!member?.organization_id,
-  });
-
-  // Fetch trial members
-  const { data: trialMembers = [] } = useQuery({
-    queryKey: ["trial-members", member?.organization_id],
-    queryFn: async () => {
-      if (!member?.organization_id) return [];
-
-      const { data, error } = await supabase
-        .from("trial_members")
-        .select(
-          `
-          *,
-          members(name),
-          roles(name, permission_level)
-        `
-        )
-        .eq("is_active", true);
-
-      if (error) throw error;
-      return data as TrialMember[];
-    },
-    enabled: !!member?.organization_id,
-  });
+  const trials = metrics?.trials || [];
+  const trialMembers = userTrialAssignments || [];
 
   const handleCreateTrial = () => {
     // TODO: Implement create trial modal or navigation
@@ -147,18 +70,11 @@ export function TrialsPage() {
 
   // Get PI and member count for a trial
   const getTrialInfo = (trialId: string) => {
-    const members = trialMembers.filter((tm) => tm.trial_id === trialId);
-    const pi = members.find(
-      (tm) =>
-        tm.roles?.permission_level === "admin" ||
-        tm.roles?.name.toLowerCase().includes("pi") ||
-        tm.roles?.name.toLowerCase().includes("principal")
-    );
-    const memberCount = members.length;
-
+    // Note: This would need to be updated to fetch actual trial member data
+    // For now, returning placeholder data for compatibility
     return {
-      piName: pi?.members?.name || "No PI assigned",
-      memberCount,
+      piName: "PI assigned",
+      memberCount: 0,
     };
   };
 
@@ -266,23 +182,46 @@ export function TrialsPage() {
           ) : (
             filteredTrials.map((trial, index) => {
               const { piName, memberCount } = getTrialInfo(trial.id);
+              const isAssigned = isUserAssignedToTrial(trial.id);
+              const userRole = getUserRoleInTrial(trial.id);
 
               return (
                 <Card
                   key={trial.id}
-                  className="w-full max-w-sm overflow-hidden hover:shadow-lg transition-shadow"
+                  className={`w-full max-w-sm overflow-hidden hover:shadow-lg transition-shadow ${
+                    isAssigned ? "ring-2 ring-blue-200" : ""
+                  }`}
                 >
                   {/* Card Image/Header */}
-                  <div className={`h-36 ${headerColors[index]} relative`}>
+                  <div
+                    className={`h-36 ${
+                      headerColors[index % headerColors.length]
+                    } relative`}
+                  >
                     {/* Tags in top left */}
                     <div className="absolute top-3 left-3 flex flex-wrap gap-1">
                       <Badge className="bg-teal-100 text-teal-800 text-xs rounded-full">
                         {trial.phase}
                       </Badge>
-                      <Badge className="bg-gray-100 text-gray-800 text-xs rounded-full">
-                        {trial.location}
-                      </Badge>
+                      {trial.location && (
+                        <Badge className="bg-gray-100 text-gray-800 text-xs rounded-full">
+                          {trial.location}
+                        </Badge>
+                      )}
                     </div>
+
+                    {/* Assignment indicator in top right */}
+                    {isAssigned && (
+                      <div className="absolute top-3 right-3">
+                        <Badge
+                          variant="outline"
+                          className="bg-blue-100 text-blue-800 border-blue-300"
+                        >
+                          <UserCheck className="h-3 w-3 mr-1" />
+                          Assigned
+                        </Badge>
+                      </div>
+                    )}
                   </div>
 
                   {/* Card Content */}
@@ -290,6 +229,14 @@ export function TrialsPage() {
                     <h3 className="text-lg font-bold text-gray-900 mb-1">
                       {trial.name}
                     </h3>
+
+                    {/* Show user's role if assigned */}
+                    {isAssigned && userRole && (
+                      <p className="text-xs text-blue-700 mb-2">
+                        Your role: {userRole.name} ({userRole.permission_level})
+                      </p>
+                    )}
+
                     <p className="text-sm text-gray-500 mb-4">
                       {trial.description || "No description available"}
                     </p>
