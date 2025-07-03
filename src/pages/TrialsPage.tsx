@@ -3,28 +3,57 @@ import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useOnboardingData } from "@/hooks/useOnboardingData";
+import { useAppData } from "@/contexts/AppDataContext";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { User, Users, UserCheck } from "lucide-react";
 
 export function TrialsPage() {
   const [activePhase, setActivePhase] = useState("All phases");
   const [activeLocation, setActiveLocation] = useState("All places");
 
-  // Use centralized hook instead of duplicating logic
+  // Use AppData context instead of duplicating logic
   const {
-    metrics,
+    trials,
     isLoading,
     isUserAssignedToTrial,
     getUserRoleInTrial,
     userTrialAssignments,
-  } = useOnboardingData();
+  } = useAppData();
 
   // Get permissions for current user
   const { canCreateTrials, canViewAllTrials } = usePermissions();
 
-  const trials = metrics?.trials || [];
-  const trialMembers = userTrialAssignments || [];
+  // Get trial team members for all trials
+  const { data: trialTeams = {} } = useQuery({
+    queryKey: ["trial-teams", trials.map((t) => t.id)],
+    queryFn: async () => {
+      const teams: Record<string, any[]> = {};
+
+      // Fetch team members for each trial
+      for (const trial of trials) {
+        try {
+          const { data, error } = await supabase.rpc("get_trial_team", {
+            trial_id_param: trial.id,
+          });
+
+          if (error) {
+            console.error(`Error fetching team for trial ${trial.id}:`, error);
+            teams[trial.id] = [];
+          } else {
+            teams[trial.id] = data || [];
+          }
+        } catch (err) {
+          console.error(`Exception fetching team for trial ${trial.id}:`, err);
+          teams[trial.id] = [];
+        }
+      }
+
+      return teams;
+    },
+    enabled: trials.length > 0,
+  });
 
   const handleCreateTrial = () => {
     // TODO: Implement create trial modal or navigation
@@ -78,11 +107,26 @@ export function TrialsPage() {
 
   // Get PI and member count for a trial
   const getTrialInfo = (trialId: string) => {
-    // Note: This would need to be updated to fetch actual trial member data
-    // For now, returning placeholder data for compatibility
+    const teamMembers = trialTeams[trialId] || [];
+
+    // Find the PI (Principal Investigator)
+    const pi = teamMembers.find(
+      (member) =>
+        member.role_name.toLowerCase().includes("principal investigator") ||
+        member.role_name.toLowerCase().includes("pi")
+    );
+
+    // Count active members excluding the PI
+    const otherMembers = teamMembers.filter(
+      (member) =>
+        member.is_active &&
+        !member.role_name.toLowerCase().includes("principal investigator") &&
+        !member.role_name.toLowerCase().includes("pi")
+    );
+
     return {
-      piName: "PI assigned",
-      memberCount: 0,
+      piName: pi ? `PI: ${pi.member_name}` : "No PI assigned",
+      memberCount: otherMembers.length,
     };
   };
 
@@ -220,7 +264,7 @@ export function TrialsPage() {
 
                     {/* Assignment indicator in top right */}
                     {isAssigned && (
-                      <div className="absolute top-3 right-3">
+                      <div className="absolute bottom-3 left-3">
                         <Badge
                           variant="outline"
                           className="bg-blue-100 text-blue-800 border-blue-300"

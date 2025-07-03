@@ -272,6 +272,78 @@ export type Database = {
         };
         Relationships: [];
       };
+      trial_documents: {
+        Row: {
+          amendment_number: number | null;
+          created_at: string;
+          description: string | null;
+          document_name: string;
+          document_type: Database["public"]["Enums"]["document_type_enum"];
+          document_url: string;
+          file_size: number | null;
+          id: string;
+          is_latest: boolean | null;
+          mime_type: string | null;
+          status: string | null;
+          tags: string[] | null;
+          trial_id: string | null;
+          updated_at: string | null;
+          uploaded_by: string | null;
+          version: number | null;
+        };
+        Insert: {
+          amendment_number?: number | null;
+          created_at?: string;
+          description?: string | null;
+          document_name: string;
+          document_type: Database["public"]["Enums"]["document_type_enum"];
+          document_url: string;
+          file_size?: number | null;
+          id?: string;
+          is_latest?: boolean | null;
+          mime_type?: string | null;
+          status?: string | null;
+          tags?: string[] | null;
+          trial_id?: string | null;
+          updated_at?: string | null;
+          uploaded_by?: string | null;
+          version?: number | null;
+        };
+        Update: {
+          amendment_number?: number | null;
+          created_at?: string;
+          description?: string | null;
+          document_name?: string;
+          document_type?: Database["public"]["Enums"]["document_type_enum"];
+          document_url?: string;
+          file_size?: number | null;
+          id?: string;
+          is_latest?: boolean | null;
+          mime_type?: string | null;
+          status?: string | null;
+          tags?: string[] | null;
+          trial_id?: string | null;
+          updated_at?: string | null;
+          uploaded_by?: string | null;
+          version?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "trial_documents_trial_id_fkey";
+            columns: ["trial_id"];
+            isOneToOne: false;
+            referencedRelation: "trials";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "trial_documents_uploaded_by_fkey";
+            columns: ["uploaded_by"];
+            isOneToOne: false;
+            referencedRelation: "members";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       trial_members: {
         Row: {
           created_at: string | null;
@@ -521,7 +593,7 @@ export type Database = {
         Returns: string;
       };
       create_trial_with_mixed_assignments: {
-        Args: { trial_data: Json; team_assignments: Json[] };
+        Args: { trial_data: Json; team_assignments?: Json[] };
         Returns: string;
       };
       debug_trial_creation: {
@@ -596,6 +668,18 @@ export type Database = {
       };
     };
     Enums: {
+      document_type_enum:
+        | "protocol"
+        | "brochure"
+        | "consent_form"
+        | "report"
+        | "manual"
+        | "plan"
+        | "amendment"
+        | "icf"
+        | "case_report_form"
+        | "standard_operating_procedure"
+        | "other";
       organization_member_type: "admin" | "staff";
       permission_level: "read" | "edit" | "admin";
     };
@@ -728,3 +812,10 @@ export type Member = Tables<"members">;
 export type TrialMember = Tables<"trial_members">;
 export type Role = Tables<"roles">;
 export type Trial = Tables<"trials">;
+
+// New exports for documents
+export type TrialDocument = Tables<"trial_documents">;
+export type TrialDocumentInsert = TablesInsert<"trial_documents">;
+export type TrialDocumentUpdate = TablesUpdate<"trial_documents">;
+export type DocumentTypeEnum =
+  Database["public"]["Enums"]["document_type_enum"];

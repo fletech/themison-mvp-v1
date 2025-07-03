@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { AppDataProvider } from "./contexts/AppDataContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import Index from "./pages/Index";
@@ -14,7 +15,9 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { TrialsPage } from "./pages/TrialsPage";
 import { OrganizationPage } from "./pages/OrganizationPage";
 import OnboardingPage from "./pages/OnboardingPage";
+import DocumentAssistantPage from "./pages/DocumentAssistantPage";
 import NotFound from "./pages/NotFound";
+import { LoadingSpinner } from "./components/organization";
 
 const queryClient = new QueryClient();
 
@@ -45,7 +48,7 @@ function OnboardingRedirect({ children }: { children: React.ReactNode }) {
   if (loading || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+        <LoadingSpinner />
       </div>
     );
   }
@@ -106,9 +109,11 @@ function AppRoutes() {
         path="/dashboard"
         element={
           <ProtectedRoute>
-            <OnboardingRedirect>
-              <DashboardPage />
-            </OnboardingRedirect>
+            <AppDataProvider>
+              <OnboardingRedirect>
+                <DashboardPage />
+              </OnboardingRedirect>
+            </AppDataProvider>
           </ProtectedRoute>
         }
       />
@@ -116,9 +121,11 @@ function AppRoutes() {
         path="/trials"
         element={
           <ProtectedRoute>
-            <OnboardingRedirect>
-              <TrialsPage />
-            </OnboardingRedirect>
+            <AppDataProvider>
+              <OnboardingRedirect>
+                <TrialsPage />
+              </OnboardingRedirect>
+            </AppDataProvider>
           </ProtectedRoute>
         }
       />
@@ -126,9 +133,47 @@ function AppRoutes() {
         path="/organization"
         element={
           <ProtectedRoute>
-            <OnboardingRedirect>
-              <OrganizationPage />
-            </OnboardingRedirect>
+            <AppDataProvider>
+              <OnboardingRedirect>
+                <OrganizationPage />
+              </OnboardingRedirect>
+            </AppDataProvider>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/document-assistant"
+        element={
+          <ProtectedRoute>
+            <AppDataProvider>
+              <OnboardingRedirect>
+                <DocumentAssistantPage />
+              </OnboardingRedirect>
+            </AppDataProvider>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/document-assistant/:trialId"
+        element={
+          <ProtectedRoute>
+            <AppDataProvider>
+              <OnboardingRedirect>
+                <DocumentAssistantPage />
+              </OnboardingRedirect>
+            </AppDataProvider>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/document-assistant/:trialId/:tab"
+        element={
+          <ProtectedRoute>
+            <AppDataProvider>
+              <OnboardingRedirect>
+                <DocumentAssistantPage />
+              </OnboardingRedirect>
+            </AppDataProvider>
           </ProtectedRoute>
         }
       />

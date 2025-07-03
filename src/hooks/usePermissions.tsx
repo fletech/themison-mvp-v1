@@ -1,11 +1,11 @@
-import { useOnboardingData } from "@/hooks/useOnboardingData";
+import { useAppData } from "@/contexts/AppDataContext";
 
 /**
  * Hook para manejar permisos basados en roles organizacionales
  * Reemplaza el hardcoding de verificaciones de default_role
  */
 export function usePermissions() {
-  const { member } = useOnboardingData();
+  const { member } = useAppData();
 
   const isAdmin = member?.default_role === "admin";
   const isStaff = member?.default_role === "staff";

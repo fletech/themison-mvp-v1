@@ -68,9 +68,9 @@ export function DashboardLayout({
     },
     {
       name: "Document Assistant",
-      href: "/documents",
+      href: "/document-assistant",
       icon: MessageSquare,
-      current: location.pathname.startsWith("/documents"),
+      current: location.pathname.startsWith("/document-assistant"),
     },
     {
       name: "Organisation",
@@ -80,13 +80,13 @@ export function DashboardLayout({
     },
     {
       name: "Notifications",
-      href: "/notifications",
+      href: "/#",
       icon: Bell,
       current: location.pathname.startsWith("/notifications"),
     },
     {
       name: "Integrations",
-      href: "/integrations",
+      href: "/#",
       icon: Puzzle,
       current: location.pathname.startsWith("/integrations"),
     },
@@ -95,13 +95,13 @@ export function DashboardLayout({
   const otherItems = [
     {
       name: "Help",
-      href: "/help",
+      href: "/#",
       icon: HelpCircle,
       current: location.pathname.startsWith("/help"),
     },
     {
       name: "Settings",
-      href: "/settings",
+      href: "/#",
       icon: SettingsIcon,
       current: location.pathname.startsWith("/settings"),
     },

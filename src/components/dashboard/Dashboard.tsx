@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { usePermissions } from "@/hooks/usePermissions";
+import { Link } from "react-router-dom";
 
 export function Dashboard() {
   const { user } = useAuth();
@@ -99,19 +100,28 @@ export function Dashboard() {
       value: activeTrialsCount?.toString() || "0",
       icon: FileText,
       color: "text-blue-600",
+      href: "/trials",
     },
-    { name: "Total Patients", value: "0", icon: Users, color: "text-blue-600" },
+    {
+      name: "Total Patients",
+      value: "0",
+      icon: Users,
+      color: "text-blue-600",
+      href: null,
+    },
     {
       name: "Team Members",
       value: teamMembersCount?.toString() || "0",
       icon: Users,
       color: "text-blue-600",
+      href: "/organization",
     },
     {
       name: "Pending Invitations",
       value: pendingInvitationsCount?.toString() || "0",
       icon: Clock,
       color: "text-blue-600",
+      href: null,
     },
   ];
 
@@ -121,42 +131,51 @@ export function Dashboard() {
       {canViewStats && (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {stats.map((stat) => (
-            <Card key={stat.name} className="p-6">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <stat.icon className={`h-8 w-8 ${stat.color}`} />
+            <Link
+              to={stat.href}
+              key={stat.name}
+              className={` ${stat.href ? "" : "cursor-not-allowed"}`}
+            >
+              <Card className="p-6">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <stat.icon className={`h-8 w-8 ${stat.color}`} />
+                  </div>
+                  <div className="ml-5 w-0 flex-1">
+                    <dl>
+                      <dt className="text-sm font-medium text-gray-500 truncate">
+                        {stat.name}
+                      </dt>
+                      <dd className="text-lg font-medium text-gray-900">
+                        {stat.value}
+                      </dd>
+                    </dl>
+                  </div>
                 </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
-                      {stat.name}
-                    </dt>
-                    <dd className="text-lg font-medium text-gray-900">
-                      {stat.value}
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </Card>
+              </Card>
+            </Link>
           ))}
         </div>
       )}
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card className="p-6">
+        <Card className="p-6 ">
           <h3 className="text-lg font-medium text-gray-900 mb-4">
             Quick Actions
           </h3>
           <div className="space-y-3">
             {canCreateTrials && (
-              <Button className="w-full justify-start bg-blue-600 hover:bg-blue-700">
+              <Button className="w-full justify-start bg-blue-600 hover:bg-blue-700 cursor-not-allowed">
                 <Plus className="h-4 w-4 mr-2" />
                 Create New Trial
               </Button>
             )}
             {canInviteMembers && (
-              <Button variant="outline" className="w-full justify-start">
+              <Button
+                variant="outline"
+                className="w-full justify-start cursor-not-allowed"
+              >
                 <Users className="h-4 w-4 mr-2" />
                 Invite Team Member
               </Button>
