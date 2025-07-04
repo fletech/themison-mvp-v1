@@ -42,14 +42,39 @@ export function OnboardingRouter() {
 
   // If no member record, something went wrong
   if (!member) {
+    const handleClearStorage = () => {
+      // Clear localStorage
+      localStorage.clear();
+      // Clear sessionStorage as well
+      sessionStorage.clear();
+      // Reload the page to start fresh
+      window.location.reload();
+    };
+
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
+        <div className="text-center max-w-md mx-auto p-6">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
             Setup Required
           </h1>
-          <p className="text-gray-600">
+          <p className="text-gray-600 mb-6">
             Please contact your administrator to set up your account.
+          </p>
+
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+            <p className="text-sm text-yellow-800 mb-3">
+              If you're experiencing issues, try clearing your browser data:
+            </p>
+            <button
+              onClick={handleClearStorage}
+              className="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+            >
+              Clear Browser Data & Refresh
+            </button>
+          </div>
+
+          <p className="text-xs text-gray-500">
+            This will clear your stored session data and reload the page.
           </p>
         </div>
       </div>
