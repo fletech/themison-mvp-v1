@@ -18,48 +18,19 @@ import {
   MessageSquare,
   FileText,
   Download,
-  Printer,
-  Trash2,
+  Eye,
 } from "lucide-react";
 import { format } from "date-fns";
 
-interface DocumentListProps {
-  trialId: string;
-  trialName: string;
-  trialDescription: string;
-  latestAmendment?: {
-    modifiedBy: string;
-    modifiedDate: string;
-  };
-  onAddDocClick?: () => void;
+interface ActiveDocumentsProps {
+  trial: any;
 }
 
-export function DocumentList({
-  trialId,
-  trialName,
-  trialDescription,
-  latestAmendment,
-  onAddDocClick,
-}: DocumentListProps) {
+export function ActiveDocuments({ trial }: ActiveDocumentsProps) {
   const [activeTab, setActiveTab] = useState("Actives");
-  const { data: documents = [], isLoading } = useTrialDocuments(trialId);
+  const { data: documents = [], isLoading } = useTrialDocuments(trial.id);
 
   const tabs = ["Actives", "Archived", "All Documents"];
-
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case "approved":
-        return "default"; // Green
-      case "pending":
-        return "secondary"; // Orange/Yellow
-      case "signed":
-        return "default"; // Green/Teal
-      case "submitted":
-        return "outline"; // Gray
-      default:
-        return "outline";
-    }
-  };
 
   const getStatusBadgeColor = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -104,14 +75,27 @@ export function DocumentList({
     (doc) => doc.document_type === "protocol" && doc.is_latest
   );
 
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        {[...Array(3)].map((_, i) => (
+          <Card key={i} className="p-4 animate-pulse">
+            <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+            <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
-      {/* Protocol Header Section */}
+      {/* AI Assistant Header Section */}
       <Card className="relative overflow-hidden border-0 shadow-lg">
         <div
           className="min-h-32 p-6 text-white relative"
           style={{
-            background: "linear-gradient(135deg, #8B5CF6 0%, #06B6D4 100%)",
+            background: "linear-gradient(135deg, #6366F1 0%, #06B6D4 100%)",
           }}
         >
           <div className="absolute top-4 right-4 flex gap-2">
@@ -127,14 +111,17 @@ export function DocumentList({
               variant="outline"
               className="bg-white/20 hover:bg-white/30 text-white border-white/30"
             >
-              <FileText className="w-4 h-4 mr-2" />
-              View Latest Protocol
+              <Eye className="w-4 h-4 mr-2" />
+              View Protocol
             </Button>
           </div>
 
           <div className="space-y-2">
             {/* Trial Name */}
-            <h2 className="text-2xl font-bold">{trialName}</h2>
+            <h2 className="text-2xl font-bold">{trial.name}</h2>
+            <p className="text-sm text-white/80">
+              📚 Document Assistant - Review active documents for AI analysis
+            </p>
 
             {/* Protocol Info */}
             {protocolDocument && (
@@ -143,25 +130,11 @@ export function DocumentList({
                 <span>{protocolDocument.document_name}</span>
               </div>
             )}
-
-            {/* Latest Amendment */}
-            {latestAmendment && (
-              <div className="text-sm text-white/80">
-                <span className="flex items-center gap-2">
-                  <span className="w-3 h-3 bg-white/60 rounded-sm"></span>
-                  Latest Amendment: {"[latest amendment file name]"}
-                </span>
-                <div className="mt-1">
-                  Last modification by {"[latestAmendment.modifiedBy]"}, on
-                  {"[latest amendment timestamps"}
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </Card>
 
-      {/* Tabs and Controls */}
+      {/* Tabs and Controls - Read Only */}
       <div className="flex items-center justify-between">
         <div className="flex space-x-8">
           {tabs.map((tab) => (
@@ -189,19 +162,11 @@ export function DocumentList({
           <Button variant="ghost" size="sm">
             <Filter className="w-4 h-4" />
           </Button>
-          {onAddDocClick && (
-            <Button
-              size="sm"
-              className="bg-blue-600 hover:bg-blue-700"
-              onClick={onAddDocClick}
-            >
-              Add Doc
-            </Button>
-          )}
+          {/* No "Add Doc" button - this is read-only */}
         </div>
       </div>
 
-      {/* Documents Table */}
+      {/* Documents Table - Read Only Actions */}
       <Card>
         <Table>
           <TableHeader>
@@ -270,20 +235,19 @@ export function DocumentList({
 
                 <TableCell>
                   <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="sm">
+                    {/* Only AI and View actions - no delete/edit */}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      title="Ask AI about this document"
+                    >
                       <MessageSquare className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="sm">
-                      <FileText className="w-4 h-4" />
+                    <Button variant="ghost" size="sm" title="View document">
+                      <Eye className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="sm">
+                    <Button variant="ghost" size="sm" title="Download document">
                       <Download className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm">
-                      <Printer className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm">
-                      <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
                 </TableCell>

@@ -12,7 +12,7 @@ export function DocumentAssistantTabs({
 }: DocumentAssistantTabsProps) {
   const tabs = [
     { id: "document-ai", label: "Document AI", icon: FileText },
-    { id: "document-hub", label: "Document Hub", icon: Upload },
+    { id: "active-documents", label: "Active Documents", icon: Upload },
     { id: "qa-repository", label: "QA Repository", icon: MessageSquare },
   ];
 

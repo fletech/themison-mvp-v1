@@ -12,6 +12,7 @@ import SignUp from "./pages/auth/SignUp";
 import SignIn from "./pages/auth/SignIn";
 import { DashboardPage } from "./pages/DashboardPage";
 import { TrialsPage } from "./pages/TrialsPage";
+import TrialDetailPage from "./pages/TrialDetailPage";
 import { OrganizationPage } from "./pages/OrganizationPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import DocumentAssistantPage from "./pages/DocumentAssistantPage";
@@ -100,6 +101,26 @@ function AppRoutes() {
           <ProtectedRoute>
             <OnboardingRedirect>
               <TrialsPage />
+            </OnboardingRedirect>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/trials/:trialId"
+        element={
+          <ProtectedRoute>
+            <OnboardingRedirect>
+              <TrialDetailPage />
+            </OnboardingRedirect>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/trials/:trialId/:tab"
+        element={
+          <ProtectedRoute>
+            <OnboardingRedirect>
+              <TrialDetailPage />
             </OnboardingRedirect>
           </ProtectedRoute>
         }

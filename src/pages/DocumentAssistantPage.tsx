@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { TrialSelector } from "@/components/documents/TrialSelector";
 import { DocumentAssistantBreadcrumbs } from "@/components/documents/DocumentAssistantBreadcrumbs";
 import { DocumentAssistantTabs } from "@/components/documents/DocumentAssistantTabs";
-import { DocumentHub } from "@/components/documents/DocumentHub";
+import { ActiveDocuments } from "@/components/documents/ActiveDocuments";
 import { DocumentAI } from "@/components/documents/DocumentAI";
 import { QARepository } from "@/components/documents/QARepository";
 
@@ -18,7 +18,7 @@ export default function DocumentAssistantPage() {
   const trials = metrics?.trials || [];
 
   const from = searchParams.get("from") || "other";
-  const currentTab = tab || "document-hub";
+  const currentTab = tab || "active-documents";
 
   // Si no hay trialId, mostrar selector de trial
   if (!trialId) {
@@ -101,11 +101,11 @@ function DocumentAssistantContent({
   switch (currentTab) {
     case "document-ai":
       return <DocumentAI trial={trial} />;
-    case "document-hub":
-      return <DocumentHub trial={trial} />;
+    case "active-documents":
+      return <ActiveDocuments trial={trial} />;
     case "qa-repository":
       return <QARepository trial={trial} />;
     default:
-      return <DocumentHub trial={trial} />;
+      return <ActiveDocuments trial={trial} />;
   }
 }

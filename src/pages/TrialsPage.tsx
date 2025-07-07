@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { User, Users, UserCheck } from "lucide-react";
 
 export function TrialsPage() {
+  const navigate = useNavigate();
   const [activePhase, setActivePhase] = useState("All phases");
   const [activeLocation, setActiveLocation] = useState("All places");
 
@@ -245,9 +247,10 @@ export function TrialsPage() {
               return (
                 <Card
                   key={trial.id}
-                  className={`w-full max-w-sm overflow-hidden hover:shadow-lg transition-shadow ${
+                  className={`w-full max-w-sm overflow-hidden hover:shadow-lg transition-shadow cursor-pointer ${
                     isAssigned ? "ring-2 ring-blue-200" : ""
                   }`}
+                  onClick={() => navigate(`/trials/${trial.id}`)}
                 >
                   {/* Card Image/Header */}
                   <div
