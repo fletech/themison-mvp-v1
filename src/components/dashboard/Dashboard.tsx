@@ -2,102 +2,20 @@ import React from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, Users, FileText, Clock } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useAppData } from "@/hooks/useAppData";
 import { usePermissions } from "@/hooks/usePermissions";
 import { Link } from "react-router-dom";
 
 export function Dashboard() {
-  const { user } = useAuth();
   const { canCreateTrials, canInviteMembers, canViewStats } = usePermissions();
 
-  // Fetch user's organization ID
-  const { data: member } = useQuery({
-    queryKey: ["user-member", user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
+  // Use centralized data instead of duplicate queries
+  const { stats, isLoading } = useAppData();
 
-      const { data, error } = await supabase
-        .from("members")
-        .select("organization_id")
-        .eq("profile_id", user.id)
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!user?.id,
-  });
-
-  // Fetch active trials count
-  const { data: activeTrialsCount } = useQuery({
-    queryKey: ["active-trials-count", member?.organization_id],
-    queryFn: async () => {
-      if (!member?.organization_id) return 0;
-
-      const { data, error } = await supabase
-        .from("trials")
-        .select("id", { count: "exact" })
-        .eq("organization_id", member.organization_id);
-
-      if (error) {
-        console.error("Error fetching active trials:", error);
-        return 0;
-      }
-
-      return data?.length || 0;
-    },
-    enabled: !!member?.organization_id,
-  });
-
-  // Fetch team members count
-  const { data: teamMembersCount } = useQuery({
-    queryKey: ["team-members-count", member?.organization_id],
-    queryFn: async () => {
-      if (!member?.organization_id) return 0;
-
-      const { data, error } = await supabase
-        .from("members")
-        .select("id", { count: "exact" })
-        .eq("organization_id", member.organization_id);
-
-      if (error) {
-        console.error("Error fetching team members:", error);
-        return 0;
-      }
-
-      return data?.length || 0;
-    },
-    enabled: !!member?.organization_id,
-  });
-
-  // Fetch pending invitations count
-  const { data: pendingInvitationsCount } = useQuery({
-    queryKey: ["pending-invitations-count", member?.organization_id],
-    queryFn: async () => {
-      if (!member?.organization_id) return 0;
-
-      const { data, error } = await supabase
-        .from("invitations")
-        .select("id", { count: "exact" })
-        .eq("organization_id", member.organization_id)
-        .eq("status", "pending");
-
-      if (error) {
-        console.error("Error fetching pending invitations:", error);
-        return 0;
-      }
-
-      return data?.length || 0;
-    },
-    enabled: !!member?.organization_id,
-  });
-
-  const stats = [
+  const dashboardStats = [
     {
       name: "Active Trials",
-      value: activeTrialsCount?.toString() || "0",
+      value: stats?.totalTrials?.toString() || "0",
       icon: FileText,
       color: "text-blue-600",
       href: "/trials",
@@ -111,14 +29,14 @@ export function Dashboard() {
     },
     {
       name: "Team Members",
-      value: teamMembersCount?.toString() || "0",
+      value: stats?.totalMembers?.toString() || "0",
       icon: Users,
       color: "text-blue-600",
       href: "/organization",
     },
     {
       name: "Pending Invitations",
-      value: pendingInvitationsCount?.toString() || "0",
+      value: stats?.totalInvitations?.toString() || "0",
       icon: Clock,
       color: "text-blue-600",
       href: null,
@@ -130,7 +48,7 @@ export function Dashboard() {
       {/* Stats Grid - Only visible to admin */}
       {canViewStats && (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {stats.map((stat) => (
+          {dashboardStats.map((stat) => (
             <Link
               to={stat.href}
               key={stat.name}

@@ -1,4 +1,4 @@
-import { useAppData } from "@/contexts/AppDataContext";
+import { useAppData } from "@/hooks/useAppData";
 
 /**
  * Hook para manejar permisos basados en roles organizacionales

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useOrganization } from "@/hooks/useOrganization";
+import { useAppData } from "@/hooks/useAppData";
 import {
   Settings,
   Save,
@@ -20,8 +20,7 @@ interface SettingsFormData {
 }
 
 export function OrganizationSettings() {
-  const { organization, loading, error, updateOrganization } =
-    useOrganization();
+  const { organization, loading, error, updateOrganization } = useAppData();
   const [formData, setFormData] = useState<SettingsFormData>({
     name: organization?.name || "",
   });
@@ -174,12 +173,13 @@ export function OrganizationSettings() {
               <div className="p-2 bg-blue-100 rounded-lg">
                 <Calendar className="h-4 w-4 text-blue-600" />
               </div>
-              <div>
+              {/* TODO: Add created_at back to organization query */}
+              {/* <div>
                 <p className="text-sm text-gray-600">Created</p>
                 <p className="font-medium text-gray-900">
                   {new Date(organization.created_at!).toLocaleDateString()}
                 </p>
-              </div>
+              </div> */}
             </div>
 
             <div className="flex items-center space-x-3">

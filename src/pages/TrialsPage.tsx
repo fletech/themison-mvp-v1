@@ -3,7 +3,7 @@ import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useAppData } from "@/contexts/AppDataContext";
+import { useAppData } from "@/hooks/useAppData";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,12 +15,17 @@ export function TrialsPage() {
 
   // Use AppData context instead of duplicating logic
   const {
-    trials,
+    metrics,
     isLoading,
+    metricsLoading,
     isUserAssignedToTrial,
     getUserRoleInTrial,
     userTrialAssignments,
   } = useAppData();
+  const trials = metrics?.trials || [];
+
+  // Include metrics loading to prevent "No trials found" flash
+  const isFullyLoading = isLoading || metricsLoading;
 
   // Get permissions for current user
   const { canCreateTrials, canViewAllTrials } = usePermissions();
@@ -130,7 +135,7 @@ export function TrialsPage() {
     };
   };
 
-  if (isLoading) {
+  if (isFullyLoading) {
     return (
       <DashboardLayout
         title="Trials"

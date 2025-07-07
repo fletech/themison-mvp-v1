@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useOrganization } from "@/hooks/useOrganization";
+import { useAppData } from "@/hooks/useAppData";
 import { usePermissions } from "@/hooks/usePermissions";
 import {
   Users,
@@ -137,7 +137,7 @@ function InviteMemberModal({
 }
 
 interface MemberCardProps {
-  member: ReturnType<typeof useOrganization>["members"][0];
+  member: ReturnType<typeof useAppData>["members"][0];
   onRemove: (memberId: string) => Promise<boolean>;
   onUpdateRole: (memberId: string, roleId: string) => Promise<boolean>;
 }
@@ -264,7 +264,7 @@ export function MembersManagement() {
     removeMember,
     updateMemberRole,
     stats,
-  } = useOrganization();
+  } = useAppData();
   const { canInviteMembers, canViewStats } = usePermissions();
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");

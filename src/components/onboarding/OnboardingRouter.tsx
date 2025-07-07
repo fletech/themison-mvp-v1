@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useOnboardingData } from "@/hooks/useOnboardingData";
+import { useAppData } from "@/hooks/useAppData";
 import { AdminSetupFlow } from "./AdminSetupFlow";
 import { AdminOverview } from "./AdminOverview";
 import { StaffOnboarding } from "./StaffOnboarding";
@@ -9,7 +9,7 @@ export function OnboardingRouter() {
   const navigate = useNavigate();
 
   // Use centralized data hook
-  const { member, organization, isLoading } = useOnboardingData();
+  const { member, organization, isLoading } = useAppData();
 
   // Check if onboarding is completed and redirect
   useEffect(() => {

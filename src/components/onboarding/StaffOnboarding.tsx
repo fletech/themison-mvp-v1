@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useOnboardingData } from "@/hooks/useOnboardingData";
+import { useAppData } from "@/hooks/useAppData";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,7 @@ export function StaffOnboarding({
     isUserAssignedToTrial,
     getUserRoleInTrial,
     isLoading: dataLoading,
-  } = useOnboardingData();
+  } = useAppData();
 
   // Complete onboarding mutation
   const completeOnboardingMutation = useMutation({

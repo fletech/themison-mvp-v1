@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useOnboardingData } from "@/hooks/useOnboardingData";
+import { useAppData } from "@/hooks/useAppData";
 import { useOnboardingMutations } from "@/hooks/useOnboardingMutations";
 import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
@@ -54,7 +54,7 @@ export function AdminOverview({ member, organization }: AdminOverviewProps) {
     isLoading: metricsLoading,
     isUserAssignedToTrial,
     getUserRoleInTrial,
-  } = useOnboardingData();
+  } = useAppData();
 
   // Fetch pending invitations separately for display
   const { data: pendingInvitations = [] } = useQuery({

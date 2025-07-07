@@ -1,6 +1,6 @@
 import React from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
-import { useAppData } from "@/contexts/AppDataContext";
+import { useAppData } from "@/hooks/useAppData";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { TrialSelector } from "@/components/documents/TrialSelector";
@@ -14,7 +14,8 @@ export default function DocumentAssistantPage() {
   const { trialId, tab } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { trials, isUserAssignedToTrial } = useAppData();
+  const { metrics, isUserAssignedToTrial } = useAppData();
+  const trials = metrics?.trials || [];
 
   const from = searchParams.get("from") || "other";
   const currentTab = tab || "document-hub";

@@ -1,5 +1,5 @@
 import React from "react";
-import { useOrganization } from "@/hooks/useOrganization";
+import { useAppData } from "@/hooks/useAppData";
 import { usePermissions } from "@/hooks/usePermissions";
 import {
   Building2,
@@ -73,7 +73,7 @@ function StatCard({
 }
 
 interface OrganizationHeaderProps {
-  organization: NonNullable<ReturnType<typeof useOrganization>["organization"]>;
+  organization: NonNullable<ReturnType<typeof useAppData>["organization"]>;
 }
 
 function OrganizationHeader({ organization }: OrganizationHeaderProps) {
@@ -89,13 +89,14 @@ function OrganizationHeader({ organization }: OrganizationHeaderProps) {
               {organization.name}
             </h1>
             <div className="flex items-center space-x-4 mt-2">
-              <div className="flex items-center space-x-1 text-gray-600">
+              {/* TODO: Add created_at back to organization query */}
+              {/* <div className="flex items-center space-x-1 text-gray-600">
                 <Calendar className="h-4 w-4" />
                 <span className="text-sm">
                   Created{" "}
                   {format(new Date(organization.created_at!), "MMM dd, yyyy")}
                 </span>
-              </div>
+              </div> */}
               <div
                 className={`px-3 py-1 rounded-full text-xs font-medium ${
                   organization.onboarding_completed
@@ -159,7 +160,7 @@ function QuickActions() {
 }
 
 export function OrganizationOverview() {
-  const { organization, stats, loading, error } = useOrganization();
+  const { organization, stats, loading, error } = useAppData();
   const { canViewStats } = usePermissions();
 
   if (loading) {

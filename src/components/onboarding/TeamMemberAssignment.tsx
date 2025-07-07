@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Trash2, UserPlus } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAppData } from "@/hooks/useAppData";
 
 interface TeamAssignment {
   memberId?: string; // For confirmed members
@@ -42,25 +43,11 @@ export function TeamMemberAssignment({
   const [assignments, setAssignments] = useState<TeamAssignment[]>([]);
   const [autoAssignedPIId, setAutoAssignedPIId] = useState<string | null>(null); // Track auto-assigned PI
 
-  // Fetch all confirmed members (removed onboarding_completed filter)
-  const { data: members = [] } = useQuery({
-    queryKey: ["confirmed-members", organizationId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("members")
-        .select("id, name, email, profile_id")
-        .eq("organization_id", organizationId);
+  // Use centralized data instead of duplicate queries
+  const { members, roles } = useAppData();
 
-      if (error) {
-        throw error;
-      }
-
-      return data || [];
-    },
-    enabled: !!organizationId,
-  });
-
-  // Fetch pending invitations
+  // Get pending invitations from members query (they should be available in useAppData)
+  // Note: We'll use a simple query here since useAppData doesn't expose pending invitations with needed fields
   const { data: pendingInvitations = [] } = useQuery({
     queryKey: ["pending-invitations", organizationId],
     queryFn: async () => {
@@ -69,25 +56,6 @@ export function TeamMemberAssignment({
         .select("id, name, email")
         .eq("organization_id", organizationId)
         .eq("status", "pending");
-
-      if (error) {
-        throw error;
-      }
-
-      return data || [];
-    },
-    enabled: !!organizationId,
-  });
-
-  // Fetch available roles for this organization
-  const { data: roles = [] } = useQuery({
-    queryKey: ["organization-roles", organizationId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("roles")
-        .select("id, name, permission_level")
-        .eq("organization_id", organizationId)
-        .order("name");
 
       if (error) {
         throw error;

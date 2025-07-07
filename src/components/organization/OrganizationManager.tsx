@@ -7,7 +7,6 @@ import {
   BarChart3,
   ChevronRight,
 } from "lucide-react";
-import { OrganizationProvider } from "@/hooks/useOrganization";
 import { OrganizationOverview } from "./OrganizationOverview";
 import { MembersManagement } from "./MembersManagement";
 import { OrganizationSettings } from "./OrganizationSettings";
@@ -156,23 +155,21 @@ export function OrganizationManager() {
   const [activeTab, setActiveTab] = useState<TabType>("overview");
 
   return (
-    <OrganizationProvider>
-      <ErrorBoundary>
-        <div className="space-y-6">
-          {/* Breadcrumb */}
-          <BreadcrumbNavigation activeTab={activeTab} />
+    <ErrorBoundary>
+      <div className="space-y-6">
+        {/* Breadcrumb */}
+        <BreadcrumbNavigation activeTab={activeTab} />
 
-          {/* Tab Navigation */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+        {/* Tab Navigation */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
 
-            {/* Tab Content */}
-            <div className="p-6">
-              <TabContent activeTab={activeTab} />
-            </div>
+          {/* Tab Content */}
+          <div className="p-6">
+            <TabContent activeTab={activeTab} />
           </div>
         </div>
-      </ErrorBoundary>
-    </OrganizationProvider>
+      </div>
+    </ErrorBoundary>
   );
 }

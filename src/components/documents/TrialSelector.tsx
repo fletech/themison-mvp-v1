@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { useAppData } from "@/contexts/AppDataContext";
+import { useAppData } from "@/hooks/useAppData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { FileText } from "lucide-react";
@@ -10,7 +10,8 @@ interface TrialSelectorProps {
 }
 
 export function TrialSelector({ from }: TrialSelectorProps) {
-  const { trials, isLoading } = useAppData();
+  const { metrics, isLoading } = useAppData();
+  const trials = metrics?.trials || [];
   const navigate = useNavigate();
 
   if (isLoading) {
