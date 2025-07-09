@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTrialDocuments } from "@/hooks/useDocuments";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ import {
   FileText,
   Download,
   Eye,
+  ExternalLink,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -27,6 +29,7 @@ interface ActiveDocumentsProps {
 }
 
 export function ActiveDocuments({ trial }: ActiveDocumentsProps) {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("Actives");
   const { data: documents = [], isLoading } = useTrialDocuments(trial.id);
 
@@ -90,18 +93,22 @@ export function ActiveDocuments({ trial }: ActiveDocumentsProps) {
 
   return (
     <div className="space-y-4">
-      {/* AI Assistant Header Section */}
-      <Card className="relative overflow-hidden border-0 shadow-lg">
-        <div
-          className="min-h-32 p-6 text-white relative"
-          style={{
-            background: "linear-gradient(135deg, #6366F1 0%, #06B6D4 100%)",
-          }}
-        >
+      {/* AI Assistant Header Section - Reduced visual weight */}
+      <Card className="relative overflow-hidden border border-gray-200 shadow-sm">
+        <div className="min-h-24 p-4 bg-gray-50 relative border-l-4 border-blue-500">
           <div className="absolute top-4 right-4 flex gap-2">
             <Button
               size="sm"
-              className="bg-white/20 hover:bg-white/30 text-white border-white/30"
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+              onClick={() => {
+                if (protocolDocument) {
+                  navigate(
+                    `/document-assistant/${trial.id}/document-ai?documentId=${protocolDocument.id}`
+                  );
+                } else {
+                  navigate(`/document-assistant/${trial.id}/document-ai`);
+                }
+              }}
             >
               <MessageSquare className="w-4 h-4 mr-2" />
               Ask AI
@@ -109,7 +116,26 @@ export function ActiveDocuments({ trial }: ActiveDocumentsProps) {
             <Button
               size="sm"
               variant="outline"
-              className="bg-white/20 hover:bg-white/30 text-white border-white/30"
+              className="border-gray-300 hover:bg-gray-100"
+              onClick={() => navigate(`/trials/${trial.id}`)}
+            >
+              <ExternalLink className="w-4 h-4 mr-2" />
+              Go to Trial
+            </Button>
+
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-gray-300 hover:bg-gray-100"
+              onClick={() => {
+                if (protocolDocument) {
+                  // TODO: Open document viewer or download
+                  console.log("View protocol:", protocolDocument);
+                } else {
+                  console.log("No protocol document available");
+                }
+              }}
+              disabled={!protocolDocument}
             >
               <Eye className="w-4 h-4 mr-2" />
               View Protocol
@@ -118,16 +144,25 @@ export function ActiveDocuments({ trial }: ActiveDocumentsProps) {
 
           <div className="space-y-2">
             {/* Trial Name */}
-            <h2 className="text-2xl font-bold">{trial.name}</h2>
-            <p className="text-sm text-white/80">
-              📚 Document Assistant - Review active documents for AI analysis
+            <h2 className="text-xl font-bold text-gray-900">{trial.name}</h2>
+            <p className="text-sm text-gray-700 flex items-center gap-2">
+              Document Assistant - Review active documents for AI analysis
             </p>
 
             {/* Protocol Info */}
             {protocolDocument && (
-              <div className="text-sm text-white/90">
-                <span className="font-medium">Protocol: </span>
-                <span>{protocolDocument.document_name}</span>
+              <div className="text-sm text-gray-700">
+                <span className="font-medium">Latest Protocol: </span>
+                <button
+                  className="text-blue-700 hover:text-blue-800 hover:underline cursor-pointer"
+                  onClick={() => {
+                    navigate(
+                      `/document-assistant/${trial.id}/document-ai?documentId=${protocolDocument.id}`
+                    );
+                  }}
+                >
+                  {protocolDocument.document_name}
+                </button>
               </div>
             )}
           </div>
@@ -240,13 +275,34 @@ export function ActiveDocuments({ trial }: ActiveDocumentsProps) {
                       variant="ghost"
                       size="sm"
                       title="Ask AI about this document"
+                      onClick={() =>
+                        navigate(
+                          `/document-assistant/${trial.id}/document-ai?documentId=${document.id}`
+                        )
+                      }
                     >
                       <MessageSquare className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="sm" title="View document">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      title="View document"
+                      onClick={() => {
+                        // TODO: Open document viewer
+                        console.log("View document:", document);
+                      }}
+                    >
                       <Eye className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="sm" title="Download document">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      title="Download document"
+                      onClick={() => {
+                        // TODO: Download document
+                        console.log("Download document:", document);
+                      }}
+                    >
                       <Download className="w-4 h-4" />
                     </Button>
                   </div>

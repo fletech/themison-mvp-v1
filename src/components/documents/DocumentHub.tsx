@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DocumentList } from "./DocumentList";
 import { DocumentUpload } from "./DocumentUpload";
+import { useTrialDocuments } from "@/hooks/useDocuments";
 import { useToast } from "@/hooks/use-toast";
 
 interface DocumentHubProps {
@@ -11,6 +12,24 @@ interface DocumentHubProps {
 export function DocumentHub({ trial }: DocumentHubProps) {
   const [showUpload, setShowUpload] = useState(false);
   const { toast } = useToast();
+  const { data: documents = [] } = useTrialDocuments(trial.id);
+
+  // Find latest protocol and amendments
+  const latestProtocol = documents.find(
+    (doc) => doc.document_type === "protocol" && doc.is_latest
+  );
+
+  const amendments = documents.filter(
+    (doc) => doc.document_type === "amendment" && doc.is_latest
+  );
+
+  const latestAmendment =
+    amendments.length > 0
+      ? amendments.sort(
+          (a, b) =>
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        )[0]
+      : null;
 
   const handleUploadComplete = (documents: any[]) => {
     toast({
@@ -62,10 +81,8 @@ export function DocumentHub({ trial }: DocumentHubProps) {
       trialId={trial.id}
       trialName={trial.name}
       trialDescription={trial.description}
-      latestAmendment={{
-        modifiedBy: "PI",
-        modifiedDate: "2025-05-15",
-      }}
+      latestProtocol={latestProtocol}
+      latestAmendment={latestAmendment}
       onAddDocClick={() => setShowUpload(true)}
     />
   );

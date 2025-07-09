@@ -1,12 +1,6 @@
 import React from "react";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
+import { Link } from "react-router-dom";
+import { ChevronRight, MessageSquare } from "lucide-react";
 
 interface DocumentAssistantBreadcrumbsProps {
   trial: any;
@@ -21,41 +15,44 @@ export function DocumentAssistantBreadcrumbs({
 }: DocumentAssistantBreadcrumbsProps) {
   const tabNames = {
     "document-ai": "Document AI",
-    "document-hub": "Document Hub",
+    "active-documents": "Active Documents",
     "qa-repository": "QA Repository",
   };
 
   return (
-    <Breadcrumb>
-      <BreadcrumbList>
-        <BreadcrumbItem>
-          <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbSeparator />
+    <div className="flex items-center space-x-2 text-sm text-gray-600 mb-6">
+      <MessageSquare className="h-4 w-4" />
+      <Link to="/dashboard" className="hover:text-blue-600 transition-colors">
+        Dashboard
+      </Link>
+      <ChevronRight className="h-4 w-4" />
 
-        {from === "trials" ? (
-          <>
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/trials">Trials</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink href={`/trials/${trial.id}`}>
-                {trial.name}
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-          </>
-        ) : null}
+      {from === "trials" ? (
+        <>
+          <Link to="/trials" className="hover:text-blue-600 transition-colors">
+            Trials
+          </Link>
+          <ChevronRight className="h-4 w-4" />
+          <Link
+            to={`/trials/${trial.id}`}
+            className="hover:text-blue-600 transition-colors"
+          >
+            {trial.name}
+          </Link>
+          <ChevronRight className="h-4 w-4" />
+        </>
+      ) : null}
 
-        <BreadcrumbItem>
-          <BreadcrumbLink href="/document-assistant">
-            Document Assistant
-          </BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbSeparator />
-        <BreadcrumbPage>{tabNames[currentTab] || currentTab}</BreadcrumbPage>
-      </BreadcrumbList>
-    </Breadcrumb>
+      <Link
+        to="/document-assistant"
+        className="hover:text-blue-600 transition-colors"
+      >
+        Document Assistant
+      </Link>
+      <ChevronRight className="h-4 w-4" />
+      <span className="text-gray-900 font-medium">
+        {tabNames[currentTab] || currentTab}
+      </span>
+    </div>
   );
 }

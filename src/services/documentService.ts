@@ -87,7 +87,46 @@ class DocumentService {
         );
       }
 
-      // 5. Create database record with proper types
+      // 5. Handle is_latest logic for protocols and amendments
+      let shouldBeLatest = true;
+      if (documentType === "protocol" || documentType === "amendment") {
+        // First, check if there's already a latest document of this type for this trial
+        const { data: existingLatest, error: existingError } = await supabase
+          .from("trial_documents")
+          .select("id")
+          .eq("trial_id", trialId)
+          .eq("document_type", documentType)
+          .eq("is_latest", true)
+          .limit(1);
+
+        if (existingError) {
+          console.warn(
+            "Error checking existing latest documents:",
+            existingError
+          );
+          // Continue with upload but don't mark as latest if we can't verify
+          shouldBeLatest = false;
+        } else if (existingLatest && existingLatest.length > 0) {
+          // Mark existing latest documents as false
+          const { error: updateError } = await supabase
+            .from("trial_documents")
+            .update({ is_latest: false })
+            .eq("trial_id", trialId)
+            .eq("document_type", documentType)
+            .eq("is_latest", true);
+
+          if (updateError) {
+            console.warn(
+              "Error updating existing latest documents:",
+              updateError
+            );
+            // Continue with upload but don't mark as latest if update failed
+            shouldBeLatest = false;
+          }
+        }
+      }
+
+      // 6. Create database record with proper types
       const documentInsert: TrialDocumentInsert = {
         document_name: file.name,
         document_type: documentType,
@@ -99,7 +138,7 @@ class DocumentService {
         mime_type: file.type,
         version: 1,
         amendment_number: amendmentNumber,
-        is_latest: true,
+        is_latest: shouldBeLatest,
         description,
         tags,
       };

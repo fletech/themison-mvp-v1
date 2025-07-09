@@ -49,7 +49,7 @@ export default function DocumentAssistantPage() {
 
   return (
     <DashboardLayout title="Document Assistant">
-      <div className="flex-1 space-y-4">
+      <div className="flex-1 space-y-6">
         <DocumentAssistantBreadcrumbs
           trial={selectedTrial}
           currentTab={currentTab}
@@ -63,10 +63,12 @@ export default function DocumentAssistantPage() {
           }
         />
 
-        <DocumentAssistantContent
-          trial={selectedTrial}
-          currentTab={currentTab}
-        />
+        <div className="p-6">
+          <DocumentAssistantContent
+            trial={selectedTrial}
+            currentTab={currentTab}
+          />
+        </div>
       </div>
     </DashboardLayout>
   );

@@ -1,75 +1,194 @@
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { CalendarDays, MapPin, Building2, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  CalendarDays,
+  MapPin,
+  Building2,
+  User,
+  FileText,
+  MessageSquare,
+  Eye,
+  Users,
+} from "lucide-react";
+import { useTrialDocuments } from "@/hooks/useDocuments";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 interface TrialOverviewProps {
   trial: any;
 }
 
 export function TrialOverview({ trial }: TrialOverviewProps) {
+  // Fetch team members to find PI
+  const { data: trialTeam = [], isLoading: teamLoading } = useQuery({
+    queryKey: ["trial-team", trial.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_trial_team", {
+        trial_id_param: trial.id,
+      });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!trial.id,
+  });
+
+  // Find the PI
+  const pi = trialTeam.find(
+    (member: any) =>
+      member.role_name?.toLowerCase().includes("principal investigator") ||
+      member.role_name?.toLowerCase().includes("pi")
+  );
+
+  // Fetch latest protocol document
+  const { data: documents = [], isLoading: docsLoading } = useTrialDocuments(
+    trial.id
+  );
+  const protocolDocument = documents.find(
+    (doc: any) => doc.document_type === "protocol" && doc.is_latest
+  );
+
+  // Timeline progress calculation
+  const start = trial.study_start ? new Date(trial.study_start) : null;
+  const end = trial.estimated_close_out
+    ? new Date(trial.estimated_close_out)
+    : null;
+  const now = new Date();
+  let progress = 0;
+  if (start && end && end > start) {
+    progress = Math.min(
+      1,
+      Math.max(
+        0,
+        (now.getTime() - start.getTime()) / (end.getTime() - start.getTime())
+      )
+    );
+  }
+
+  const navigate = useNavigate();
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">{trial.name}</h2>
-        <p className="text-gray-600">
-          {trial.description || "No description available"}
-        </p>
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-900 mb-1 flex items-center gap-3">
+            {trial.name}
+            {/* <Badge variant="secondary" className="ml-2 text-base">
+              {trial.status}
+            </Badge> */}
+          </h2>
+          <p className="text-gray-600 max-w-2xl">
+            {trial.description || "No description available"}
+          </p>
+        </div>
+        <div className="flex flex-col gap-2 min-w-[220px]">
+          <div className="flex items-center gap-2 text-sm">
+            <Building2 className="h-4 w-4 text-blue-600" />
+            <span className="text-gray-600">Phase:</span>
+            <span className="font-semibold">{trial.phase}</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <User className="h-4 w-4 text-blue-600" />
+            <span className="text-gray-600">Sponsor:</span>
+            <span className="font-semibold">{trial.sponsor}</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <MapPin className="h-4 w-4 text-blue-600" />
+            <span className="text-gray-600">Location:</span>
+            <span className="font-semibold">{trial.location}</span>
+          </div>
+        </div>
       </div>
 
-      {/* Trial Details Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="p-4">
-          <div className="flex items-center space-x-3">
-            <div className="bg-blue-100 p-2 rounded-lg">
-              <Building2 className="h-5 w-5 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Phase</p>
-              <p className="font-semibold">{trial.phase}</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-4">
-          <div className="flex items-center space-x-3">
-            <div className="bg-blue-100 p-2 rounded-lg">
-              <User className="h-5 w-5 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Sponsor</p>
-              <p className="font-semibold">{trial.sponsor}</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-4">
-          <div className="flex items-center space-x-3">
-            <div className="bg-blue-100 p-2 rounded-lg">
-              <MapPin className="h-5 w-5 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Location</p>
-              <p className="font-semibold">{trial.location}</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-4">
-          <div className="flex items-center space-x-3">
-            <div className="bg-blue-100 p-2 rounded-lg">
-              <CalendarDays className="h-5 w-5 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Status</p>
-              <Badge variant="secondary">{trial.status}</Badge>
-            </div>
-          </div>
-        </Card>
+      {/* Quick Actions */}
+      <div className="flex flex-wrap gap-3">
+        <Button
+          size="sm"
+          className="bg-blue-600 hover:bg-blue-700 text-white"
+          disabled={!protocolDocument}
+          onClick={() => {
+            if (protocolDocument) {
+              navigate(
+                `/document-assistant/${trial.id}/document-ai?documentId=${protocolDocument.id}`
+              );
+            }
+          }}
+        >
+          <MessageSquare className="w-4 h-4 mr-2" />
+          Ask AI
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          className="border-gray-300 hover:bg-gray-100"
+          disabled={!protocolDocument}
+          onClick={() => {
+            if (protocolDocument) {
+              window.open(protocolDocument.document_url, "_blank");
+            }
+          }}
+        >
+          <Eye className="w-4 h-4 mr-2" />
+          View Protocol
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          className="border-gray-300 hover:bg-gray-100"
+          onClick={() => navigate(`/trials/${trial.id}/team`)}
+        >
+          <Users className="w-4 h-4 mr-2" />
+          Manage Team
+        </Button>
       </div>
 
-      {/* Timeline placeholder */}
-      <Card className="p-6">
+      {/* Info Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* PI and Protocol */}
+        <div className="space-y-4">
+          <div className="bg-white rounded-xl border border-gray-100 p-5 flex items-center gap-4 shadow-sm">
+            <User className="h-6 w-6 text-blue-600" />
+            <div>
+              <p className="text-sm text-gray-600 mb-1">
+                Principal Investigator
+              </p>
+              <p className="font-semibold text-gray-900">
+                {pi ? pi.member_name : "No PI assigned"}
+              </p>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-100 p-5 flex items-center gap-4 shadow-sm">
+            <FileText className="h-6 w-6 text-blue-600" />
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Latest Protocol</p>
+              {protocolDocument ? (
+                <span className="font-semibold text-gray-900">
+                  {protocolDocument.document_name}
+                </span>
+              ) : (
+                <span className="text-gray-500">No protocol uploaded</span>
+              )}
+            </div>
+          </div>
+        </div>
+        {/* What can I do here? */}
+        <div className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-xl border border-blue-100 p-6 flex flex-col justify-center shadow-sm">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            What can I do here?
+          </h3>
+          <ul className="list-disc pl-5 text-gray-700 space-y-1 text-sm">
+            <li>Review the latest protocol and trial details</li>
+            <li>Ask the AI assistant about trial documents</li>
+            <li>Manage the trial team and assignments</li>
+          </ul>
+        </div>
+      </div>
+
+      {/* Timeline
+      <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm">
         <h3 className="text-lg font-semibold mb-4">Trial Timeline</h3>
         <div className="space-y-4">
           <div className="flex justify-between text-sm text-gray-500 mb-2">
@@ -77,14 +196,17 @@ export function TrialOverview({ trial }: TrialOverviewProps) {
             <span>Close-out</span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
-            <div className="bg-blue-600 h-2 rounded-full w-1/4"></div>
+            <div
+              className="bg-blue-600 h-2 rounded-full transition-all"
+              style={{ width: `${Math.round(progress * 100)}%` }}
+            ></div>
           </div>
           <div className="flex justify-between text-sm">
             <span>{trial.study_start || "TBD"}</span>
             <span>{trial.estimated_close_out || "TBD"}</span>
           </div>
         </div>
-      </Card>
+      </div> */}
     </div>
   );
 }
