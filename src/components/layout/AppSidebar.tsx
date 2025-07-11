@@ -1,57 +1,26 @@
-import React, { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { useAuth } from "@/hooks/useAuth";
 import {
-  Menu,
-  X,
+  User,
+  LogOut,
   Home,
   FileText,
   MessageSquare,
   Building2,
   Bell,
-  Settings as SettingsIcon,
   Puzzle,
   HelpCircle,
-  LogOut,
-  Search,
-  Plus,
-  User,
+  Settings as SettingsIcon,
 } from "lucide-react";
+import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { useLocation, Link } from "react-router-dom";
 
-interface DashboardLayoutProps {
-  children: React.ReactNode;
-  count?: number;
-  title?: string;
-  showSearch?: boolean;
-  showCreateButton?: boolean;
-  onCreateClick?: () => void;
-}
-
-export function DashboardLayout({
-  children,
-  title = "Dashboard",
-  showSearch = false,
-  showCreateButton = false,
-  onCreateClick,
-}: DashboardLayoutProps) {
+export const AppSidebar = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, signOut } = useAuth();
-  //member
   const { toast } = useToast();
   const location = useLocation();
-
-  const handleSignOut = async () => {
-    await signOut();
-    toast({
-      title: "Signed out",
-      description: "You have been signed out successfully",
-    });
-    // Force redirect to home page after logout
-    window.location.href = "/";
-  };
 
   const navigationItems = [
     {
@@ -68,12 +37,12 @@ export function DashboardLayout({
     },
     {
       name: "Document Assistant",
-      href: "/document-assistant",
+      href: "/document-assistant/select-trial",
       icon: MessageSquare,
-      current: location.pathname.startsWith("/document-assistant"),
+      current: location.pathname.startsWith("/document-assistant/select-trial"),
     },
     {
-      name: "Organisation",
+      name: "Organization",
       href: "/organization",
       icon: Building2,
       current: location.pathname.startsWith("/organization"),
@@ -107,7 +76,17 @@ export function DashboardLayout({
     },
   ];
 
-  const SidebarContent = () => (
+  const handleSignOut = async () => {
+    await signOut();
+    toast({
+      title: "Signed out",
+      description: "You have been signed out successfully",
+    });
+    // Force redirect to home page after logout
+    window.location.href = "/";
+  };
+
+  return (
     <div className="flex h-full flex-col">
       {/* Logo */}
       <div className="flex h-16 flex-shrink-0 items-center px-4 border-b border-gray-200 justify-center">
@@ -205,100 +184,4 @@ export function DashboardLayout({
       </div>
     </div>
   );
-
-  return (
-    <div className="h-screen flex bg-gray-50">
-      {/* Mobile sidebar */}
-      <div
-        className={`fixed inset-0 z-40 lg:hidden ${
-          sidebarOpen ? "" : "hidden"
-        }`}
-      >
-        <div
-          className="fixed inset-0 bg-gray-600 bg-opacity-75"
-          onClick={() => setSidebarOpen(false)}
-        />
-        <div className="relative flex w-full max-w-xs flex-1 flex-col bg-white h-full">
-          <div className="absolute top-0 right-0 -mr-12 pt-2">
-            <button
-              type="button"
-              className="ml-1 flex h-10 w-10 items-center justify-center rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
-              onClick={() => setSidebarOpen(false)}
-            >
-              <X className="h-6 w-6 text-white" />
-            </button>
-          </div>
-          <SidebarContent />
-        </div>
-      </div>
-
-      {/* Static sidebar for desktop */}
-      <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0">
-        <div className="flex flex-col flex-grow bg-white border-r border-gray-200 overflow-y-auto">
-          <SidebarContent />
-        </div>
-      </div>
-
-      {/* Main content */}
-      <div className="lg:pl-64 flex flex-col flex-1 min-h-0">
-        {/* Mobile menu button */}
-        <div className="lg:hidden">
-          <div className="flex items-center justify-between bg-white px-4 py-2 border-b border-gray-200">
-            <button
-              type="button"
-              className="text-gray-500 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
-              onClick={() => setSidebarOpen(true)}
-            >
-              <Menu className="h-6 w-6" />
-            </button>
-            <img className="h-6 w-auto" src="/assets/logo.svg" alt="THEMISON" />
-            <div className="w-6" /> {/* Spacer */}
-          </div>
-        </div>
-
-        {/* Sticky header */}
-        {(showSearch || showCreateButton || title !== "Dashboard") && (
-          <div className="sticky top-0 z-30 bg-white border-b border-gray-200">
-            <div className="px-4 sm:px-6 lg:px-8">
-              <div className="flex items-center justify-between h-16">
-                <div className="flex items-center flex-1">
-                  <h1 className="text-xl font-semibold text-gray-900 mr-8">
-                    {title}
-                  </h1>
-                  {showSearch && (
-                    <div className="flex-1 max-w-lg">
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <Search className="h-4 w-4 text-gray-400" />
-                        </div>
-                        <Input
-                          type="text"
-                          placeholder="Search your trial here"
-                          className="pl-10 pr-4 py-2 w-full"
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-                {showCreateButton && (
-                  <Button
-                    onClick={onCreateClick}
-                    className="bg-black hover:bg-gray-800 text-white"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create trial
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Main content area with scroll */}
-        <main className="flex-1 overflow-y-auto">
-          <div className="p-4 sm:p-6 lg:p-8">{children}</div>
-        </main>
-      </div>
-    </div>
-  );
-}
+};

@@ -8,9 +8,7 @@ import { Link } from "react-router-dom";
 
 export function Dashboard() {
   const { canCreateTrials, canInviteMembers, canViewStats } = usePermissions();
-
-  // Use centralized data instead of duplicate queries
-  const { stats, isLoading } = useAppData();
+  const { stats } = useAppData();
 
   const dashboardStats = [
     {
@@ -52,7 +50,7 @@ export function Dashboard() {
             <Link
               to={stat.href}
               key={stat.name}
-              className={` ${stat.href ? "" : "cursor-not-allowed"}`}
+              className={`${stat.href ? "" : "cursor-not-allowed"}`}
             >
               <Card className="p-6">
                 <div className="flex items-center">
@@ -78,7 +76,7 @@ export function Dashboard() {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card className="p-6 ">
+        <Card className="p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">
             Quick Actions
           </h3>
@@ -98,7 +96,6 @@ export function Dashboard() {
                 Invite Team Member
               </Button>
             )}
-            {/* Show message if user has no quick actions available */}
             {!canCreateTrials && !canInviteMembers && (
               <div className="text-sm text-gray-500">
                 <p>Welcome to your dashboard!</p>

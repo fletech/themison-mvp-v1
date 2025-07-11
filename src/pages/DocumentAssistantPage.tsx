@@ -1,14 +1,23 @@
 import React from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { useAppData } from "@/hooks/useAppData";
-import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
-import { TrialSelector } from "@/components/documents/TrialSelector";
-import { DocumentAssistantBreadcrumbs } from "@/components/documents/DocumentAssistantBreadcrumbs";
+import { TrialSelector } from "@/components/documents/TrialSelector.tsx";
 import { DocumentAssistantTabs } from "@/components/documents/DocumentAssistantTabs";
 import { ActiveDocuments } from "@/components/documents/ActiveDocuments";
 import { DocumentAI } from "@/components/documents/DocumentAI";
 import { QARepository } from "@/components/documents/QARepository";
+import { MessageSquare } from "lucide-react";
+import type { BreadcrumbItem } from "@/components/ui/breadcrumb";
+import { TrialDropdownBreadcrumb } from "@/components/common/breadcrumbs/TrialDropdownBreadcrumb";
+
+const tabNames: Record<string, string> = {
+  "document-ai": "Document AI",
+  "active-documents": "Active Documents",
+  "qa-repository": "QA Repository",
+  "select-trial": "Select Trial",
+};
 
 export default function DocumentAssistantPage() {
   const { trialId, tab } = useParams();
@@ -20,57 +29,86 @@ export default function DocumentAssistantPage() {
   const from = searchParams.get("from") || "other";
   const currentTab = tab || "active-documents";
 
+  // Validar que el trial existe y el usuario tiene acceso
+  const selectedTrial = trialId ? trials.find((t) => t.id === trialId) : null;
+
+  // Breadcrumb base
+  const breadcrumbItems: BreadcrumbItem[] = [
+    {
+      label: "Document Assistant",
+      href: "/document-assistant/select-trial",
+      icon: MessageSquare,
+    },
+  ];
+
+  // Siempre agregamos el selector de trial
+  breadcrumbItems.push({
+    customContent: (
+      <TrialDropdownBreadcrumb
+        currentTrial={
+          selectedTrial || {
+            id: "",
+            name: "Select Trial",
+          }
+        }
+        basePath="/document-assistant"
+        className="px-2 py-1 -ml-2"
+      />
+    ),
+  });
+
   // Si no hay trialId, mostrar selector de trial
   if (!trialId) {
     return (
-      <DashboardLayout title="Document Assistant">
+      <AppLayout title="Document Assistant" breadcrumbItems={breadcrumbItems}>
         <TrialSelector from={from} />
-      </DashboardLayout>
+      </AppLayout>
     );
   }
 
-  // Validar que el trial existe y el usuario tiene acceso
-  const selectedTrial = trials.find((t) => t.id === trialId);
+  // Validar acceso al trial
   if (!selectedTrial) {
     return (
-      <DashboardLayout title="Document Assistant">
+      <AppLayout title="Document Assistant" breadcrumbItems={breadcrumbItems}>
         <TrialError message="Trial not found" />
-      </DashboardLayout>
+      </AppLayout>
     );
   }
 
   if (!isUserAssignedToTrial(trialId)) {
     return (
-      <DashboardLayout title="Document Assistant">
+      <AppLayout title="Document Assistant" breadcrumbItems={breadcrumbItems}>
         <TrialError message="You don't have access to this trial" />
-      </DashboardLayout>
+      </AppLayout>
     );
   }
 
-  return (
-    <DashboardLayout title="Document Assistant">
-      <div className="flex-1 space-y-6">
-        <DocumentAssistantBreadcrumbs
-          trial={selectedTrial}
-          currentTab={currentTab}
-          from={from}
-        />
+  // Agregar tab actual al breadcrumb
+  if (currentTab && tabNames[currentTab]) {
+    breadcrumbItems.push({
+      label: tabNames[currentTab],
+      isActive: true,
+    });
+  }
 
+  return (
+    <AppLayout title="Document Assistant" breadcrumbItems={breadcrumbItems}>
+      <div className="flex-1 h-[calc(100vh-35vh)]  ">
         <DocumentAssistantTabs
           currentTab={currentTab}
           onTabChange={(newTab) =>
-            navigate(`/document-assistant/${trialId}/${newTab}?from=${from}`)
+            navigate(`/document-assistant/${trialId}/${newTab}`)
           }
         />
 
-        <div className="p-6">
+        <div className="py-4  h-full ">
           <DocumentAssistantContent
             trial={selectedTrial}
             currentTab={currentTab}
           />
         </div>
       </div>
-    </DashboardLayout>
+    </AppLayout>
   );
 }
 

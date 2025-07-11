@@ -1,12 +1,5 @@
-import React, { useState } from "react";
-import {
-  Building2,
-  Users,
-  Settings,
-  Shield,
-  BarChart3,
-  ChevronRight,
-} from "lucide-react";
+import React from "react";
+import { Building2, Users, Settings, Shield, BarChart3 } from "lucide-react";
 import { OrganizationOverview } from "./OrganizationOverview";
 import { MembersManagement } from "./MembersManagement";
 import { OrganizationSettings } from "./OrganizationSettings";
@@ -88,19 +81,6 @@ function TabNavigation({
   );
 }
 
-function BreadcrumbNavigation({ activeTab }: { activeTab: TabType }) {
-  const currentTab = tabs.find((tab) => tab.id === activeTab);
-
-  return (
-    <div className="flex items-center space-x-2 text-sm text-gray-600 mb-6">
-      <Building2 className="h-4 w-4" />
-      <span>Organization</span>
-      <ChevronRight className="h-4 w-4" />
-      <span className="text-gray-900 font-medium">{currentTab?.name}</span>
-    </div>
-  );
-}
-
 function RolesPlaceholder() {
   return (
     <ErrorBoundary>
@@ -151,20 +131,20 @@ function TabContent({ activeTab }: { activeTab: TabType }) {
   }
 }
 
-export function OrganizationManager() {
-  const [activeTab, setActiveTab] = useState<TabType>("overview");
+interface OrganizationManagerProps {
+  activeTab: TabType;
+  onTabChange: (tab: TabType) => void;
+}
 
+export function OrganizationManager({
+  activeTab,
+  onTabChange,
+}: OrganizationManagerProps) {
   return (
     <ErrorBoundary>
       <div className="space-y-6">
-        {/* Breadcrumb */}
-        <BreadcrumbNavigation activeTab={activeTab} />
-
-        {/* Tab Navigation */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-
-          {/* Tab Content */}
+          <TabNavigation activeTab={activeTab} onTabChange={onTabChange} />
           <div className="p-6">
             <TabContent activeTab={activeTab} />
           </div>

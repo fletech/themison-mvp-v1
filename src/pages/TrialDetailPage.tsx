@@ -1,9 +1,18 @@
 import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAppData } from "@/hooks/useAppData";
-import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { TrialManager } from "@/components/trials/TrialManager";
+import { FlaskConical } from "lucide-react";
+import type { BreadcrumbItem } from "@/components/ui/breadcrumb";
+import { TrialDropdownBreadcrumb } from "@/components/common/breadcrumbs/TrialDropdownBreadcrumb";
+
+const tabNames = {
+  overview: "Overview",
+  "document-hub": "Document Hub",
+  team: "Team",
+};
 
 export default function TrialDetailPage() {
   const { trialId, tab } = useParams();
@@ -16,20 +25,54 @@ export default function TrialDetailPage() {
 
   // Validate trial exists and user has access
   const selectedTrial = trials.find((t) => t.id === trialId);
+
+  // Base breadcrumb items
+  const breadcrumbItems: BreadcrumbItem[] = [
+    {
+      label: "Trials",
+      href: "/trials",
+      icon: FlaskConical,
+    },
+  ];
+
+  // Siempre agregamos el selector de trial
+  breadcrumbItems.push({
+    customContent: (
+      <TrialDropdownBreadcrumb
+        currentTrial={
+          selectedTrial || {
+            id: "",
+            name: "Select Trial",
+          }
+        }
+        basePath="/trials"
+        className="px-2 py-1 -ml-2"
+      />
+    ),
+  });
+
   if (!selectedTrial) {
     return (
-      <DashboardLayout title="Trial Details">
+      <AppLayout title="Trial Details" breadcrumbItems={breadcrumbItems}>
         <TrialError message="Trial not found" />
-      </DashboardLayout>
+      </AppLayout>
     );
   }
 
   if (!isUserAssignedToTrial(trialId!)) {
     return (
-      <DashboardLayout title="Trial Details">
+      <AppLayout title="Trial Details" breadcrumbItems={breadcrumbItems}>
         <TrialError message="You don't have access to this trial" />
-      </DashboardLayout>
+      </AppLayout>
     );
+  }
+
+  // Add current tab to breadcrumb
+  if (currentTab && tabNames[currentTab]) {
+    breadcrumbItems.push({
+      label: tabNames[currentTab],
+      isActive: true,
+    });
   }
 
   const handleTabChange = (newTab: string) => {
@@ -37,13 +80,13 @@ export default function TrialDetailPage() {
   };
 
   return (
-    <DashboardLayout title={selectedTrial.name}>
+    <AppLayout title={selectedTrial.name} breadcrumbItems={breadcrumbItems}>
       <TrialManager
         trial={selectedTrial}
         activeTab={currentTab}
         onTabChange={handleTabChange}
       />
-    </DashboardLayout>
+    </AppLayout>
   );
 }
 

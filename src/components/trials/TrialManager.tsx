@@ -1,6 +1,5 @@
 import React, { useState } from "react";
-import { FileText, Users, BarChart3, ChevronRight } from "lucide-react";
-import { TrialBreadcrumbs } from "./TrialBreadcrumbs.tsx";
+import { FileText, Users, BarChart3 } from "lucide-react";
 import { TrialDocumentHub } from "./TrialDocumentHub.tsx";
 import { TrialOverview } from "./TrialOverview.tsx";
 import { TrialTeam } from "./TrialTeam.tsx";
@@ -109,18 +108,12 @@ export function TrialManager({
   const currentTab = onTabChange ? activeTab : internalTab;
 
   return (
-    <div className="space-y-6">
-      {/* Breadcrumb */}
-      <TrialBreadcrumbs trial={trial} currentTab={currentTab} />
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <TabNavigation activeTab={currentTab} onTabChange={handleTabChange} />
 
-      {/* Tab Navigation */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <TabNavigation activeTab={currentTab} onTabChange={handleTabChange} />
-
-        {/* Tab Content */}
-        <div className="p-6">
-          <TabContent activeTab={currentTab} trial={trial} />
-        </div>
+      {/* Tab Content */}
+      <div className="p-6">
+        <TabContent activeTab={currentTab} trial={trial} />
       </div>
     </div>
   );

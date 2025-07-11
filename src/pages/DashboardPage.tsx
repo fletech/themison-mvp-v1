@@ -1,11 +1,11 @@
 import React from "react";
-import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { Dashboard } from "@/components/dashboard/Dashboard";
 
 export function DashboardPage() {
   return (
-    <DashboardLayout>
+    <AppLayout title="Dashboard" breadcrumbItems={[]}>
       <Dashboard />
-    </DashboardLayout>
+    </AppLayout>
   );
 }

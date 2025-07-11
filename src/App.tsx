@@ -18,6 +18,7 @@ import OnboardingPage from "./pages/OnboardingPage";
 import DocumentAssistantPage from "./pages/DocumentAssistantPage";
 import NotFound from "./pages/NotFound";
 import { LoadingSpinner } from "./components/organization";
+import { BreadcrumbProvider } from "@/hooks/useBreadcrumb";
 
 const queryClient = new QueryClient();
 
@@ -136,7 +137,7 @@ function AppRoutes() {
         }
       />
       <Route
-        path="/document-assistant"
+        path="/document-assistant/select-trial"
         element={
           <ProtectedRoute>
             <OnboardingRedirect>
@@ -177,9 +178,11 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <AuthProvider>
-          <AppRoutes />
-        </AuthProvider>
+        <BreadcrumbProvider>
+          <AuthProvider>
+            <AppRoutes />
+          </AuthProvider>
+        </BreadcrumbProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

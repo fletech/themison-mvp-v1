@@ -16,12 +16,15 @@ import { useTrialDocuments } from "@/hooks/useDocuments";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { TrialBreadcrumb } from "@/components/common/breadcrumbs/TrialBreadcrumb";
 
 interface TrialOverviewProps {
   trial: any;
 }
 
 export function TrialOverview({ trial }: TrialOverviewProps) {
+  const navigate = useNavigate();
+
   // Fetch team members to find PI
   const { data: trialTeam = [], isLoading: teamLoading } = useQuery({
     queryKey: ["trial-team", trial.id],
@@ -49,25 +52,6 @@ export function TrialOverview({ trial }: TrialOverviewProps) {
   const protocolDocument = documents.find(
     (doc: any) => doc.document_type === "protocol" && doc.is_latest
   );
-
-  // Timeline progress calculation
-  const start = trial.study_start ? new Date(trial.study_start) : null;
-  const end = trial.estimated_close_out
-    ? new Date(trial.estimated_close_out)
-    : null;
-  const now = new Date();
-  let progress = 0;
-  if (start && end && end > start) {
-    progress = Math.min(
-      1,
-      Math.max(
-        0,
-        (now.getTime() - start.getTime()) / (end.getTime() - start.getTime())
-      )
-    );
-  }
-
-  const navigate = useNavigate();
 
   return (
     <div className="space-y-8">
@@ -186,27 +170,6 @@ export function TrialOverview({ trial }: TrialOverviewProps) {
           </ul>
         </div>
       </div>
-
-      {/* Timeline
-      <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm">
-        <h3 className="text-lg font-semibold mb-4">Trial Timeline</h3>
-        <div className="space-y-4">
-          <div className="flex justify-between text-sm text-gray-500 mb-2">
-            <span>Start</span>
-            <span>Close-out</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div
-              className="bg-blue-600 h-2 rounded-full transition-all"
-              style={{ width: `${Math.round(progress * 100)}%` }}
-            ></div>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span>{trial.study_start || "TBD"}</span>
-            <span>{trial.estimated_close_out || "TBD"}</span>
-          </div>
-        </div>
-      </div> */}
     </div>
   );
 }
