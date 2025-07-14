@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTrialDocuments } from "@/hooks/useDocuments";
 import { Badge } from "@/components/ui/badge";
@@ -37,6 +37,7 @@ import {
   Eye,
   Archive,
   MoreVertical,
+  X,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -61,33 +62,45 @@ export function DocumentList({
   const navigate = useNavigate();
   const { data: documents = [], isLoading } = useTrialDocuments(trialId);
 
+  // Add state for dismissing the multiple active protocols warning
+  const [showProtocolWarning, setShowProtocolWarning] = useState(false);
+
+  // On mount, check localStorage for warningDismissed
+  useEffect(() => {
+    if (localStorage.getItem("warningDismissed") === "true") {
+      setShowProtocolWarning(false);
+    } else {
+      setShowProtocolWarning(true);
+    }
+  }, []);
+
+  // Add state for showing the warning
+  const [showWarning, setShowWarning] = useState(false);
+
   const tabs = ["Active", "Archived", "All Documents"];
 
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case "approved":
-        return "default"; // Green
-      case "pending":
-        return "secondary"; // Orange/Yellow
-      case "signed":
-        return "default"; // Green/Teal
-      case "submitted":
-        return "outline"; // Gray
-      default:
-        return "outline";
-    }
-  };
+  // const getStatusBadgeVariant = (status: string) => {
+  //   switch (status?.toLowerCase()) {
+  //     case "approved":
+  //       return "default"; // Green
+  //     case "pending":
+  //       return "secondary"; // Orange/Yellow
+  //     case "signed":
+  //       return "default"; // Green/Teal
+  //     case "submitted":
+  //       return "outline"; // Gray
+  //     default:
+  //       return "outline";
+  //   }
+  // };
 
   const getStatusBadgeColor = (status: string) => {
     switch (status?.toLowerCase()) {
-      case "approved":
+      case "active":
         return "bg-green-100 text-green-800 border-green-200";
-      case "pending":
+      case "archived":
         return "bg-orange-100 text-orange-800 border-orange-200";
-      case "signed":
-        return "bg-teal-100 text-teal-800 border-teal-200";
-      case "submitted":
-        return "bg-gray-100 text-gray-800 border-gray-200";
+
       default:
         return "bg-gray-100 text-gray-800 border-gray-200";
     }
@@ -120,7 +133,7 @@ export function DocumentList({
   const isActiveProtocol = (document: any) => {
     if (document.document_type !== "protocol") return false;
 
-    const activeStatuses = ["active", "approved", "signed", "pending"];
+    const activeStatuses = ["active", "archived"];
     return activeStatuses.includes(document.status?.toLowerCase());
   };
 
@@ -208,15 +221,6 @@ export function DocumentList({
               )}
 
               {/* Multiple Active Protocols Warning */}
-              {hasMultipleActiveProtocols && (
-                <div className="text-sm text-yellow-200 italic flex items-center gap-2 mt-2">
-                  <AlertTriangle className="w-4 h-4" />
-                  <span>
-                    Warning: {activeProtocols.length} active protocols found -
-                    some should be marked as inactive
-                  </span>
-                </div>
-              )}
 
               {/* No Amendment message */}
               {!latestAmendment && protocolDocument && (
@@ -230,6 +234,30 @@ export function DocumentList({
             </div>
           </div>
         </Card>
+
+        {hasMultipleActiveProtocols && showProtocolWarning && (
+          <div className="text-sm text-red-600 font-semibold flex items-center  mt-2 px-3 py-3 gap-2 relative bg-red-50 border-l-4 border-red-400">
+            <AlertTriangle className="w-4 h-4" />
+            <span>
+              {activeProtocols.length} active protocols found - some should be
+              marked as inactive
+            </span>
+            <button
+              onClick={() => {
+                setShowProtocolWarning(false);
+                localStorage.setItem("warningDismissed", "true");
+              }}
+              title="Dismiss warning"
+            >
+              <span
+                className="text-gray-500 font-semibold bg-gray-100 px-3 py-2 rounded-md hover:bg-gray-100"
+                title="Dismiss warning"
+              >
+                Dismiss
+              </span>
+            </button>
+          </div>
+        )}
 
         {/* Tabs and Controls */}
         <div className="flex items-center justify-between">
@@ -308,11 +336,10 @@ export function DocumentList({
                           <TooltipTrigger asChild>
                             <AlertTriangle className="w-4 h-4 text-red-500 cursor-help" />
                           </TooltipTrigger>
-                          <TooltipContent className="bg-red-200 border-red-200">
+                          <TooltipContent className="bg-red-50 border-red-200">
                             <p className="max-w-xs text-red-600">
-                              This protocol is active but should likely be
-                              marked as inactive. Only one protocol should
-                              typically remain active per trial.
+                              This protocol is outdated. Only one protocol
+                              should typically remain active per trial.
                             </p>
                           </TooltipContent>
                         </Tooltip>

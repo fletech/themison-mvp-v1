@@ -285,6 +285,7 @@ export type Database = {
           is_latest: boolean | null;
           mime_type: string | null;
           status: string | null;
+          warning: boolean | null;
           tags: string[] | null;
           trial_id: string | null;
           updated_at: string | null;

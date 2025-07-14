@@ -78,6 +78,9 @@ export function ActiveDocuments({ trial }: ActiveDocumentsProps) {
     (doc) => doc.document_type === "protocol" && doc.is_latest
   );
 
+  // Only show active documents
+  const activeDocuments = documents.filter((doc) => doc.is_latest);
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -122,7 +125,6 @@ export function ActiveDocuments({ trial }: ActiveDocumentsProps) {
               <ExternalLink className="w-4 h-4 mr-2" />
               Go to Trial
             </Button>
-
             <Button
               size="sm"
               variant="outline"
@@ -141,14 +143,12 @@ export function ActiveDocuments({ trial }: ActiveDocumentsProps) {
               View Protocol
             </Button>
           </div>
-
           <div className="space-y-2">
             {/* Trial Name */}
             <h2 className="text-xl font-bold text-gray-900">{trial.name}</h2>
             <p className="text-sm text-gray-700 flex items-center gap-2">
               Document Assistant - Review active documents for AI analysis
             </p>
-
             {/* Protocol Info */}
             {protocolDocument && (
               <div className="text-sm text-gray-700">
@@ -168,39 +168,6 @@ export function ActiveDocuments({ trial }: ActiveDocumentsProps) {
           </div>
         </div>
       </Card>
-
-      {/* Tabs and Controls - Read Only */}
-      <div className="flex items-center justify-between">
-        <div className="flex space-x-8">
-          {tabs.map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`pb-2 text-sm font-medium transition-colors ${
-                activeTab === tab
-                  ? "text-foreground border-b-2 border-primary"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm">
-            <Search className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="sm">
-            <ArrowUpDown className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="sm">
-            <Filter className="w-4 h-4" />
-          </Button>
-          {/* No "Add Doc" button - this is read-only */}
-        </div>
-      </div>
-
       {/* Documents Table - Read Only Actions */}
       <Card>
         <Table>
@@ -215,7 +182,7 @@ export function ActiveDocuments({ trial }: ActiveDocumentsProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {documents.map((document: any) => (
+            {activeDocuments.map((document: any) => (
               <TableRow key={document.id}>
                 <TableCell>
                   <div className="flex items-center gap-2">
@@ -229,7 +196,6 @@ export function ActiveDocuments({ trial }: ActiveDocumentsProps) {
                     )}
                   </div>
                 </TableCell>
-
                 <TableCell>
                   <div className="text-sm">
                     <div className="font-medium">
@@ -240,7 +206,6 @@ export function ActiveDocuments({ trial }: ActiveDocumentsProps) {
                     </div>
                   </div>
                 </TableCell>
-
                 <TableCell>
                   <Badge
                     variant="outline"
@@ -249,7 +214,6 @@ export function ActiveDocuments({ trial }: ActiveDocumentsProps) {
                     {formatDocumentType(document.document_type)}
                   </Badge>
                 </TableCell>
-
                 <TableCell>
                   <Badge
                     variant="outline"
@@ -260,17 +224,14 @@ export function ActiveDocuments({ trial }: ActiveDocumentsProps) {
                     {document.status || "Pending"}
                   </Badge>
                 </TableCell>
-
                 <TableCell className="text-sm text-muted-foreground">
                   {format(
                     new Date(document.updated_at || document.created_at),
                     "yyyy-MM-dd"
                   )}
                 </TableCell>
-
                 <TableCell>
                   <div className="flex items-center gap-1">
-                    {/* Only AI and View actions - no delete/edit */}
                     <Button
                       variant="ghost"
                       size="sm"
@@ -282,28 +243,6 @@ export function ActiveDocuments({ trial }: ActiveDocumentsProps) {
                       }
                     >
                       <MessageSquare className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      title="View document"
-                      onClick={() => {
-                        // TODO: Open document viewer
-                        console.log("View document:", document);
-                      }}
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      title="Download document"
-                      onClick={() => {
-                        // TODO: Download document
-                        console.log("Download document:", document);
-                      }}
-                    >
-                      <Download className="w-4 h-4" />
                     </Button>
                   </div>
                 </TableCell>

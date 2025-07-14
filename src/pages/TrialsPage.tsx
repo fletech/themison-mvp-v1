@@ -181,7 +181,7 @@ export function TrialsPage() {
       return (
         <Card
           key={trial.id}
-          className={`w-full max-w-sm overflow-hidden hover:shadow-lg transition-shadow cursor-pointer ${
+          className={`w-full max-w-sm overflow-hidden hover:shadow-xl hover:translate-y-[-2px] transition-all duration-300 cursor-pointer ${
             isAssigned ? "ring-2 ring-blue-200" : ""
           }`}
           onClick={() => navigate(`/trials/${trial.id}`)}
@@ -194,11 +194,11 @@ export function TrialsPage() {
           >
             {/* Tags in top left */}
             <div className="absolute top-3 left-3 flex flex-wrap gap-1">
-              <Badge className="bg-teal-100 text-teal-800 text-xs rounded-full">
+              <Badge className="bg-teal-100 text-teal-800 text-xs rounded-full hover:bg-teal-200">
                 {trial.phase}
               </Badge>
               {trial.location && (
-                <Badge className="bg-gray-100 text-gray-800 text-xs rounded-full">
+                <Badge className="bg-gray-100 text-gray-800 text-xs rounded-full hover:bg-gray-200">
                   {trial.location}
                 </Badge>
               )}

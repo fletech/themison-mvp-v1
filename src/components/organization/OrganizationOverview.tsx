@@ -78,14 +78,14 @@ interface OrganizationHeaderProps {
 
 function OrganizationHeader({ organization }: OrganizationHeaderProps) {
   return (
-    <div className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-2xl p-8 border border-blue-200">
+    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-8 border border-blue-200">
       <div className="flex items-start justify-between">
         <div className="flex items-center space-x-4">
-          <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-4 rounded-2xl shadow-lg">
-            <Building2 className="h-8 w-8 text-white" />
+          <div className="bg-gradient-to-br from-blue-500 to-indigo-500 p-4 rounded-2xl shadow-lg">
+            <Building2 className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-2xl font-bold text-gray-900">
               {organization.name}
             </h1>
             <div className="flex items-center space-x-4 mt-2">
@@ -222,7 +222,6 @@ export function OrganizationOverview() {
               icon={Users}
               description="Active members in organization"
               color="bg-blue-500"
-              trend={{ value: 12, isPositive: true }}
             />
             <StatCard
               title="Active Trials"
@@ -230,7 +229,6 @@ export function OrganizationOverview() {
               icon={FileText}
               description="Currently running trials"
               color="bg-green-500"
-              trend={{ value: 8, isPositive: true }}
             />
             <StatCard
               title="Custom Roles"
@@ -239,20 +237,23 @@ export function OrganizationOverview() {
               description="Defined access roles"
               color="bg-purple-500"
             />
-            <StatCard
-              title="Pending Invites"
-              value={stats.totalInvitations}
-              icon={Mail}
-              description="Outstanding invitations"
-              color="bg-orange-500"
-            />
+            {/* stat card only visible if stats.totalInvitations is diff than 0 */}
+            {stats.totalInvitations > 0 && (
+              <StatCard
+                title="Pending Invites"
+                value={stats.totalInvitations}
+                icon={Mail}
+                description="Outstanding invitations"
+                color="bg-orange-500"
+              />
+            )}
           </div>
         )}
 
         {/* Quick Actions */}
         <QuickActions />
 
-        {/* Recent Activity Placeholder - Only visible to admin */}
+        {/* Recent Activity Placeholder - Only visible to admin
         {canViewStats && (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -278,7 +279,7 @@ export function OrganizationOverview() {
               ))}
             </div>
           </div>
-        )}
+        )} */}
       </div>
     </ErrorBoundary>
   );
