@@ -40,6 +40,9 @@ import {
   X,
 } from "lucide-react";
 import { format } from "date-fns";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { documentService } from "@/services/documentService";
+import { useToast } from "@/hooks/use-toast";
 
 interface DocumentListProps {
   trialId: string;
@@ -153,6 +156,29 @@ export function DocumentList({
     latestProtocol ||
     documents.find((doc) => doc.document_type === "protocol" && doc.is_latest);
 
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const archiveMutation = useMutation({
+    mutationFn: (documentId: string) =>
+      documentService.updateDocument(documentId, { status: "archived" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["trialDocuments", trialId] });
+      toast({ title: "Document archived" });
+    },
+    onError: () => {
+      toast({ title: "Error archiving document", variant: "destructive" });
+    },
+  });
+
+  // Filter documents by tab
+  let filteredDocuments = documents;
+  if (activeTab === "Active") {
+    filteredDocuments = documents.filter((doc) => doc.status === "active");
+  } else if (activeTab === "Archived") {
+    filteredDocuments = documents.filter((doc) => doc.status === "archived");
+  }
+
   return (
     <TooltipProvider>
       <div className="space-y-4">
@@ -168,6 +194,15 @@ export function DocumentList({
               <Button
                 size="sm"
                 className="bg-white/20 hover:bg-white/30 text-white border-white/30"
+                onClick={() => {
+                  if (protocolDocument) {
+                    navigate(
+                      `/document-assistant/${trialId}/document-ai?documentId=${protocolDocument.id}`
+                    );
+                  } else {
+                    navigate(`/document-assistant/${trialId}/document-ai`);
+                  }
+                }}
               >
                 <MessageSquare className="w-4 h-4 mr-2" />
                 Ask AI
@@ -313,7 +348,7 @@ export function DocumentList({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {documents.map((document: any) => (
+              {filteredDocuments.map((document: any) => (
                 <TableRow key={document.id}>
                   <TableCell>
                     <div className="flex items-center gap-2">
@@ -429,10 +464,11 @@ export function DocumentList({
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => {
-                              // Archive document logic
-                              console.log("Archive document:", document.id);
-                            }}
+                            onClick={() => archiveMutation.mutate(document.id)}
+                            disabled={
+                              document.status === "archived" ||
+                              archiveMutation.status === "pending"
+                            }
                           >
                             <Archive className="w-4 h-4" />
                           </Button>

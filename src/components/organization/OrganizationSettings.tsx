@@ -152,63 +152,7 @@ export function OrganizationSettings() {
           </p>
         </div>
 
-        {/* Organization Info Card */}
-        <div className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-2xl p-6 border border-blue-200">
-          <div className="flex items-center space-x-4 mb-4">
-            <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-3 rounded-xl">
-              <Building2 className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">
-                Organization Overview
-              </h3>
-              <p className="text-sm text-gray-600">
-                Current organization information
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Calendar className="h-4 w-4 text-blue-600" />
-              </div>
-              {/* TODO: Add created_at back to organization query */}
-              {/* <div>
-                <p className="text-sm text-gray-600">Created</p>
-                <p className="font-medium text-gray-900">
-                  {new Date(organization.created_at!).toLocaleDateString()}
-                </p>
-              </div> */}
-            </div>
-
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Status</p>
-                <p className="font-medium text-gray-900">
-                  {organization.onboarding_completed
-                    ? "Active"
-                    : "Setup Pending"}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <Shield className="h-4 w-4 text-purple-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">ID</p>
-                <p className="font-medium text-gray-900 font-mono text-xs">
-                  {organization.id.slice(0, 8)}...
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/*  */}
 
         {/* Settings Form */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">

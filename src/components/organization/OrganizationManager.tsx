@@ -4,8 +4,9 @@ import { OrganizationOverview } from "./OrganizationOverview";
 import { MembersManagement } from "./MembersManagement";
 import { OrganizationSettings } from "./OrganizationSettings";
 import { ErrorBoundary } from "./ErrorBoundary";
+import { PatientsManagement } from "./PatientsManagement.tsx";
 
-type TabType = "overview" | "members" | "roles" | "settings";
+type TabType = "overview" | "members" | "roles" | "settings" | "patients";
 
 interface TabItem {
   id: TabType;
@@ -23,9 +24,15 @@ const tabs: TabItem[] = [
   },
   {
     id: "members",
-    name: "Team Members",
+    name: "Members",
     icon: Users,
-    description: "Manage team members and invitations",
+    description: "Manage members and invitations",
+  },
+  {
+    id: "patients",
+    name: "Patients",
+    icon: Users,
+    description: "Manage patients in your organization",
   },
   {
     id: "roles",
@@ -126,6 +133,8 @@ function TabContent({ activeTab }: { activeTab: TabType }) {
       return <RolesPlaceholder />;
     case "settings":
       return <OrganizationSettings />;
+    case "patients":
+      return <PatientsManagement />;
     default:
       return <OrganizationOverview />;
   }

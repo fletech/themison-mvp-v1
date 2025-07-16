@@ -11,11 +11,15 @@ const tabs = [
   },
   {
     id: "members",
-    name: "Team Members",
+    name: "Members",
   },
   {
     id: "roles",
     name: "Roles & Permissions",
+  },
+  {
+    id: "patients",
+    name: "Patients",
   },
   {
     id: "settings",
