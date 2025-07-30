@@ -59,6 +59,7 @@ import {
   STATUS_OPTIONS,
 } from "@/hooks/usePatientDocuments";
 import { toast } from "sonner";
+import { useAppData } from "@/hooks/useAppData";
 
 interface PatientDocumentsProps {
   patientId: string;
@@ -77,6 +78,7 @@ export function PatientDocuments({
   const [filterType, setFilterType] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { member } = useAppData();
 
   const {
     documents,
@@ -166,6 +168,7 @@ export function PatientDocuments({
         description: uploadForm.description || null,
         tags: tagsArray.length > 0 ? tagsArray : null,
         status: uploadForm.status,
+        uploaded_by: member?.id || null,
         is_latest: true,
         version: 1,
       };
@@ -422,19 +425,9 @@ export function PatientDocuments({
                         {formatFileSize(document.file_size)}
                       </TableCell>
                       <TableCell>
-                        <div className="text-sm text-gray-600">
-                          <div className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
-                            {new Date(document.created_at).toLocaleDateString()}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            v{document.version}
-                            {document.is_latest && (
-                              <Badge variant="outline" className="ml-1 text-xs">
-                                Latest
-                              </Badge>
-                            )}
-                          </div>
+                        <div className="flex items-center gap-1 text-sm text-gray-600">
+                          <Calendar className="w-3 h-3" />
+                          {new Date(document.created_at).toLocaleDateString()}
                         </div>
                       </TableCell>
                       <TableCell>

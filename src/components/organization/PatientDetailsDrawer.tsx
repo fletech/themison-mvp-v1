@@ -276,7 +276,7 @@ export function PatientDetailsDrawer({
             {patient.known_allergies && (
               <div className="space-y-1">
                 <span className="text-sm text-gray-500">Known Allergies:</span>
-                <p className="text-sm font-medium text-gray-900 whitespace-pre-wrap text-red-700">
+                <p className="text-sm font-medium whitespace-pre-wrap text-red-700">
                   {patient.known_allergies}
                 </p>
               </div>
