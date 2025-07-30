@@ -267,10 +267,12 @@ export function TrialsPage() {
                 <User className="w-3 h-3 mr-2" />
                 <span>{piName}</span>
               </div>
-              <div className="flex items-center text-gray-600">
-                <Users className="w-3 h-3 mr-2" />
-                <span>+{memberCount} members</span>
-              </div>
+              {memberCount > 0 && (
+                <div className="flex items-center text-gray-600">
+                  <Users className="w-3 h-3 mr-2" />
+                  <span>+{memberCount} members</span>
+                </div>
+              )}
             </div>
           </div>
         </Card>
@@ -321,7 +323,7 @@ export function TrialsPage() {
               ))}
             </div>
           </div>
-          
+
           {/* Create Trial Button */}
           {canCreateTrials && (
             <Dialog open={showTrialDialog} onOpenChange={setShowTrialDialog}>

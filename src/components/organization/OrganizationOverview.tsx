@@ -250,9 +250,6 @@ export function OrganizationOverview() {
           </div>
         )}
 
-        {/* Quick Actions */}
-        <QuickActions />
-
         {/* Recent Activity Placeholder - Only visible to admin
         {canViewStats && (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
