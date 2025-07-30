@@ -1,10 +1,10 @@
 import React, { useState } from "react";
-import { FileText, Users, BarChart3 } from "lucide-react";
+import { FileText, Users, BarChart3, UserCheck } from "lucide-react";
 import { TrialDocumentHub } from "./TrialDocumentHub.tsx";
 import { TrialOverview } from "./TrialOverview.tsx";
 import { TrialTeam } from "./TrialTeam.tsx";
 
-type TabType = "overview" | "document-hub" | "team";
+type TabType = "overview" | "document-hub" | "team" | "patients";
 
 interface TabItem {
   id: TabType;
@@ -31,6 +31,12 @@ const tabs: TabItem[] = [
     name: "Team",
     icon: Users,
     description: "Trial team members and assignments",
+  },
+  {
+    id: "patients",
+    name: "Patients",
+    icon: UserCheck,
+    description: "Patient assignment and management",
   },
 ];
 
@@ -80,6 +86,36 @@ function TabNavigation({
   );
 }
 
+// Placeholder component for patients management
+function TrialPatients({ trial }: { trial: any }) {
+  return (
+    <div className="space-y-6">
+      <div className="text-center py-12">
+        <UserCheck className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-gray-900 mb-2">
+          Patient Management
+        </h3>
+        <p className="text-gray-500 mb-4">
+          This section will allow you to assign patients from your organization
+          to this trial.
+        </p>
+        <div className="max-w-md mx-auto text-left bg-gray-50 p-4 rounded-lg">
+          <h4 className="font-medium text-gray-700 mb-2">
+            Features to develop:
+          </h4>
+          <ul className="text-sm text-gray-600 space-y-1">
+            <li>• View organization patients</li>
+            <li>• Assign patients to trial</li>
+            <li>• Manage patient eligibility</li>
+            <li>• Track patient status in trial</li>
+            <li>• Patient consent management</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function TabContent({ activeTab, trial }: { activeTab: TabType; trial: any }) {
   switch (activeTab) {
     case "overview":
@@ -88,6 +124,8 @@ function TabContent({ activeTab, trial }: { activeTab: TabType; trial: any }) {
       return <TrialDocumentHub trial={trial} />;
     case "team":
       return <TrialTeam trial={trial} />;
+    case "patients":
+      return <TrialPatients trial={trial} />;
     default:
       return <TrialOverview trial={trial} />;
   }

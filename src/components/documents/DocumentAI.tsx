@@ -1,13 +1,16 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { MessageSquare, AlertCircle } from "lucide-react";
 import { useLocation } from "react-router-dom";
-import {
-  useDocument,
-  useTrialDocuments,
-  useTrialDocumentsByType,
-} from "@/hooks/useDocuments";
+import { useDocument, useTrialDocuments } from "@/hooks/useDocuments";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface DocumentAIProps {
@@ -28,12 +31,18 @@ export function DocumentAI({ trial }: DocumentAIProps) {
   const [chat, setChat] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Get latest protocol document
-  const { data: protocols = [], isLoading: docsLoading } =
-    useTrialDocumentsByType(trial.id, "protocol");
-  const latestProtocol = protocols[0]; // Since we're using isLatest in the hook, first doc is the latest
+  // Get all documents and filter for active ones
+  const { data: documents = [], isLoading: docsLoading } = useTrialDocuments(
+    trial.id
+  );
+  const activeDocuments = documents.filter((doc) => doc.is_latest);
 
-  // Parse documentId from URL or use latest protocol
+  // Get latest protocol as default
+  const latestProtocol = activeDocuments.find(
+    (doc) => doc.document_type === "protocol"
+  );
+
+  // Parse documentId from URL or use latest protocol as default
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const docId = params.get("documentId");
@@ -79,39 +88,73 @@ export function DocumentAI({ trial }: DocumentAIProps) {
     }, 500);
   };
 
-  let documentIndicator = null;
+  const formatDocumentType = (type: string) => {
+    switch (type) {
+      case "protocol":
+        return "Protocol";
+      case "brochure":
+        return "Brochure";
+      case "consent_form":
+        return "Consent Form";
+      case "report":
+        return "Report";
+      case "manual":
+        return "Manual";
+      case "plan":
+        return "Plan";
+      default:
+        return type;
+    }
+  };
+
+  // Document selector component
+  let documentSelector = null;
   if (docsLoading || docLoading) {
-    documentIndicator = (
+    documentSelector = (
       <span className="text-gray-500 animate-pulse">Loading document...</span>
     );
-  } else if (!documentId && !latestProtocol) {
-    documentIndicator = (
-      <span className="text-gray-500">(No protocol available)</span>
+  } else if (activeDocuments.length === 0) {
+    documentSelector = (
+      <span className="text-gray-500">(No active documents available)</span>
     );
   } else if (error) {
-    documentIndicator = (
+    documentSelector = (
       <span className="text-red-500">Error loading document</span>
     );
-  } else if (document) {
-    documentIndicator = (
-      <span
-        className="truncate font-semibold text-blue-700"
-        title={document.document_name}
+  } else {
+    documentSelector = (
+      <Select
+        value={documentId || ""}
+        onValueChange={(value) => setDocumentId(value)}
       >
-        {document.document_name}
-      </span>
+        <SelectTrigger className="w-full">
+          <SelectValue placeholder="Select a document..." />
+        </SelectTrigger>
+        <SelectContent>
+          {activeDocuments.map((doc) => (
+            <SelectItem key={doc.id} value={doc.id}>
+              <div className="flex flex-col text-left">
+                <span className="font-medium">{doc.document_name}</span>
+                <span className="text-xs text-gray-500 capitalize">
+                  {formatDocumentType(doc.document_type)}
+                </span>
+              </div>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     );
   }
 
   return (
     <div className="relative h-full">
-      {/* Alert when no protocol is available */}
-      {!docsLoading && !latestProtocol && !documentId && (
+      {/* Alert when no active documents are available */}
+      {!docsLoading && activeDocuments.length === 0 && (
         <Alert className="mb-4">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            No protocol document is available for this trial. Please upload a
-            protocol document first.
+            No active documents are available for this trial. Please upload
+            documents first.
           </AlertDescription>
         </Alert>
       )}
@@ -154,17 +197,19 @@ export function DocumentAI({ trial }: DocumentAIProps) {
 
       {/* Input container - fixed at the bottom of this component */}
       <div className="bottom-0 left-0 right-0 border-t border-gray-300">
-        {/* Document indicator */}
-        <div className="px-4 pt-3 pb-2 text-xs text-gray-600 flex items-center gap-2">
-          <span className="font-medium text-gray-700">Querying document:</span>
-          {documentIndicator}
+        {/* Document selector */}
+        <div className="px-4 pt-3 pb-2 text-xs text-gray-600 flex items-center gap-3">
+          <span className="font-medium text-gray-700 flex-shrink-0">
+            Querying document:
+          </span>
+          <div className="flex-1 max-w-md">{documentSelector}</div>
         </div>
         {/* Input row */}
         <form
           onSubmit={handleSend}
           className="flex items-end justify-center px-4 py-4"
         >
-          <div className="flex w-full max-w-2xl bg-white border border-gray-00 rounded-2xl shadow-sm px-4 py-2 gap-2 items-center">
+          <div className="flex w-full max-w-2xl bg-white border border-gray-200 rounded-2xl shadow-sm px-4 py-2 gap-2 items-center">
             <Input
               ref={inputRef}
               className="flex-1 text-base bg-transparent border-none outline-none placeholder-gray-400"

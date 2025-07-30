@@ -11,8 +11,8 @@ export function DocumentAssistantTabs({
   onTabChange,
 }: DocumentAssistantTabsProps) {
   const tabs = [
-    { id: "document-ai", label: "Document AI", icon: FileText },
     { id: "active-documents", label: "Active Documents", icon: Upload },
+    { id: "document-ai", label: "Document AI", icon: FileText },
     { id: "qa-repository", label: "QA Repository", icon: MessageSquare },
   ];
 

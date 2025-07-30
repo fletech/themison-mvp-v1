@@ -72,10 +72,10 @@ export function InviteMembers({ onContinue }: InviteMembersProps) {
           <Users className="h-5 w-5 text-blue-600 mt-0.5" />
           <div>
             <h3 className="font-medium text-blue-900">
-              Organization Team Setup
+              Organization Members Setup
             </h3>
             <p className="text-sm text-blue-700 mt-1">
-              Invite team members to your organization. This affects the entire
+              Invite members to your organization. This affects the entire
               organization and helps you build your complete staff roster.
             </p>
           </div>

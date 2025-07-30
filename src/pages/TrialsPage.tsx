@@ -16,8 +16,18 @@ import {
   FlaskConical,
   ChevronDown,
   ChevronUp,
+  Plus,
 } from "lucide-react";
 import type { BreadcrumbItem } from "@/components/ui/breadcrumb";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { CreateTrial } from "@/components/onboarding/CreateTrial";
+import { useOnboardingMutations } from "@/hooks/useOnboardingMutations";
 
 export function TrialsPage() {
   const navigate = useNavigate();
@@ -26,6 +36,7 @@ export function TrialsPage() {
   const [expandedSections, setExpandedSections] = useState<string[]>([
     "assigned",
   ]);
+  const [showTrialDialog, setShowTrialDialog] = useState(false);
 
   // Use AppData context instead of duplicating logic
   const {
@@ -34,8 +45,16 @@ export function TrialsPage() {
     metricsLoading,
     isUserAssignedToTrial,
     getUserRoleInTrial,
+    organizationId,
+    memberId,
+    refreshData,
   } = useAppData();
   const trials = metrics?.trials || [];
+
+  const { createTrialMutation } = useOnboardingMutations({
+    organizationId,
+    memberId,
+  });
 
   // Include metrics loading to prevent "No trials found" flash
   const isFullyLoading = isLoading || metricsLoading;
@@ -83,9 +102,16 @@ export function TrialsPage() {
     enabled: trials.length > 0,
   });
 
-  const handleCreateTrial = () => {
-    // TODO: Implement create trial modal or navigation
-    console.log("Create trial clicked");
+  // Determine if this is the first trial
+  const isFirstTrial = (metrics?.trials?.length || 0) === 0;
+
+  const handleCreateTrial = (trialData: any) => {
+    createTrialMutation.mutate(trialData, {
+      onSuccess: async () => {
+        setShowTrialDialog(false);
+        if (refreshData) await refreshData();
+      },
+    });
   };
 
   const phases = [
@@ -273,45 +299,53 @@ export function TrialsPage() {
   return (
     <AppLayout title="Trials" breadcrumbItems={breadcrumbItems}>
       <div className="space-y-6">
-        {/* Compact Filters */}
-        <div className="flex flex-col flex-wrap gap-2 items-start">
-          {/* Phase filters */}
-          <div className="flex flex-wrap gap-1">
-            {phases.map((phase) => (
-              <Button
-                key={phase}
-                variant={activePhase === phase ? "default" : "outline"}
-                size="sm"
-                onClick={() => setActivePhase(phase)}
-                className={`h-7 px-2 text-xs rounded-full ${
-                  activePhase === phase
-                    ? "bg-gray-800 hover:bg-gray-700 text-white"
-                    : "bg-white hover:bg-gray-50 text-gray-700 border-gray-300"
-                }`}
-              >
-                {phase}
-              </Button>
-            ))}
+        {/* Header with Create Trial Button */}
+        <div className="flex justify-between items-center">
+          <div className="flex flex-col flex-wrap gap-2 items-start">
+            {/* Location filters */}
+            <div className="flex flex-wrap gap-1">
+              {locations.map((location) => (
+                <Button
+                  key={location}
+                  variant={activeLocation === location ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setActiveLocation(location)}
+                  className={`h-7 px-2 text-xs rounded-full ${
+                    activeLocation === location
+                      ? "bg-gray-800 hover:bg-gray-700 text-white"
+                      : "bg-white hover:bg-gray-50 text-gray-700 border-gray-300"
+                  }`}
+                >
+                  {location}
+                </Button>
+              ))}
+            </div>
           </div>
-
-          {/* Location filters */}
-          <div className="flex flex-wrap gap-1">
-            {locations.map((location) => (
-              <Button
-                key={location}
-                variant={activeLocation === location ? "default" : "outline"}
-                size="sm"
-                onClick={() => setActiveLocation(location)}
-                className={`h-7 px-2 text-xs rounded-full ${
-                  activeLocation === location
-                    ? "bg-gray-800 hover:bg-gray-700 text-white"
-                    : "bg-white hover:bg-gray-50 text-gray-700 border-gray-300"
-                }`}
-              >
-                {location}
-              </Button>
-            ))}
-          </div>
+          
+          {/* Create Trial Button */}
+          {canCreateTrials && (
+            <Dialog open={showTrialDialog} onOpenChange={setShowTrialDialog}>
+              <DialogTrigger asChild>
+                <Button
+                  className="bg-blue-600 hover:bg-blue-700"
+                  onClick={() => setShowTrialDialog(true)}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create New Trial
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Create New Trial</DialogTitle>
+                </DialogHeader>
+                <CreateTrial
+                  onComplete={handleCreateTrial}
+                  isFirstTrial={isFirstTrial}
+                  organizationId={organizationId || ""}
+                />
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
 
         {/* Assigned Section */}

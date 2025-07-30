@@ -7,6 +7,11 @@ export type Json =
   | Json[];
 
 export type Database = {
+  // Allows to automatically instanciate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "12.2.3 (519615d)";
+  };
   public: {
     Tables: {
       invitations: {
@@ -145,27 +150,273 @@ export type Database = {
           }
         ];
       };
-      patients: {
+      patient_documents: {
+        Row: {
+          created_at: string;
+          description: string | null;
+          document_name: string;
+          document_type: Database["public"]["Enums"]["patient_document_type_enum"];
+          document_url: string;
+          file_size: number | null;
+          id: string;
+          is_latest: boolean | null;
+          mime_type: string | null;
+          patient_id: string | null;
+          status: string | null;
+          tags: string[] | null;
+          updated_at: string | null;
+          uploaded_by: string | null;
+          version: number | null;
+        };
+        Insert: {
+          created_at?: string;
+          description?: string | null;
+          document_name: string;
+          document_type: Database["public"]["Enums"]["patient_document_type_enum"];
+          document_url: string;
+          file_size?: number | null;
+          id?: string;
+          is_latest?: boolean | null;
+          mime_type?: string | null;
+          patient_id?: string | null;
+          status?: string | null;
+          tags?: string[] | null;
+          updated_at?: string | null;
+          uploaded_by?: string | null;
+          version?: number | null;
+        };
+        Update: {
+          created_at?: string;
+          description?: string | null;
+          document_name?: string;
+          document_type?: Database["public"]["Enums"]["patient_document_type_enum"];
+          document_url?: string;
+          file_size?: number | null;
+          id?: string;
+          is_latest?: boolean | null;
+          mime_type?: string | null;
+          patient_id?: string | null;
+          status?: string | null;
+          tags?: string[] | null;
+          updated_at?: string | null;
+          uploaded_by?: string | null;
+          version?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "patient_documents_patient_id_fkey";
+            columns: ["patient_id"];
+            isOneToOne: false;
+            referencedRelation: "patients";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "patient_documents_uploaded_by_fkey";
+            columns: ["uploaded_by"];
+            isOneToOne: false;
+            referencedRelation: "members";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      patient_visits: {
         Row: {
           created_at: string | null;
+          created_by: string | null;
+          doctor_id: string;
+          duration_minutes: number | null;
           id: string;
-          organization_id: string;
-          patient_code: string;
+          location: string | null;
+          next_visit_date: string | null;
+          notes: string | null;
+          patient_id: string;
+          status: Database["public"]["Enums"]["visit_status_enum"];
+          trial_id: string;
           updated_at: string | null;
+          visit_date: string;
+          visit_number: number | null;
+          visit_time: string | null;
+          visit_type: Database["public"]["Enums"]["visit_type_enum"];
         };
         Insert: {
           created_at?: string | null;
+          created_by?: string | null;
+          doctor_id: string;
+          duration_minutes?: number | null;
           id?: string;
-          organization_id: string;
-          patient_code: string;
+          location?: string | null;
+          next_visit_date?: string | null;
+          notes?: string | null;
+          patient_id: string;
+          status?: Database["public"]["Enums"]["visit_status_enum"];
+          trial_id: string;
           updated_at?: string | null;
+          visit_date: string;
+          visit_number?: number | null;
+          visit_time?: string | null;
+          visit_type?: Database["public"]["Enums"]["visit_type_enum"];
         };
         Update: {
           created_at?: string | null;
+          created_by?: string | null;
+          doctor_id?: string;
+          duration_minutes?: number | null;
           id?: string;
+          location?: string | null;
+          next_visit_date?: string | null;
+          notes?: string | null;
+          patient_id?: string;
+          status?: Database["public"]["Enums"]["visit_status_enum"];
+          trial_id?: string;
+          updated_at?: string | null;
+          visit_date?: string;
+          visit_number?: number | null;
+          visit_time?: string | null;
+          visit_type?: Database["public"]["Enums"]["visit_type_enum"];
+        };
+        Relationships: [
+          {
+            foreignKeyName: "patient_enrolled_in_trial";
+            columns: ["patient_id", "trial_id"];
+            isOneToOne: false;
+            referencedRelation: "trial_patients";
+            referencedColumns: ["patient_id", "trial_id"];
+          },
+          {
+            foreignKeyName: "patient_visits_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "members";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "patient_visits_doctor_id_fkey";
+            columns: ["doctor_id"];
+            isOneToOne: false;
+            referencedRelation: "members";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "patient_visits_patient_id_fkey";
+            columns: ["patient_id"];
+            isOneToOne: false;
+            referencedRelation: "patients";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "patient_visits_trial_id_fkey";
+            columns: ["trial_id"];
+            isOneToOne: false;
+            referencedRelation: "trials";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      patients: {
+        Row: {
+          blood_type: string | null;
+          city: string | null;
+          consent_date: string | null;
+          consent_signed: boolean | null;
+          country: string | null;
+          created_at: string | null;
+          current_medications: string | null;
+          date_of_birth: string | null;
+          email: string | null;
+          emergency_contact_name: string | null;
+          emergency_contact_phone: string | null;
+          emergency_contact_relationship: string | null;
+          first_name: string | null;
+          gender: string | null;
+          height_cm: number | null;
+          id: string;
+          insurance_policy_number: string | null;
+          insurance_provider: string | null;
+          is_active: boolean | null;
+          known_allergies: string | null;
+          last_name: string | null;
+          medical_history: string | null;
+          organization_id: string;
+          patient_code: string;
+          phone_number: string | null;
+          postal_code: string | null;
+          primary_physician_name: string | null;
+          primary_physician_phone: string | null;
+          screening_notes: string | null;
+          state_province: string | null;
+          street_address: string | null;
+          updated_at: string | null;
+          weight_kg: number | null;
+        };
+        Insert: {
+          blood_type?: string | null;
+          city?: string | null;
+          consent_date?: string | null;
+          consent_signed?: boolean | null;
+          country?: string | null;
+          created_at?: string | null;
+          current_medications?: string | null;
+          date_of_birth?: string | null;
+          email?: string | null;
+          emergency_contact_name?: string | null;
+          emergency_contact_phone?: string | null;
+          emergency_contact_relationship?: string | null;
+          first_name?: string | null;
+          gender?: string | null;
+          height_cm?: number | null;
+          id?: string;
+          insurance_policy_number?: string | null;
+          insurance_provider?: string | null;
+          is_active?: boolean | null;
+          known_allergies?: string | null;
+          last_name?: string | null;
+          medical_history?: string | null;
+          organization_id: string;
+          patient_code: string;
+          phone_number?: string | null;
+          postal_code?: string | null;
+          primary_physician_name?: string | null;
+          primary_physician_phone?: string | null;
+          screening_notes?: string | null;
+          state_province?: string | null;
+          street_address?: string | null;
+          updated_at?: string | null;
+          weight_kg?: number | null;
+        };
+        Update: {
+          blood_type?: string | null;
+          city?: string | null;
+          consent_date?: string | null;
+          consent_signed?: boolean | null;
+          country?: string | null;
+          created_at?: string | null;
+          current_medications?: string | null;
+          date_of_birth?: string | null;
+          email?: string | null;
+          emergency_contact_name?: string | null;
+          emergency_contact_phone?: string | null;
+          emergency_contact_relationship?: string | null;
+          first_name?: string | null;
+          gender?: string | null;
+          height_cm?: number | null;
+          id?: string;
+          insurance_policy_number?: string | null;
+          insurance_provider?: string | null;
+          is_active?: boolean | null;
+          known_allergies?: string | null;
+          last_name?: string | null;
+          medical_history?: string | null;
           organization_id?: string;
           patient_code?: string;
+          phone_number?: string | null;
+          postal_code?: string | null;
+          primary_physician_name?: string | null;
+          primary_physician_phone?: string | null;
+          screening_notes?: string | null;
+          state_province?: string | null;
+          street_address?: string | null;
           updated_at?: string | null;
+          weight_kg?: number | null;
         };
         Relationships: [
           {
@@ -285,12 +536,12 @@ export type Database = {
           is_latest: boolean | null;
           mime_type: string | null;
           status: string | null;
-          warning: boolean | null;
           tags: string[] | null;
           trial_id: string | null;
           updated_at: string | null;
           uploaded_by: string | null;
           version: number | null;
+          warning: boolean | null;
         };
         Insert: {
           amendment_number?: number | null;
@@ -309,6 +560,7 @@ export type Database = {
           updated_at?: string | null;
           uploaded_by?: string | null;
           version?: number | null;
+          warning?: boolean | null;
         };
         Update: {
           amendment_number?: number | null;
@@ -327,6 +579,7 @@ export type Database = {
           updated_at?: string | null;
           uploaded_by?: string | null;
           version?: number | null;
+          warning?: boolean | null;
         };
         Relationships: [
           {
@@ -461,6 +714,7 @@ export type Database = {
       };
       trial_patients: {
         Row: {
+          assigned_by: string | null;
           created_at: string | null;
           enrollment_date: string | null;
           id: string;
@@ -472,6 +726,7 @@ export type Database = {
           updated_at: string | null;
         };
         Insert: {
+          assigned_by?: string | null;
           created_at?: string | null;
           enrollment_date?: string | null;
           id?: string;
@@ -483,6 +738,7 @@ export type Database = {
           updated_at?: string | null;
         };
         Update: {
+          assigned_by?: string | null;
           created_at?: string | null;
           enrollment_date?: string | null;
           id?: string;
@@ -494,6 +750,13 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: "trial_patients_assigned_by_fkey";
+            columns: ["assigned_by"];
+            isOneToOne: false;
+            referencedRelation: "members";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "trial_patients_patient_id_fkey";
             columns: ["patient_id"];
@@ -569,9 +832,157 @@ export type Database = {
           }
         ];
       };
+      visit_documents: {
+        Row: {
+          amount: number | null;
+          created_at: string | null;
+          currency: string | null;
+          description: string | null;
+          document_name: string;
+          document_type: Database["public"]["Enums"]["visit_document_type_enum"];
+          document_url: string;
+          file_size: number | null;
+          file_type: string | null;
+          id: string;
+          is_latest: boolean | null;
+          mime_type: string | null;
+          tags: string[] | null;
+          updated_at: string | null;
+          upload_date: string | null;
+          uploaded_by: string | null;
+          version: number | null;
+          visit_id: string;
+        };
+        Insert: {
+          amount?: number | null;
+          created_at?: string | null;
+          currency?: string | null;
+          description?: string | null;
+          document_name: string;
+          document_type: Database["public"]["Enums"]["visit_document_type_enum"];
+          document_url: string;
+          file_size?: number | null;
+          file_type?: string | null;
+          id?: string;
+          is_latest?: boolean | null;
+          mime_type?: string | null;
+          tags?: string[] | null;
+          updated_at?: string | null;
+          upload_date?: string | null;
+          uploaded_by?: string | null;
+          version?: number | null;
+          visit_id: string;
+        };
+        Update: {
+          amount?: number | null;
+          created_at?: string | null;
+          currency?: string | null;
+          description?: string | null;
+          document_name?: string;
+          document_type?: Database["public"]["Enums"]["visit_document_type_enum"];
+          document_url?: string;
+          file_size?: number | null;
+          file_type?: string | null;
+          id?: string;
+          is_latest?: boolean | null;
+          mime_type?: string | null;
+          tags?: string[] | null;
+          updated_at?: string | null;
+          upload_date?: string | null;
+          uploaded_by?: string | null;
+          version?: number | null;
+          visit_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "visit_documents_uploaded_by_fkey";
+            columns: ["uploaded_by"];
+            isOneToOne: false;
+            referencedRelation: "members";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "visit_documents_visit_id_fkey";
+            columns: ["visit_id"];
+            isOneToOne: false;
+            referencedRelation: "patient_visits";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "visit_documents_visit_id_fkey";
+            columns: ["visit_id"];
+            isOneToOne: false;
+            referencedRelation: "patient_visits_detailed";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
     };
     Views: {
-      [_ in never]: never;
+      patient_visits_detailed: {
+        Row: {
+          created_at: string | null;
+          created_by: string | null;
+          doctor_email: string | null;
+          doctor_id: string | null;
+          doctor_name: string | null;
+          duration_minutes: number | null;
+          first_name: string | null;
+          id: string | null;
+          last_name: string | null;
+          location: string | null;
+          next_visit_date: string | null;
+          notes: string | null;
+          patient_code: string | null;
+          patient_id: string | null;
+          status: Database["public"]["Enums"]["visit_status_enum"] | null;
+          trial_id: string | null;
+          trial_name: string | null;
+          trial_phase: string | null;
+          updated_at: string | null;
+          visit_date: string | null;
+          visit_number: number | null;
+          visit_time: string | null;
+          visit_type: Database["public"]["Enums"]["visit_type_enum"] | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "patient_enrolled_in_trial";
+            columns: ["patient_id", "trial_id"];
+            isOneToOne: false;
+            referencedRelation: "trial_patients";
+            referencedColumns: ["patient_id", "trial_id"];
+          },
+          {
+            foreignKeyName: "patient_visits_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "members";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "patient_visits_doctor_id_fkey";
+            columns: ["doctor_id"];
+            isOneToOne: false;
+            referencedRelation: "members";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "patient_visits_patient_id_fkey";
+            columns: ["patient_id"];
+            isOneToOne: false;
+            referencedRelation: "patients";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "patient_visits_trial_id_fkey";
+            columns: ["trial_id"];
+            isOneToOne: false;
+            referencedRelation: "trials";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
     };
     Functions: {
       create_trial_with_members: {
@@ -682,7 +1093,53 @@ export type Database = {
         | "standard_operating_procedure"
         | "other";
       organization_member_type: "admin" | "staff";
+      patient_document_type_enum:
+        | "medical_record"
+        | "lab_result"
+        | "imaging"
+        | "consent_form"
+        | "assessment"
+        | "questionnaire"
+        | "adverse_event_report"
+        | "medication_record"
+        | "visit_note"
+        | "discharge_summary"
+        | "other";
       permission_level: "read" | "edit" | "admin";
+      visit_document_type_enum:
+        | "visit_note"
+        | "lab_results"
+        | "blood_test"
+        | "vital_signs"
+        | "invoice"
+        | "billing_statement"
+        | "medication_log"
+        | "adverse_event_form"
+        | "assessment_form"
+        | "imaging_report"
+        | "procedure_note"
+        | "data_export"
+        | "consent_form"
+        | "insurance_document"
+        | "other";
+      visit_status_enum:
+        | "scheduled"
+        | "in_progress"
+        | "completed"
+        | "cancelled"
+        | "no_show"
+        | "rescheduled";
+      visit_type_enum:
+        | "screening"
+        | "baseline"
+        | "follow_up"
+        | "treatment"
+        | "assessment"
+        | "monitoring"
+        | "adverse_event"
+        | "unscheduled"
+        | "study_closeout"
+        | "withdrawal";
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -690,21 +1147,28 @@ export type Database = {
   };
 };
 
-type DefaultSchema = Database[Extract<keyof Database, "public">];
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">;
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<
+  keyof Database,
+  "public"
+>];
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database;
+    schema: keyof DatabaseWithoutInternals;
   }
-    ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals;
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R;
     }
     ? R
@@ -722,14 +1186,16 @@ export type Tables<
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database;
+    schema: keyof DatabaseWithoutInternals;
   }
-    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals;
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I;
     }
     ? I
@@ -745,14 +1211,16 @@ export type TablesInsert<
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database;
+    schema: keyof DatabaseWithoutInternals;
   }
-    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals;
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U;
     }
     ? U
@@ -768,14 +1236,16 @@ export type TablesUpdate<
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof Database;
+    schema: keyof DatabaseWithoutInternals;
   }
-    ? keyof Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never
-> = DefaultSchemaEnumNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals;
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
   ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
   : never;
@@ -783,14 +1253,16 @@ export type Enums<
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof Database;
+    schema: keyof DatabaseWithoutInternals;
   }
-    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never
-> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals;
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
   ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
   : never;
@@ -798,25 +1270,71 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      document_type_enum: [
+        "protocol",
+        "brochure",
+        "consent_form",
+        "report",
+        "manual",
+        "plan",
+        "amendment",
+        "icf",
+        "case_report_form",
+        "standard_operating_procedure",
+        "other",
+      ],
       organization_member_type: ["admin", "staff"],
+      patient_document_type_enum: [
+        "medical_record",
+        "lab_result",
+        "imaging",
+        "consent_form",
+        "assessment",
+        "questionnaire",
+        "adverse_event_report",
+        "medication_record",
+        "visit_note",
+        "discharge_summary",
+        "other",
+      ],
       permission_level: ["read", "edit", "admin"],
+      visit_document_type_enum: [
+        "visit_note",
+        "lab_results",
+        "blood_test",
+        "vital_signs",
+        "invoice",
+        "billing_statement",
+        "medication_log",
+        "adverse_event_form",
+        "assessment_form",
+        "imaging_report",
+        "procedure_note",
+        "data_export",
+        "consent_form",
+        "insurance_document",
+        "other",
+      ],
+      visit_status_enum: [
+        "scheduled",
+        "in_progress",
+        "completed",
+        "cancelled",
+        "no_show",
+        "rescheduled",
+      ],
+      visit_type_enum: [
+        "screening",
+        "baseline",
+        "follow_up",
+        "treatment",
+        "assessment",
+        "monitoring",
+        "adverse_event",
+        "unscheduled",
+        "study_closeout",
+        "withdrawal",
+      ],
     },
   },
 } as const;
-
-// Type aliases for convenience
-export type TrialMembersPending = Tables<"trial_members_pending">;
-export type TrialMembersPendingInsert = TablesInsert<"trial_members_pending">;
-export type TrialMembersPendingUpdate = TablesUpdate<"trial_members_pending">;
-export type Invitation = Tables<"invitations">;
-export type Member = Tables<"members">;
-export type TrialMember = Tables<"trial_members">;
-export type Role = Tables<"roles">;
-export type Trial = Tables<"trials">;
-
-// New exports for documents
-export type TrialDocument = Tables<"trial_documents">;
-export type TrialDocumentInsert = TablesInsert<"trial_documents">;
-export type TrialDocumentUpdate = TablesUpdate<"trial_documents">;
-export type DocumentTypeEnum =
-  Database["public"]["Enums"]["document_type_enum"];

@@ -93,26 +93,28 @@ export function TrialDropdownBreadcrumb({
           </div>
         </div>
         <DropdownMenuSeparator />
-        <ScrollArea className="max-h-[176px]">
-          {filteredTrials.length > 0 ? (
-            filteredTrials.map((trial) => (
-              <DropdownMenuItem
-                key={trial.id}
-                className={cn(
-                  "flex items-center gap-2 px-4 py-2 cursor-pointer h-11",
-                  trial.id === currentTrial.id && "bg-gray-100"
-                )}
-                onClick={() => handleTrialSelect(trial.id)}
-              >
-                <FlaskConical className="h-4 w-4 shrink-0" />
-                <span className="truncate">{trial.name}</span>
-              </DropdownMenuItem>
-            ))
-          ) : (
-            <div className="px-4 py-2 text-sm text-gray-500">
-              No trials found
-            </div>
-          )}
+        <ScrollArea className="max-h-[280px] overflow-y-auto">
+          <div className="p-1">
+            {filteredTrials.length > 0 ? (
+              filteredTrials.map((trial) => (
+                <DropdownMenuItem
+                  key={trial.id}
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-2 cursor-pointer h-11 focus:bg-gray-100",
+                    trial.id === currentTrial.id && "bg-gray-100"
+                  )}
+                  onClick={() => handleTrialSelect(trial.id)}
+                >
+                  <FlaskConical className="h-4 w-4 shrink-0" />
+                  <span className="truncate">{trial.name}</span>
+                </DropdownMenuItem>
+              ))
+            ) : (
+              <div className="px-4 py-2 text-sm text-gray-500">
+                No trials found
+              </div>
+            )}
+          </div>
         </ScrollArea>
       </DropdownMenuContent>
     </DropdownMenu>

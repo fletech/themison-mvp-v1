@@ -5,10 +5,34 @@ import { Plus, Users, FileText, Clock } from "lucide-react";
 import { useAppData } from "@/hooks/useAppData";
 import { usePermissions } from "@/hooks/usePermissions";
 import { Link } from "react-router-dom";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { CreateTrial } from "@/components/onboarding/CreateTrial";
+import { useOnboardingMutations } from "@/hooks/useOnboardingMutations";
+import { useState } from "react";
+import { InviteMemberDialog } from "@/components/organization/InviteMemberDialog.tsx";
 
 export function Dashboard() {
   const { canCreateTrials, canInviteMembers, canViewStats } = usePermissions();
-  const { stats } = useAppData();
+  const {
+    stats,
+    organizationId,
+    memberId,
+    metrics,
+    refreshData,
+    inviteMember,
+  } = useAppData();
+  const [showTrialDialog, setShowTrialDialog] = useState(false);
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const { createTrialMutation } = useOnboardingMutations({
+    organizationId,
+    memberId,
+  });
 
   // Split stats into two rows for the left panel
   const dashboardStatsRows = [
@@ -25,7 +49,7 @@ export function Dashboard() {
         value: "2",
         icon: Users,
         color: "text-blue-600",
-        href: null,
+        href: "/organization?tab=patients",
       },
     ],
     [
@@ -46,12 +70,120 @@ export function Dashboard() {
     ],
   ];
 
+  // Determine if this is the first trial
+  const isFirstTrial = (metrics?.trials?.length || 0) === 0;
+
+  const handleCreateTrial = (trialData: any) => {
+    createTrialMutation.mutate(trialData, {
+      onSuccess: async () => {
+        setShowTrialDialog(false);
+        if (refreshData) await refreshData();
+      },
+    });
+  };
+
   return (
-    <div className="flex flex-col lg:flex-row gap-8">
-      {/* Left Panel */}
-      <div className="flex-1 space-y-6">
-        {/* Stats Grid - Only visible to admin */}
-        {canViewStats && (
+    <div className="flex flex-col gap-8">
+      {/* Stats Grid - Only visible to admin */}
+      {canViewStats && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
+          {/* Quick Actions arriba a la derecha, ocupa todo el alto */}
+          <div className="flex flex-col justify-start h-full">
+            <Card className="p-6 h-full flex flex-col">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                Quick Actions
+              </h3>
+              <div className="space-y-3">
+                {canCreateTrials && (
+                  <Dialog
+                    open={showTrialDialog}
+                    onOpenChange={setShowTrialDialog}
+                  >
+                    <DialogTrigger asChild>
+                      <Button
+                        className="w-full justify-start bg-blue-600 hover:bg-blue-700"
+                        onClick={() => setShowTrialDialog(true)}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Create New Trial
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>Create New Trial</DialogTitle>
+                      </DialogHeader>
+                      <CreateTrial
+                        onComplete={handleCreateTrial}
+                        isFirstTrial={isFirstTrial}
+                        organizationId={organizationId || ""}
+                      />
+                    </DialogContent>
+                  </Dialog>
+                )}
+                {canInviteMembers && (
+                  <>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start "
+                      onClick={() => setShowInviteDialog(true)}
+                    >
+                      <Users className="h-4 w-4 mr-2" />
+                      Assign a new Patient
+                    </Button>
+                    <InviteMemberDialog
+                      open={showInviteDialog}
+                      onOpenChange={setShowInviteDialog}
+                      onInvite={async (members) => {
+                        for (const member of members) {
+                          await inviteMember(
+                            member.email,
+                            member.name,
+                            member.role
+                          );
+                        }
+                        setShowInviteDialog(false);
+                      }}
+                    />
+                  </>
+                )}
+                {canInviteMembers && (
+                  <>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start "
+                      onClick={() => setShowInviteDialog(true)}
+                    >
+                      <Users className="h-4 w-4 mr-2" />
+                      Invite a Member to the Organization
+                    </Button>
+                    <InviteMemberDialog
+                      open={showInviteDialog}
+                      onOpenChange={setShowInviteDialog}
+                      onInvite={async (members) => {
+                        for (const member of members) {
+                          await inviteMember(
+                            member.email,
+                            member.name,
+                            member.role
+                          );
+                        }
+                        setShowInviteDialog(false);
+                      }}
+                    />
+                  </>
+                )}
+
+                {!canCreateTrials && !canInviteMembers && (
+                  <div className="text-sm text-gray-500">
+                    <p>Welcome to your dashboard!</p>
+                    <p className="mt-2">
+                      Access your assigned trials from the Trials section.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </Card>
+          </div>
           <div className="space-y-4">
             {dashboardStatsRows.map((row, rowIdx) => (
               <div
@@ -86,47 +218,17 @@ export function Dashboard() {
               </div>
             ))}
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Quick Actions */}
-        <Card className="p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">
-            Quick Actions
-          </h3>
-          <div className="space-y-3">
-            {canCreateTrials && (
-              <Button className="w-full justify-start bg-blue-600 hover:bg-blue-700 cursor-not-allowed">
-                <Plus className="h-4 w-4 mr-2" />
-                Create New Trial
-              </Button>
-            )}
-            {canInviteMembers && (
-              <Button
-                variant="outline"
-                className="w-full justify-start cursor-not-allowed"
-              >
-                <Users className="h-4 w-4 mr-2" />
-                Invite Team Member
-              </Button>
-            )}
-            {!canCreateTrials && !canInviteMembers && (
-              <div className="text-sm text-gray-500">
-                <p>Welcome to your dashboard!</p>
-                <p className="mt-2">
-                  Access your assigned trials from the Trials section.
-                </p>
-              </div>
-            )}
-          </div>
-        </Card>
-      </div>
-
-      {/* Right Panel (Agent Curie Chat) */}
-      <div className="flex-1 hidden lg:flex flex-col">
+      {/* Chat de Agent Curie abajo, ancho completo */}
+      <div className="flex flex-col w-full mt-8">
         <Card className="flex flex-col h-full min-h-[400px] max-h-[600px]">
           {/* Header */}
           <div className="p-4 border-b border-gray-200 bg-gray-50 rounded-t-md">
-            <h3 className="text-lg font-semibold text-gray-900">Agent Curie</h3>
+            <h3 className="text-lg font-semibold text-gray-900">
+              AI Assistant
+            </h3>
           </div>
           {/* Messages Area */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-white">

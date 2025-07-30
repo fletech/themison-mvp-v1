@@ -12,6 +12,7 @@ const tabNames = {
   overview: "Overview",
   "document-hub": "Document Hub",
   team: "Team",
+  patients: "Patients",
 };
 
 export default function TrialDetailPage() {
@@ -21,7 +22,7 @@ export default function TrialDetailPage() {
   const trials = metrics?.trials || [];
 
   const currentTab =
-    (tab as "overview" | "document-hub" | "team") || "overview";
+    (tab as "overview" | "document-hub" | "team" | "patients") || "overview";
 
   // Validate trial exists and user has access
   const selectedTrial = trials.find((t) => t.id === trialId);
@@ -90,20 +91,20 @@ export default function TrialDetailPage() {
   );
 }
 
-// Error component
 function TrialError({ message }: { message: string }) {
+  const navigate = useNavigate();
+
   return (
-    <div className="flex items-center justify-center h-64">
+    <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
       <div className="text-center">
-        <h3 className="text-lg font-semibold text-red-600">{message}</h3>
-        <Button
-          variant="outline"
-          className="mt-4"
-          onClick={() => window.history.back()}
-        >
-          Go Back
-        </Button>
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">
+          Access Denied
+        </h2>
+        <p className="text-gray-600">{message}</p>
       </div>
+      <Button onClick={() => navigate("/trials")} variant="outline">
+        Back to Trials
+      </Button>
     </div>
   );
 }

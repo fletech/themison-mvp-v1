@@ -25,12 +25,20 @@ interface TeamAssignment {
   type: "confirmed" | "pending";
 }
 
+interface ExistingAssignment {
+  memberId?: string;
+  invitationId?: string;
+  roleId: string;
+  type: "confirmed" | "pending";
+}
+
 interface TeamMemberAssignmentProps {
   organizationId: string;
   onAssignmentsChange: (assignments: TeamAssignment[]) => void;
   currentUserId?: string;
   autoAssignAsPI: boolean;
   onAutoAssignPIChange: (checked: boolean) => void;
+  existingAssignments?: ExistingAssignment[]; // Filter out already assigned members
 }
 
 export function TeamMemberAssignment({
@@ -39,6 +47,7 @@ export function TeamMemberAssignment({
   currentUserId,
   autoAssignAsPI,
   onAutoAssignPIChange,
+  existingAssignments = [],
 }: TeamMemberAssignmentProps) {
   const [assignments, setAssignments] = useState<TeamAssignment[]>([]);
   const [autoAssignedPIId, setAutoAssignedPIId] = useState<string | null>(null); // Track auto-assigned PI
@@ -78,37 +87,105 @@ export function TeamMemberAssignment({
     (member) => member.profile_id === currentUserId
   );
 
+  // Filter out members and invitations that are already assigned to the trial
+  const availableMembers = members.filter((member) => {
+    return !existingAssignments.some(
+      (existing) =>
+        existing.type === "confirmed" && existing.memberId === member.id
+    );
+  });
+
+  const availablePendingInvitations = pendingInvitations.filter(
+    (invitation) => {
+      return !existingAssignments.some(
+        (existing) =>
+          existing.type === "pending" && existing.invitationId === invitation.id
+      );
+    }
+  );
+
+  // Combine filtered members and pending invitations into a single list
+  const combinedAvailableUsers = [
+    ...availableMembers.map((member) => ({
+      id: member.id,
+      name: member.name,
+      email: member.email,
+      type: "confirmed" as const,
+      profile_id: member.profile_id,
+    })),
+    ...availablePendingInvitations.map((invitation) => ({
+      id: invitation.id,
+      name: invitation.name,
+      email: invitation.email,
+      type: "pending" as const,
+      profile_id: null,
+    })),
+  ];
+
+  // Check if there's already a PI assigned in existing assignments OR current assignments
+  const hasExistingPI = existingAssignments.some((existing) => {
+    const role = roles.find((r) => r.id === existing.roleId);
+    return (
+      role &&
+      (role.name.toLowerCase().includes("principal investigator") ||
+        role.name.toLowerCase().includes("pi"))
+    );
+  });
+
+  const hasPIAssigned =
+    hasExistingPI ||
+    assignments.some((assignment) => {
+      const role = roles.find((r) => r.id === assignment.roleId);
+      return (
+        role &&
+        (role.name.toLowerCase().includes("principal investigator") ||
+          role.name.toLowerCase().includes("pi"))
+      );
+    });
+
   // Effect to handle auto-assign PI checkbox changes
   useEffect(() => {
-    if (autoAssignAsPI && piRole && currentUserMember) {
+    if (autoAssignAsPI && piRole && currentUserMember && !hasExistingPI) {
       // Check if current user is already assigned with any role
       const existingUserAssignmentIndex = assignments.findIndex(
         (assignment) => assignment.memberId === currentUserMember.id
       );
 
-      const newPIAssignment: TeamAssignment = {
-        memberId: currentUserMember.id,
-        memberName: currentUserMember.name,
-        memberEmail: currentUserMember.email,
-        roleId: piRole.id,
-        roleName: piRole.name,
-        type: "confirmed",
-      };
+      // Only auto-assign if current user is not already assigned to the trial
+      const isCurrentUserAlreadyAssigned = existingAssignments.some(
+        (existing) =>
+          existing.type === "confirmed" &&
+          existing.memberId === currentUserMember.id
+      );
 
-      let updatedAssignments;
-      if (existingUserAssignmentIndex !== -1) {
-        // Replace existing assignment with PI role
-        updatedAssignments = [...assignments];
-        updatedAssignments[existingUserAssignmentIndex] = newPIAssignment;
+      if (!isCurrentUserAlreadyAssigned) {
+        const newPIAssignment: TeamAssignment = {
+          memberId: currentUserMember.id,
+          memberName: currentUserMember.name,
+          memberEmail: currentUserMember.email,
+          roleId: piRole.id,
+          roleName: piRole.name,
+          type: "confirmed",
+        };
+
+        let updatedAssignments;
+        if (existingUserAssignmentIndex !== -1) {
+          // Replace existing assignment with PI role
+          updatedAssignments = [...assignments];
+          updatedAssignments[existingUserAssignmentIndex] = newPIAssignment;
+        } else {
+          // Add new assignment for current user as PI
+          updatedAssignments = [...assignments, newPIAssignment];
+        }
+
+        setAssignments(updatedAssignments);
+        onAssignmentsChange(updatedAssignments);
+        // Track this as auto-assigned
+        setAutoAssignedPIId(currentUserMember.id);
       } else {
-        // Add new assignment for current user as PI
-        updatedAssignments = [...assignments, newPIAssignment];
+        // Current user is already assigned, can't auto-assign as PI
+        onAutoAssignPIChange(false);
       }
-
-      setAssignments(updatedAssignments);
-      onAssignmentsChange(updatedAssignments);
-      // Track this as auto-assigned
-      setAutoAssignedPIId(currentUserMember.id);
     } else if (
       !autoAssignAsPI &&
       piRole &&
@@ -137,25 +214,9 @@ export function TeamMemberAssignment({
     assignments,
     onAssignmentsChange,
     autoAssignedPIId,
+    hasExistingPI,
+    existingAssignments,
   ]);
-
-  // Combine members and pending invitations into a single list
-  const combinedAvailableUsers = [
-    ...members.map((member) => ({
-      id: member.id,
-      name: member.name,
-      email: member.email,
-      type: "confirmed" as const,
-      profile_id: member.profile_id,
-    })),
-    ...pendingInvitations.map((invitation) => ({
-      id: invitation.id,
-      name: invitation.name,
-      email: invitation.email,
-      type: "pending" as const,
-      profile_id: null,
-    })),
-  ];
 
   const addAssignment = () => {
     const availableUsers = combinedAvailableUsers.filter(
@@ -244,7 +305,7 @@ export function TeamMemberAssignment({
         const isCurrentUser =
           currentUserMember && assignment.memberId === currentUserMember.id;
 
-        if (isPIRole && isCurrentUser && !autoAssignAsPI) {
+        if (isPIRole && isCurrentUser && !autoAssignAsPI && !hasExistingPI) {
           // User manually assigned themselves as PI, auto-check the checkbox
           onAutoAssignPIChange(true);
           setAutoAssignedPIId(currentUserMember.id);
@@ -281,16 +342,6 @@ export function TeamMemberAssignment({
     });
   };
 
-  // Check if there's already a PI assigned in the assignments
-  const hasPIAssigned = assignments.some((assignment) => {
-    const role = roles.find((r) => r.id === assignment.roleId);
-    return (
-      role &&
-      (role.name.toLowerCase().includes("principal investigator") ||
-        role.name.toLowerCase().includes("pi"))
-    );
-  });
-
   // Check if current user is assigned as PI in the assignments
   const currentUserAssignedAsPI = assignments.some((assignment) => {
     const member = members.find((m) => m.id === assignment.memberId);
@@ -303,6 +354,12 @@ export function TeamMemberAssignment({
     );
   });
 
+  // Check if current user is available to be assigned as PI
+  const currentUserAlreadyAssigned = existingAssignments.some((existing) => {
+    const member = members.find((m) => m.id === existing.memberId);
+    return member?.profile_id === currentUserId;
+  });
+
   return (
     <div className="space-y-4">
       {/* PI Auto-assignment checkbox */}
@@ -311,11 +368,25 @@ export function TeamMemberAssignment({
           id="autoAssignPI"
           checked={autoAssignAsPI}
           onCheckedChange={onAutoAssignPIChange}
-          disabled={hasPIAssigned && !currentUserAssignedAsPI}
+          disabled={
+            hasExistingPI ||
+            currentUserAlreadyAssigned ||
+            (hasPIAssigned && !currentUserAssignedAsPI)
+          }
         />
         <Label htmlFor="autoAssignPI" className="text-sm font-medium">
           Auto-assign me as Principal Investigator for this trial
-          {hasPIAssigned && !currentUserAssignedAsPI && (
+          {hasExistingPI && (
+            <span className="text-gray-500 text-xs block">
+              (Disabled: PI already assigned to this trial)
+            </span>
+          )}
+          {currentUserAlreadyAssigned && (
+            <span className="text-gray-500 text-xs block">
+              (Disabled: You are already assigned to this trial)
+            </span>
+          )}
+          {hasPIAssigned && !currentUserAssignedAsPI && !hasExistingPI && (
             <span className="text-gray-500 text-xs block">
               (Disabled: Another member is already assigned as PI)
             </span>
@@ -344,9 +415,9 @@ export function TeamMemberAssignment({
         <Card className="p-4">
           <div className="text-center text-gray-500">
             <UserPlus className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-            <p>No team members or invitations available to assign.</p>
+            <p>No available team members to assign.</p>
             <p className="text-sm mt-1">
-              Send invitations or wait for members to accept their invitations.
+              All organization members are already assigned to this trial.
             </p>
           </div>
         </Card>
@@ -455,12 +526,14 @@ export function TeamMemberAssignment({
                             // 1. Auto-assign is ON and this is the current user (because they're already auto-assigned)
                             // 2. Auto-assign is ON and this is NOT the current user (because PI is auto-assigned to current user)
                             // 3. There's already another PI assigned and this isn't that assignment
+                            // 4. PI already exists in the trial
                             const isDisabled =
                               isPIRole &&
                               ((autoAssignAsPI && isCurrentUserAssigning) ||
                                 (autoAssignAsPI && !isCurrentUserAssigning) ||
                                 (hasPIAssigned &&
-                                  assignment.roleId !== role.id));
+                                  assignment.roleId !== role.id) ||
+                                hasExistingPI);
 
                             return (
                               <SelectItem
@@ -483,9 +556,13 @@ export function TeamMemberAssignment({
                                   !isCurrentUserAssigning &&
                                   " (Auto-assigned to current user)"}
                                 {isPIRole &&
+                                  hasExistingPI &&
+                                  " (Already assigned to trial)"}
+                                {isPIRole &&
                                   hasPIAssigned &&
                                   assignment.roleId !== role.id &&
                                   !autoAssignAsPI &&
+                                  !hasExistingPI &&
                                   " (Already assigned to another member)"}
                               </SelectItem>
                             );
