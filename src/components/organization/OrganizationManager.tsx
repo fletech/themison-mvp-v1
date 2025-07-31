@@ -1,12 +1,13 @@
 import React from "react";
-import { Building2, Users, Settings, Shield, BarChart3 } from "lucide-react";
+import { Building2, Users, Settings, Shield, BarChart3, DollarSign } from "lucide-react";
 import { OrganizationOverview } from "./OrganizationOverview";
 import { MembersManagement } from "./MembersManagement";
 import { OrganizationSettings } from "./OrganizationSettings";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { PatientsManagement } from "./PatientsManagement.tsx";
+import { FinancialsManagement } from "./FinancialsManagement";
 
-type TabType = "overview" | "members" | "roles" | "settings" | "patients";
+type TabType = "overview" | "members" | "roles" | "settings" | "patients" | "financials";
 
 interface TabItem {
   id: TabType;
@@ -33,6 +34,12 @@ const tabs: TabItem[] = [
     name: "Patients",
     icon: Users,
     description: "Manage patients in your organization",
+  },
+  {
+    id: "financials",
+    name: "Financials",
+    icon: DollarSign,
+    description: "Budget overview and cost analysis",
   },
   {
     id: "roles",
@@ -135,6 +142,8 @@ function TabContent({ activeTab }: { activeTab: TabType }) {
       return <OrganizationSettings />;
     case "patients":
       return <PatientsManagement />;
+    case "financials":
+      return <FinancialsManagement />;
     default:
       return <OrganizationOverview />;
   }

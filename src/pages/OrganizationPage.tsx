@@ -23,6 +23,10 @@ const tabs = [
     name: "Patients",
   },
   {
+    id: "financials",
+    name: "Financials",
+  },
+  {
     id: "settings",
     name: "Settings",
   },

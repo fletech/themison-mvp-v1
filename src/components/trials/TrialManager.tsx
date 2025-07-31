@@ -3,6 +3,7 @@ import { FileText, Users, BarChart3, UserCheck } from "lucide-react";
 import { TrialDocumentHub } from "./TrialDocumentHub.tsx";
 import { TrialOverview } from "./TrialOverview.tsx";
 import { TrialTeam } from "./TrialTeam.tsx";
+import { TrialPatientsManager } from "./TrialPatientsManager.tsx";
 
 type TabType = "overview" | "document-hub" | "team" | "patients";
 
@@ -86,34 +87,9 @@ function TabNavigation({
   );
 }
 
-// Placeholder component for patients management
+// Real component for patient management with assignment functionality
 function TrialPatients({ trial }: { trial: any }) {
-  return (
-    <div className="space-y-6">
-      <div className="text-center py-12">
-        <UserCheck className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">
-          Patient Management
-        </h3>
-        <p className="text-gray-500 mb-4">
-          This section will allow you to assign patients from your organization
-          to this trial.
-        </p>
-        <div className="max-w-md mx-auto text-left bg-gray-50 p-4 rounded-lg">
-          <h4 className="font-medium text-gray-700 mb-2">
-            Features to develop:
-          </h4>
-          <ul className="text-sm text-gray-600 space-y-1">
-            <li>• View organization patients</li>
-            <li>• Assign patients to trial</li>
-            <li>• Manage patient eligibility</li>
-            <li>• Track patient status in trial</li>
-            <li>• Patient consent management</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  );
+  return <TrialPatientsManager trial={trial} />;
 }
 
 function TabContent({ activeTab, trial }: { activeTab: TabType; trial: any }) {
