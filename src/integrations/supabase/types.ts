@@ -14,6 +14,193 @@ export type Database = {
   };
   public: {
     Tables: {
+      chat_document_links: {
+        Row: {
+          chat_session_id: string;
+          created_at: string | null;
+          document_id: string;
+          first_used_at: string | null;
+          last_used_at: string | null;
+          usage_count: number | null;
+        };
+        Insert: {
+          chat_session_id: string;
+          created_at?: string | null;
+          document_id: string;
+          first_used_at?: string | null;
+          last_used_at?: string | null;
+          usage_count?: number | null;
+        };
+        Update: {
+          chat_session_id?: string;
+          created_at?: string | null;
+          document_id?: string;
+          first_used_at?: string | null;
+          last_used_at?: string | null;
+          usage_count?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "chat_document_links_chat_session_id_fkey";
+            columns: ["chat_session_id"];
+            isOneToOne: false;
+            referencedRelation: "chat_sessions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "chat_document_links_document_id_fkey";
+            columns: ["document_id"];
+            isOneToOne: false;
+            referencedRelation: "documents";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      chat_messages: {
+        Row: {
+          content: string | null;
+          created_at: string | null;
+          document_chunk_ids: string[] | null;
+          id: string;
+          role: string | null;
+          session_id: string | null;
+        };
+        Insert: {
+          content?: string | null;
+          created_at?: string | null;
+          document_chunk_ids?: string[] | null;
+          id: string;
+          role?: string | null;
+          session_id?: string | null;
+        };
+        Update: {
+          content?: string | null;
+          created_at?: string | null;
+          document_chunk_ids?: string[] | null;
+          id?: string;
+          role?: string | null;
+          session_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_session_id_fkey";
+            columns: ["session_id"];
+            isOneToOne: false;
+            referencedRelation: "chat_sessions";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      chat_sessions: {
+        Row: {
+          created_at: string | null;
+          id: string;
+          title: string | null;
+          updated_at: string | null;
+          user_id: string | null;
+        };
+        Insert: {
+          created_at?: string | null;
+          id: string;
+          title?: string | null;
+          updated_at?: string | null;
+          user_id?: string | null;
+        };
+        Update: {
+          created_at?: string | null;
+          id?: string;
+          title?: string | null;
+          updated_at?: string | null;
+          user_id?: string | null;
+        };
+        Relationships: [];
+      };
+      document_chunks: {
+        Row: {
+          chunk_index: number;
+          content: string;
+          created_at: string | null;
+          document_id: string;
+          embedding: string | null;
+          id: string;
+          metadata: Json | null;
+        };
+        Insert: {
+          chunk_index: number;
+          content: string;
+          created_at?: string | null;
+          document_id: string;
+          embedding?: string | null;
+          id: string;
+          metadata?: Json | null;
+        };
+        Update: {
+          chunk_index?: number;
+          content?: string;
+          created_at?: string | null;
+          document_id?: string;
+          embedding?: string | null;
+          id?: string;
+          metadata?: Json | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "document_chunks_document_id_fkey";
+            columns: ["document_id"];
+            isOneToOne: false;
+            referencedRelation: "documents";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      documents: {
+        Row: {
+          chunks: Json | null;
+          content: string | null;
+          created_at: string | null;
+          file_size: number | null;
+          id: string;
+          metadata: Json | null;
+          original_filename: string;
+          processing_status: string | null;
+          storage_url: string;
+          total_chunks: number | null;
+          total_pages: number | null;
+          updated_at: string | null;
+          user_id: string;
+        };
+        Insert: {
+          chunks?: Json | null;
+          content?: string | null;
+          created_at?: string | null;
+          file_size?: number | null;
+          id: string;
+          metadata?: Json | null;
+          original_filename: string;
+          processing_status?: string | null;
+          storage_url: string;
+          total_chunks?: number | null;
+          total_pages?: number | null;
+          updated_at?: string | null;
+          user_id: string;
+        };
+        Update: {
+          chunks?: Json | null;
+          content?: string | null;
+          created_at?: string | null;
+          file_size?: number | null;
+          id?: string;
+          metadata?: Json | null;
+          original_filename?: string;
+          processing_status?: string | null;
+          storage_url?: string;
+          total_chunks?: number | null;
+          total_pages?: number | null;
+          updated_at?: string | null;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       invitations: {
         Row: {
           accepted_at: string | null;
@@ -221,6 +408,7 @@ export type Database = {
       };
       patient_visits: {
         Row: {
+          cost_data: Json | null;
           created_at: string | null;
           created_by: string | null;
           doctor_id: string;
@@ -239,6 +427,7 @@ export type Database = {
           visit_type: Database["public"]["Enums"]["visit_type_enum"];
         };
         Insert: {
+          cost_data?: Json | null;
           created_at?: string | null;
           created_by?: string | null;
           doctor_id: string;
@@ -257,6 +446,7 @@ export type Database = {
           visit_type?: Database["public"]["Enums"]["visit_type_enum"];
         };
         Update: {
+          cost_data?: Json | null;
           created_at?: string | null;
           created_by?: string | null;
           doctor_id?: string;
@@ -715,6 +905,7 @@ export type Database = {
       trial_patients: {
         Row: {
           assigned_by: string | null;
+          cost_data: Json | null;
           created_at: string | null;
           enrollment_date: string | null;
           id: string;
@@ -727,6 +918,7 @@ export type Database = {
         };
         Insert: {
           assigned_by?: string | null;
+          cost_data?: Json | null;
           created_at?: string | null;
           enrollment_date?: string | null;
           id?: string;
@@ -739,6 +931,7 @@ export type Database = {
         };
         Update: {
           assigned_by?: string | null;
+          cost_data?: Json | null;
           created_at?: string | null;
           enrollment_date?: string | null;
           id?: string;
@@ -775,6 +968,7 @@ export type Database = {
       };
       trials: {
         Row: {
+          budget_data: Json | null;
           created_at: string | null;
           created_by: string | null;
           description: string | null;
@@ -791,6 +985,7 @@ export type Database = {
           updated_at: string | null;
         };
         Insert: {
+          budget_data?: Json | null;
           created_at?: string | null;
           created_by?: string | null;
           description?: string | null;
@@ -807,6 +1002,7 @@ export type Database = {
           updated_at?: string | null;
         };
         Update: {
+          budget_data?: Json | null;
           created_at?: string | null;
           created_by?: string | null;
           description?: string | null;
@@ -831,6 +1027,33 @@ export type Database = {
             referencedColumns: ["id"];
           }
         ];
+      };
+      users: {
+        Row: {
+          created_at: string | null;
+          email: string | null;
+          id: string;
+          password: string | null;
+          role: Database["public"]["Enums"]["userrole"] | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          created_at?: string | null;
+          email?: string | null;
+          id: string;
+          password?: string | null;
+          role?: Database["public"]["Enums"]["userrole"] | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          created_at?: string | null;
+          email?: string | null;
+          id?: string;
+          password?: string | null;
+          role?: Database["public"]["Enums"]["userrole"] | null;
+          updated_at?: string | null;
+        };
+        Relationships: [];
       };
       visit_documents: {
         Row: {
@@ -1053,6 +1276,18 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: boolean;
       };
+      mock_calculate_burn_rate: {
+        Args: { trial_id: string };
+        Returns: number;
+      };
+      mock_get_available_budget: {
+        Args: { trial_id: string };
+        Returns: number;
+      };
+      mock_get_patient_total_cost: {
+        Args: { patient_id: string; trial_id: string };
+        Returns: number;
+      };
       user_belongs_to_organization: {
         Args: Record<PropertyKey, never>;
         Returns: string;
@@ -1106,6 +1341,7 @@ export type Database = {
         | "discharge_summary"
         | "other";
       permission_level: "read" | "edit" | "admin";
+      userrole: "ADMIN" | "USER";
       visit_document_type_enum:
         | "visit_note"
         | "lab_results"
@@ -1298,6 +1534,7 @@ export const Constants = {
         "other",
       ],
       permission_level: ["read", "edit", "admin"],
+      userrole: ["ADMIN", "USER"],
       visit_document_type_enum: [
         "visit_note",
         "lab_results",

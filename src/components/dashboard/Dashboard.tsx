@@ -21,46 +21,50 @@ import { supabase } from "@/integrations/supabase/client";
 
 // Enhanced Markdown renderer for artifacts
 const ArtifactRenderer = ({ content }: { content: string }) => {
-  const lines = content.split('\n');
+  const lines = content.split("\n");
   const tableRows: string[][] = [];
   let isInTable = false;
   let tableHeaders: string[] = [];
-  
+
   // First pass: identify tables
-  const processedContent: Array<{ type: string; content: any; index: number }> = [];
-  
+  const processedContent: Array<{ type: string; content: any; index: number }> =
+    [];
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    
+
     // Headers
-    if (line.startsWith('## ')) {
+    if (line.startsWith("## ")) {
       processedContent.push({
-        type: 'header',
-        content: line.replace('## ', ''),
-        index: i
+        type: "header",
+        content: line.replace("## ", ""),
+        index: i,
       });
     }
     // Table detection
-    else if (line.includes('|') && !line.includes('---')) {
-      const cells = line.split('|').map(cell => cell.trim()).filter(cell => cell);
+    else if (line.includes("|") && !line.includes("---")) {
+      const cells = line
+        .split("|")
+        .map((cell) => cell.trim())
+        .filter((cell) => cell);
       if (cells.length > 1) {
         const nextLine = lines[i + 1];
-        const isHeader = nextLine?.includes('---');
-        
+        const isHeader = nextLine?.includes("---");
+
         if (isHeader) {
           tableHeaders = cells;
           isInTable = true;
         } else if (isInTable || tableRows.length > 0) {
           tableRows.push(cells);
         }
-        
+
         // Check if table ended
         const nextNonTableLine = lines[i + 1];
-        if (!nextNonTableLine?.includes('|') && tableRows.length > 0) {
+        if (!nextNonTableLine?.includes("|") && tableRows.length > 0) {
           processedContent.push({
-            type: 'table',
+            type: "table",
             content: { headers: tableHeaders, rows: [...tableRows] },
-            index: i
+            index: i,
           });
           tableRows.length = 0;
           tableHeaders = [];
@@ -69,85 +73,103 @@ const ArtifactRenderer = ({ content }: { content: string }) => {
       }
     }
     // Skip table separator lines
-    else if (line.includes('---') && line.includes('|')) {
+    else if (line.includes("---") && line.includes("|")) {
       continue;
     }
     // Bullet points
-    else if (line.startsWith('- ')) {
+    else if (line.startsWith("- ")) {
       processedContent.push({
-        type: 'bullet',
-        content: line.replace('- ', ''),
-        index: i
+        type: "bullet",
+        content: line.replace("- ", ""),
+        index: i,
       });
     }
     // Regular text
     else if (line.trim()) {
       processedContent.push({
-        type: 'text',
+        type: "text",
         content: line,
-        index: i
+        index: i,
       });
     }
   }
-  
+
   return (
     <div className="bg-white border border-slate-200 rounded-lg p-6 mt-2 space-y-4">
       {processedContent.map((item, index) => {
         switch (item.type) {
-          case 'header':
+          case "header":
             return (
-              <h3 key={index} className="text-xl font-bold text-slate-900 border-b border-slate-200 pb-2">
+              <h3
+                key={index}
+                className="text-xl font-bold text-slate-900 border-b border-slate-200 pb-2"
+              >
                 {item.content}
               </h3>
             );
-            
-          case 'table':
+
+          case "table":
             return (
-              <div key={index} className="overflow-hidden border border-slate-200 rounded-lg">
+              <div
+                key={index}
+                className="overflow-hidden border border-slate-200 rounded-lg"
+              >
                 <table className="w-full">
                   <thead className="bg-slate-50">
                     <tr>
-                      {item.content.headers.map((header: string, headerIndex: number) => (
-                        <th key={headerIndex} className="px-4 py-3 text-left text-sm font-semibold text-slate-900 border-b border-slate-200">
-                          {header}
-                        </th>
-                      ))}
+                      {item.content.headers.map(
+                        (header: string, headerIndex: number) => (
+                          <th
+                            key={headerIndex}
+                            className="px-4 py-3 text-left text-sm font-semibold text-slate-900 border-b border-slate-200"
+                          >
+                            {header}
+                          </th>
+                        )
+                      )}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200">
-                    {item.content.rows.map((row: string[], rowIndex: number) => (
-                      <tr key={rowIndex} className="hover:bg-slate-50">
-                        {row.map((cell: string, cellIndex: number) => (
-                          <td key={cellIndex} className="px-4 py-3 text-sm text-slate-700">
-                            {cell.startsWith('**') && cell.endsWith('**') ? (
-                              <strong>{cell.replace(/\*\*/g, '')}</strong>
-                            ) : (
-                              cell
-                            )}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
+                    {item.content.rows.map(
+                      (row: string[], rowIndex: number) => (
+                        <tr key={rowIndex} className="hover:bg-slate-50">
+                          {row.map((cell: string, cellIndex: number) => (
+                            <td
+                              key={cellIndex}
+                              className="px-4 py-3 text-sm text-slate-700"
+                            >
+                              {cell.startsWith("**") && cell.endsWith("**") ? (
+                                <strong>{cell.replace(/\*\*/g, "")}</strong>
+                              ) : (
+                                cell
+                              )}
+                            </td>
+                          ))}
+                        </tr>
+                      )
+                    )}
                   </tbody>
                 </table>
               </div>
             );
-            
-          case 'bullet':
+
+          case "bullet":
             return (
               <div key={index} className="flex items-start gap-3 py-1">
                 <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-                <span className="text-sm text-slate-700 leading-relaxed">{item.content}</span>
+                <span className="text-sm text-slate-700 leading-relaxed">
+                  {item.content}
+                </span>
               </div>
             );
-            
-          case 'text':
+
+          case "text":
             return (
               <p key={index} className="text-sm text-slate-700 leading-relaxed">
                 {item.content}
               </p>
             );
-            
+
           default:
             return null;
         }
@@ -157,7 +179,9 @@ const ArtifactRenderer = ({ content }: { content: string }) => {
 };
 
 const hasArtifactContent = (content: string): boolean => {
-  return content.includes('##') || content.includes('|') || content.includes('- ');
+  return (
+    content.includes("##") || content.includes("|") || content.includes("- ")
+  );
 };
 
 export function Dashboard() {
@@ -173,8 +197,14 @@ export function Dashboard() {
   const [showTrialDialog, setShowTrialDialog] = useState(false);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [chatMessage, setChatMessage] = useState("");
+
   const [messages, setMessages] = useState<
-    { role: "user" | "assistant"; content: string; hasArtifact?: boolean; artifactData?: any }[]
+    {
+      role: "user" | "assistant";
+      content: string;
+      hasArtifact?: boolean;
+      artifactData?: any;
+    }[]
   >([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -260,8 +290,7 @@ export function Dashboard() {
           name,
           phase,
           status,
-          budget_data,
-          trial_patients!inner(count)
+          budget_data
         `
         )
         .eq("organization_id", organizationId);
@@ -283,7 +312,7 @@ export function Dashboard() {
             .select("*", { count: "exact", head: true })
             .eq("trial_id", trial.id);
 
-          const budgetData = trial.budget_data || {};
+          const budgetData = (trial.budget_data as Record<string, any>) || {};
           const budget = budgetData.total_budget || 0;
           const spent = budgetData.spent_to_date || 0;
 
@@ -331,7 +360,9 @@ Choose the best format based on what the user is asking and what would be most h
       const chatCompletion = await groq.chat.completions.create({
         messages: [
           { role: "system", content: contextPrompt },
-          ...newMessages.slice(-5).map(msg => ({ role: msg.role, content: msg.content })), // Keep last 5 messages for context, strip extra properties
+          ...newMessages
+            .slice(-5)
+            .map((msg) => ({ role: msg.role, content: msg.content })), // Keep last 5 messages for context, strip extra properties
         ],
         model: "llama-3.3-70b-versatile",
         temperature: 0.7,
@@ -352,10 +383,10 @@ Choose the best format based on what the user is asking and what would be most h
         // Update the last message (assistant's response) in real-time
         setMessages((prev) => [
           ...prev.slice(0, -1),
-          { 
-            role: "assistant", 
+          {
+            role: "assistant",
             content: assistantResponse,
-            hasArtifact: hasArtifactContent(assistantResponse)
+            hasArtifact: hasArtifactContent(assistantResponse),
           },
         ]);
       }
