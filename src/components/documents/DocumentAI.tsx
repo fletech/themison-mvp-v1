@@ -12,6 +12,8 @@ import { MessageSquare, AlertCircle } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { useDocument, useTrialDocuments } from "@/hooks/useDocuments";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { supabase } from "@/integrations/supabase/client";
+import ReactMarkdown from "react-markdown";
 
 interface DocumentAIProps {
   trial: any;
@@ -62,30 +64,88 @@ export function DocumentAI({ trial }: DocumentAIProps) {
   }, []);
 
   // Handle send
-  const handleSend = (e: React.FormEvent) => {
+  const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!query.trim()) return;
+    if (!query.trim() || !documentId) return;
+
+    const userMessage = query.trim();
     const userMsg: ChatMessage = {
       id: `${Date.now()}-user`,
       role: "user",
-      content: query.trim(),
+      content: userMessage,
     };
+
     setChat((prev) => [...prev, userMsg]);
     setQuery("");
     setIsLoading(true);
 
-    // Mock LLM response after 1.5s
-    setTimeout(() => {
+    try {
+      // Get auth token
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      if (!token) {
+        throw new Error("No authentication token available");
+      }
+
+      // Log the request payload
+      const requestPayload = {
+        message: userMessage,
+        retrieve_only: false,
+        limit: 5,
+        document_ids: documentId ? [documentId] : undefined,
+      };
+
+      console.log("🔍 DocumentAI Query Request:", {
+        documentId: documentId,
+        selectedDocument: document?.document_name || "No document selected",
+        requestPayload: requestPayload,
+      });
+
+      // Call backend API
+      const apiResponse = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/query`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(requestPayload),
+        }
+      );
+
+      if (!apiResponse.ok) {
+        throw new Error(`API request failed: ${apiResponse.status}`);
+      }
+
+      const responseText = await apiResponse.text();
+
+      // Add the response to chat
       setChat((prev) => [
         ...prev,
         {
           id: `${Date.now()}-llm`,
           role: "llm",
-          content: `Echo: ${userMsg.content}`,
+          content: responseText,
         },
       ]);
+    } catch (error) {
+      console.error("Error with backend query:", error);
+      setChat((prev) => [
+        ...prev,
+        {
+          id: `${Date.now()}-llm`,
+          role: "llm",
+          content:
+            "Sorry, I'm having trouble connecting to the AI service right now. Please try again.",
+        },
+      ]);
+    } finally {
       setIsLoading(false);
-    }, 500);
+    }
   };
 
   const formatDocumentType = (type: string) => {
@@ -175,20 +235,26 @@ export function DocumentAI({ trial }: DocumentAIProps) {
               }`}
             >
               <div
-                className={`rounded-lg px-4 py-2 shadow text-sm whitespace-pre-line ${
+                className={`rounded-lg px-4 py-2 shadow text-sm ${
                   msg.role === "user"
                     ? "bg-blue-600 text-white rounded-br-none"
                     : "bg-gray-100 text-gray-900 rounded-bl-none"
                 }`}
               >
-                {msg.content}
+                {msg.role === "user" ? (
+                  <div className="whitespace-pre-line">{msg.content}</div>
+                ) : (
+                  <div className="prose prose-sm max-w-none prose-headings:text-gray-900 prose-p:text-gray-900 prose-strong:text-gray-900 prose-ul:text-gray-900 prose-ol:text-gray-900 prose-li:text-gray-900">
+                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  </div>
+                )}
               </div>
             </div>
           ))}
           {isLoading && (
             <div className="max-w-2xl mx-auto flex justify-start">
               <div className="rounded-lg px-4 py-2 shadow text-sm bg-gray-100 text-gray-900 rounded-bl-none">
-                <span className="animate-pulse">Connecting to LLM...</span>
+                <span className="animate-pulse">Analyzing document...</span>
               </div>
             </div>
           )}
