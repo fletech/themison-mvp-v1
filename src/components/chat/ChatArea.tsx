@@ -1,5 +1,6 @@
 import React from "react";
 import type { ChatMessage } from "./types";
+import { MarkdownRenderer } from "./MarkdownRenderer";
 
 interface ChatAreaProps {
   messages: ChatMessage[];
@@ -82,7 +83,7 @@ export function ChatArea({
             <div
               className={`max-w-[80%] ${
                 message.role === "user"
-                  ? "bg-blue-600 text-white p-3 rounded-lg text-sm"
+                  ? "bg-blue-400 text-white p-3 rounded-lg text-sm"
                   : message.hasArtifact
                   ? "bg-white border border-slate-200 rounded-lg p-3 text-sm"
                   : "bg-gray-100 text-gray-900 p-3 rounded-lg text-sm"
@@ -100,7 +101,9 @@ export function ChatArea({
                 </div>
               ) : (
                 <div>
-                  <div className="whitespace-pre-wrap">{message.content}</div>
+                  <div className="prose prose-sm max-w-none">
+                    <MarkdownRenderer content={message.content} />
+                  </div>
                   {message.timestamp && (
                     <div className="text-xs opacity-70 mt-2">
                       {message.timestamp.toLocaleTimeString([], {

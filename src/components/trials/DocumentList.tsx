@@ -38,6 +38,7 @@ import {
   Archive,
   MoreVertical,
   X,
+  Upload,
 } from "lucide-react";
 import { format } from "date-fns";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -325,10 +326,12 @@ export function DocumentList({
             {onAddDocClick && (
               <Button
                 size="sm"
-                className="bg-blue-600 hover:bg-blue-700"
+                variant="outline"
+                className="border-blue-300 hover:bg-blue-50 text-blue-600"
                 onClick={onAddDocClick}
               >
-                Add Doc
+                <Upload className="w-4 h-4 mr-2" />
+                Upload Document
               </Button>
             )}
           </div>

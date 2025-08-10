@@ -49,7 +49,7 @@ export const AppSidebar = () => {
     },
     {
       name: "Notifications",
-      href: "/#",
+      href: "/notifications",
       icon: Bell,
       current: location.pathname.startsWith("/notifications"),
     },
@@ -58,6 +58,12 @@ export const AppSidebar = () => {
       href: "/#",
       icon: Puzzle,
       current: location.pathname.startsWith("/integrations"),
+    },
+    {
+      name: "Settings",
+      href: "/#",
+      icon: SettingsIcon,
+      current: location.pathname.startsWith("/settings"),
     },
   ];
 
@@ -68,12 +74,12 @@ export const AppSidebar = () => {
       icon: HelpCircle,
       current: location.pathname.startsWith("/help"),
     },
-    {
-      name: "Settings",
-      href: "/#",
-      icon: SettingsIcon,
-      current: location.pathname.startsWith("/settings"),
-    },
+    // {
+    //   name: "Settings",
+    //   href: "/#",
+    //   icon: SettingsIcon,
+    //   current: location.pathname.startsWith("/settings"),
+    // },
   ];
 
   const handleSignOut = async () => {
@@ -125,7 +131,7 @@ export const AppSidebar = () => {
           </div>
 
           {/* Others Section */}
-          <div className="pt-6">
+          {/* <div className="pt-6">
             <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
               Others
             </p>
@@ -154,7 +160,7 @@ export const AppSidebar = () => {
                 );
               })}
             </div>
-          </div>
+          </div> */}
         </nav>
 
         {/* User Section */}

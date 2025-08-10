@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import { DocumentList } from "./DocumentList";
@@ -11,9 +12,19 @@ interface TrialDocumentHubProps {
 }
 
 export function TrialDocumentHub({ trial }: TrialDocumentHubProps) {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [showUpload, setShowUpload] = useState(false);
   const { toast } = useToast();
   const { data: documents = [] } = useTrialDocuments(trial.id);
+
+  // Check if upload parameter is in URL
+  useEffect(() => {
+    const uploadParam = searchParams.get("upload");
+    if (uploadParam === "true") {
+      setShowUpload(true);
+    }
+  }, [searchParams]);
 
   // Find latest protocol and amendments
   const latestProtocol = documents.find(
@@ -38,7 +49,14 @@ export function TrialDocumentHub({ trial }: TrialDocumentHubProps) {
       description: `${documents.length} document(s) uploaded successfully to ${trial.name}`,
       variant: "default",
     });
+    handleBackToDocuments();
+  };
+
+  const handleBackToDocuments = () => {
     setShowUpload(false);
+    // Remove upload parameter from URL
+    searchParams.delete("upload");
+    setSearchParams(searchParams, { replace: true });
   };
 
   const handleUploadError = (error: string) => {
@@ -60,7 +78,7 @@ export function TrialDocumentHub({ trial }: TrialDocumentHubProps) {
               Upload new documents for {trial.name}
             </p>
           </div>
-          <Button variant="outline" onClick={() => setShowUpload(false)}>
+          <Button variant="outline" onClick={handleBackToDocuments}>
             Back to Documents
           </Button>
         </div>
@@ -85,7 +103,12 @@ export function TrialDocumentHub({ trial }: TrialDocumentHubProps) {
         trialDescription={trial.description}
         latestProtocol={latestProtocol}
         latestAmendment={latestAmendment}
-        onAddDocClick={() => setShowUpload(true)}
+        onAddDocClick={() => {
+          setShowUpload(true);
+          // Add upload parameter to URL
+          searchParams.set("upload", "true");
+          setSearchParams(searchParams, { replace: true });
+        }}
       />
     </>
   );

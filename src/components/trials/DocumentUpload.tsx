@@ -1,6 +1,15 @@
 import React, { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { Upload, X, FileText, AlertCircle, CheckCircle2 } from "lucide-react";
+import {
+  Upload,
+  X,
+  FileText,
+  AlertCircle,
+  CheckCircle2,
+  Edit3,
+  Check,
+  XCircle,
+} from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -30,13 +39,11 @@ interface DocumentUploadProps {
 
 const DOCUMENT_TYPES: { value: DocumentTypeEnum; label: string }[] = [
   { value: "protocol", label: "Protocol" },
+  { value: "amendment", label: "Amendment" },
+  { value: "plan", label: "Data Management Plan" },
+  { value: "manual", label: "Study Manual" },
   { value: "brochure", label: "Investigator Brochure" },
   { value: "consent_form", label: "Informed Consent Form" },
-  { value: "report", label: "Report" },
-  { value: "manual", label: "Study Manual" },
-  { value: "plan", label: "Data Management Plan" },
-  { value: "amendment", label: "Amendment" },
-  { value: "icf", label: "ICF" },
   { value: "case_report_form", label: "Case Report Form" },
   { value: "standard_operating_procedure", label: "SOP" },
   { value: "other", label: "Other" },
@@ -59,6 +66,17 @@ const ACCEPTED_FILE_TYPES = {
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
+// Individual file configuration interface
+interface FileConfig {
+  file: File;
+  documentName: string;
+  documentType: DocumentTypeEnum;
+  description: string;
+  amendmentNumber: string;
+  tags: string;
+  isEditingName: boolean;
+}
+
 export function DocumentUpload({
   trialId,
   onUploadComplete,
@@ -67,11 +85,7 @@ export function DocumentUpload({
   maxFiles = 5,
   maxSizeBytes = MAX_FILE_SIZE,
 }: DocumentUploadProps) {
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [documentType, setDocumentType] = useState<DocumentTypeEnum>("other");
-  const [description, setDescription] = useState("");
-  const [amendmentNumber, setAmendmentNumber] = useState<string>("");
-  const [tags, setTags] = useState<string>("");
+  const [fileConfigs, setFileConfigs] = useState<FileConfig[]>([]);
 
   const {
     uploadMultipleDocuments,
@@ -94,9 +108,20 @@ export function DocumentUpload({
         return true;
       });
 
-      setSelectedFiles((prev) => {
-        const newFiles = [...prev, ...validFiles];
-        return newFiles.slice(0, maxFiles);
+      setFileConfigs((prev) => {
+        const newConfigs = validFiles.map(
+          (file): FileConfig => ({
+            file,
+            documentName: file.name,
+            documentType: "other",
+            description: "",
+            amendmentNumber: "",
+            tags: "",
+            isEditingName: false,
+          })
+        );
+        const combined = [...prev, ...newConfigs];
+        return combined.slice(0, maxFiles);
       });
     },
     [maxFiles, maxSizeBytes, onUploadError]
@@ -110,39 +135,60 @@ export function DocumentUpload({
   });
 
   const removeFile = (index: number) => {
-    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+    setFileConfigs((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const updateFileConfig = (index: number, updates: Partial<FileConfig>) => {
+    setFileConfigs((prev) =>
+      prev.map((config, i) =>
+        i === index ? { ...config, ...updates } : config
+      )
+    );
+  };
+
+  const toggleEditName = (index: number) => {
+    setFileConfigs((prev) =>
+      prev.map((config, i) =>
+        i === index
+          ? { ...config, isEditingName: !config.isEditingName }
+          : config
+      )
+    );
   };
 
   const handleUpload = async () => {
-    if (selectedFiles.length === 0) {
+    if (fileConfigs.length === 0) {
       onUploadError?.("Please select at least one file");
       return;
     }
 
-    if (!documentType) {
-      onUploadError?.("Please select a document type");
+    // Validate all files have document types
+    const invalidConfigs = fileConfigs.filter((config) => !config.documentType);
+    if (invalidConfigs.length > 0) {
+      onUploadError?.("Please select document type for all files");
       return;
     }
 
     try {
-      const uploadOptions = selectedFiles.map((file) => ({
-        file,
+      const uploadOptions = fileConfigs.map((config) => ({
+        file: new File([config.file], config.documentName, {
+          type: config.file.type,
+        }),
         trialId,
-        documentType,
-        description: description || undefined,
-        tags: tags ? tags.split(",").map((tag) => tag.trim()) : undefined,
-        amendmentNumber: amendmentNumber
-          ? parseInt(amendmentNumber)
+        documentType: config.documentType,
+        description: config.description || undefined,
+        tags: config.tags
+          ? config.tags.split(",").map((tag) => tag.trim())
+          : undefined,
+        amendmentNumber: config.amendmentNumber
+          ? parseInt(config.amendmentNumber)
           : undefined,
       }));
 
       const uploadedDocuments = await uploadMultipleDocuments(uploadOptions);
 
       // Clear form
-      setSelectedFiles([]);
-      setDescription("");
-      setAmendmentNumber("");
-      setTags("");
+      setFileConfigs([]);
       clearProgress();
 
       onUploadComplete?.(uploadedDocuments);
@@ -160,7 +206,7 @@ export function DocumentUpload({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
-  const hasFiles = selectedFiles.length > 0;
+  const hasFiles = fileConfigs.length > 0;
   const hasUploading = uploadProgress.some((p) => p.status === "uploading");
 
   return (
@@ -201,99 +247,191 @@ export function DocumentUpload({
         </CardContent>
       </Card>
 
-      {/* Selected Files */}
+      {/* Files to Upload */}
       {hasFiles && (
         <Card>
           <CardContent className="p-6">
             <h3 className="font-medium mb-4">
-              Selected Files ({selectedFiles.length})
+              Files to Upload ({fileConfigs.length})
             </h3>
-            <div className="space-y-3">
-              {selectedFiles.map((file, index) => (
+            <div className="space-y-6">
+              {fileConfigs.map((config, index) => (
                 <div
                   key={index}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                  className="border border-gray-200 rounded-lg p-4 space-y-4"
                 >
-                  <div className="flex items-center space-x-3">
-                    <FileText className="h-8 w-8 text-blue-500" />
+                  {/* File Header */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <FileText className="h-8 w-8 text-blue-500" />
+                      <div className="flex items-center space-x-2">
+                        {config.isEditingName ? (
+                          <div className="flex items-center space-x-1">
+                            <Input
+                              value={config.documentName}
+                              onChange={(e) =>
+                                updateFileConfig(index, {
+                                  documentName: e.target.value,
+                                })
+                              }
+                              className="h-8 text-sm font-medium min-w-48"
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  toggleEditName(index);
+                                }
+                                if (e.key === "Escape") {
+                                  updateFileConfig(index, {
+                                    documentName: config.file.name,
+                                  });
+                                  toggleEditName(index);
+                                }
+                              }}
+                              autoFocus
+                            />
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => toggleEditName(index)}
+                              className="h-6 w-6 p-0"
+                            >
+                              <Check className="h-3 w-3 text-green-600" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                updateFileConfig(index, {
+                                  documentName: config.file.name,
+                                });
+                                toggleEditName(index);
+                              }}
+                              className="h-6 w-6 p-0"
+                            >
+                              <XCircle className="h-3 w-3 text-red-600" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center space-x-1">
+                            <p className="font-medium text-sm">
+                              {config.documentName}
+                            </p>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => toggleEditName(index)}
+                              className="h-6 w-6 p-0 opacity-60 hover:opacity-100"
+                            >
+                              <Edit3 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        )}
+                        <p className="text-xs text-gray-500">
+                          {formatFileSize(config.file.size)} •{" "}
+                          {config.file.type.split("/")[1]?.toUpperCase()}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeFile(index)}
+                      disabled={isUploading}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  {/* File Configuration */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <p className="font-medium text-sm">{file.name}</p>
-                      <p className="text-xs text-gray-500">
-                        {formatFileSize(file.size)}
-                      </p>
+                      <Label
+                        htmlFor={`documentType-${index}`}
+                        className="text-xs font-medium"
+                      >
+                        Document Type *
+                      </Label>
+                      <Select
+                        value={config.documentType}
+                        onValueChange={(value) =>
+                          updateFileConfig(index, {
+                            documentType: value as DocumentTypeEnum,
+                          })
+                        }
+                      >
+                        <SelectTrigger className="h-8 text-sm">
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {DOCUMENT_TYPES.map((type) => (
+                            <SelectItem key={type.value} value={type.value}>
+                              {type.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label
+                        htmlFor={`amendmentNumber-${index}`}
+                        className="text-xs font-medium"
+                      >
+                        Amendment Number
+                      </Label>
+                      <Input
+                        id={`amendmentNumber-${index}`}
+                        type="number"
+                        value={config.amendmentNumber}
+                        onChange={(e) =>
+                          updateFileConfig(index, {
+                            amendmentNumber: e.target.value,
+                          })
+                        }
+                        placeholder="Optional"
+                        className="h-8 text-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <Label
+                        htmlFor={`tags-${index}`}
+                        className="text-xs font-medium"
+                      >
+                        Tags
+                      </Label>
+                      <Input
+                        id={`tags-${index}`}
+                        value={config.tags}
+                        onChange={(e) =>
+                          updateFileConfig(index, { tags: e.target.value })
+                        }
+                        placeholder="comma,separated,tags"
+                        className="h-8 text-sm"
+                      />
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeFile(index)}
-                    disabled={isUploading}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+
+                  {/* Description */}
+                  <div>
+                    <Label
+                      htmlFor={`description-${index}`}
+                      className="text-xs font-medium"
+                    >
+                      Description
+                    </Label>
+                    <Textarea
+                      id={`description-${index}`}
+                      value={config.description}
+                      onChange={(e) =>
+                        updateFileConfig(index, { description: e.target.value })
+                      }
+                      placeholder="Optional description for this document"
+                      rows={2}
+                      className="text-sm"
+                    />
+                  </div>
                 </div>
               ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Upload Configuration */}
-      {hasFiles && (
-        <Card>
-          <CardContent className="p-6">
-            <h3 className="font-medium mb-4">Document Details</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="documentType">Document Type *</Label>
-                <Select
-                  value={documentType}
-                  onValueChange={setDocumentType as any}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select document type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {DOCUMENT_TYPES.map((type) => (
-                      <SelectItem key={type.value} value={type.value}>
-                        {type.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="amendmentNumber">Amendment Number</Label>
-                <Input
-                  id="amendmentNumber"
-                  type="number"
-                  value={amendmentNumber}
-                  onChange={(e) => setAmendmentNumber(e.target.value)}
-                  placeholder="Optional"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Optional description for the document(s)"
-                  rows={3}
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <Label htmlFor="tags">Tags</Label>
-                <Input
-                  id="tags"
-                  value={tags}
-                  onChange={(e) => setTags(e.target.value)}
-                  placeholder="Optional tags, separated by commas"
-                />
-              </div>
             </div>
           </CardContent>
         </Card>
@@ -351,7 +489,9 @@ export function DocumentUpload({
         <div className="flex justify-end">
           <Button
             onClick={handleUpload}
-            disabled={isUploading || !documentType}
+            disabled={
+              isUploading || fileConfigs.some((config) => !config.documentType)
+            }
             size="lg"
             className="min-w-32"
           >
@@ -363,8 +503,8 @@ export function DocumentUpload({
             ) : (
               <>
                 <Upload className="mr-2 h-4 w-4" />
-                Upload {selectedFiles.length}{" "}
-                {selectedFiles.length === 1 ? "File" : "Files"}
+                Upload {fileConfigs.length}{" "}
+                {fileConfigs.length === 1 ? "File" : "Files"}
               </>
             )}
           </Button>

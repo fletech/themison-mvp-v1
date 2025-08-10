@@ -11,6 +11,7 @@ import {
   MessageSquare,
   Eye,
   Users,
+  Upload,
 } from "lucide-react";
 import { useTrialDocuments } from "@/hooks/useDocuments";
 import { useQuery } from "@tanstack/react-query";
@@ -24,6 +25,11 @@ interface TrialOverviewProps {
 
 export function TrialOverview({ trial }: TrialOverviewProps) {
   const navigate = useNavigate();
+
+  const handleUploadDocument = () => {
+    // Navigate to the document-hub tab with upload parameter
+    navigate(`/trials/${trial.id}/document-hub?upload=true`);
+  };
 
   // Fetch team members to find PI
   const { data: trialTeam = [], isLoading: teamLoading } = useQuery({
@@ -126,6 +132,15 @@ export function TrialOverview({ trial }: TrialOverviewProps) {
         >
           <Users className="w-4 h-4 mr-2" />
           Manage Team
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          className="border-blue-300 hover:bg-blue-50 text-blue-600"
+          onClick={handleUploadDocument}
+        >
+          <Upload className="w-4 h-4 mr-2" />
+          Upload Document
         </Button>
       </div>
 

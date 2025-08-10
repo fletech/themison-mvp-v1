@@ -14,6 +14,7 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { TrialsPage } from "./pages/TrialsPage";
 import TrialDetailPage from "./pages/TrialDetailPage";
 import { OrganizationPage } from "./pages/OrganizationPage";
+import { Notifications } from "./pages/Notifications";
 import OnboardingPage from "./pages/OnboardingPage";
 import DocumentAssistantPage from "./pages/DocumentAssistantPage";
 import NotFound from "./pages/NotFound";
@@ -132,6 +133,16 @@ function AppRoutes() {
           <ProtectedRoute>
             <OnboardingRedirect>
               <OrganizationPage />
+            </OnboardingRedirect>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/notifications"
+        element={
+          <ProtectedRoute>
+            <OnboardingRedirect>
+              <Notifications />
             </OnboardingRedirect>
           </ProtectedRoute>
         }

@@ -133,7 +133,7 @@ class DocumentService {
         document_url: publicUrl,
         trial_id: trialId,
         uploaded_by: memberData.id,
-        status: "pending",
+        status: "active",
         file_size: file.size,
         mime_type: file.type,
         version: 1,

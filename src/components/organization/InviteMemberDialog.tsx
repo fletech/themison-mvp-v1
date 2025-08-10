@@ -99,12 +99,12 @@ export function InviteMemberDialog({
         </DialogHeader>
 
         <div className="space-y-6">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
             <div className="flex items-start space-x-3">
-              <Users className="h-5 w-5 text-blue-600 mt-0.5" />
+              <Users className="h-5 w-5 text-gray-600 mt-0.5" />
               <div>
-                <h3 className="font-medium text-blue-900">Add Team Members</h3>
-                <p className="text-sm text-blue-700 mt-1">
+                <h3 className="font-medium text-gray-900">Add Team Members</h3>
+                <p className="text-sm text-gray-700 mt-1">
                   Invite new members to your organization. They will receive an
                   email invitation to join.
                 </p>
