@@ -55,7 +55,7 @@ export const AppSidebar = () => {
     },
     {
       name: "Integrations",
-      href: "/#",
+      href: "/integrations",
       icon: Puzzle,
       current: location.pathname.startsWith("/integrations"),
     },
