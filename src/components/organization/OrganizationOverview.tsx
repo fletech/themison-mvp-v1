@@ -36,22 +36,22 @@ function StatCard({
   color,
 }: StatCardProps) {
   return (
-    <div className="relative overflow-hidden bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300">
+    <div className="relative overflow-hidden bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-gray-300 transition-all duration-300 group">
       <div className="p-6">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className={`p-3 rounded-xl ${color}`}>
-              <Icon className="h-6 w-6 text-white" />
+          <div className="flex items-center space-x-4">
+            <div className="p-3 rounded-lg bg-blue-50 group-hover:bg-blue-100 transition-colors">
+              <Icon className="h-5 w-5 text-blue-600" />
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-600">{title}</p>
+              <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
               <p className="text-2xl font-bold text-gray-900">{value}</p>
             </div>
           </div>
           {trend && (
             <div
               className={`flex items-center space-x-1 ${
-                trend.isPositive ? "text-green-600" : "text-red-600"
+                trend.isPositive ? "text-blue-600" : "text-red-600"
               }`}
             >
               <TrendingUp
@@ -61,13 +61,8 @@ function StatCard({
             </div>
           )}
         </div>
-        <p className="mt-2 text-sm text-gray-500">{description}</p>
+        <p className="mt-3 text-sm text-gray-500">{description}</p>
       </div>
-      <div
-        className={`h-1 ${color
-          .replace("bg-", "from-")
-          .replace("-500", "-400")} bg-gradient-to-r to-transparent`}
-      />
     </div>
   );
 }
@@ -100,8 +95,8 @@ function OrganizationHeader({ organization }: OrganizationHeaderProps) {
               <div
                 className={`px-3 py-1 rounded-full text-xs font-medium ${
                   organization.onboarding_completed
-                    ? "bg-green-100 text-green-800"
-                    : "bg-orange-100 text-orange-800"
+                    ? "bg-blue-100 text-blue-800"
+                    : "bg-gray-100 text-gray-700"
                 }`}
               >
                 {organization.onboarding_completed ? "Active" : "Setup Pending"}
@@ -125,31 +120,31 @@ function QuickActions() {
       </h3>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {canInviteMembers && (
-          <button className="flex items-center space-x-3 p-4 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors group">
-            <Users className="h-5 w-5 text-blue-600 group-hover:scale-110 transition-transform" />
-            <span className="text-sm font-medium text-blue-900">
+          <button className="flex items-center space-x-3 p-4 rounded-lg bg-gray-50 hover:bg-gray-100 border border-gray-200 hover:border-gray-300 transition-all group">
+            <Users className="h-5 w-5 text-gray-600 group-hover:text-blue-600 group-hover:scale-110 transition-all" />
+            <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">
               Invite Members
             </span>
           </button>
         )}
         {canManageRoles && (
-          <button className="flex items-center space-x-3 p-4 rounded-xl bg-green-50 hover:bg-green-100 transition-colors group">
-            <Shield className="h-5 w-5 text-green-600 group-hover:scale-110 transition-transform" />
-            <span className="text-sm font-medium text-green-900">
+          <button className="flex items-center space-x-3 p-4 rounded-lg bg-gray-50 hover:bg-gray-100 border border-gray-200 hover:border-gray-300 transition-all group">
+            <Shield className="h-5 w-5 text-gray-600 group-hover:text-blue-600 group-hover:scale-110 transition-all" />
+            <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">
               Manage Roles
             </span>
           </button>
         )}
-        <button className="flex items-center space-x-3 p-4 rounded-xl bg-purple-50 hover:bg-purple-100 transition-colors group">
-          <FileText className="h-5 w-5 text-purple-600 group-hover:scale-110 transition-transform" />
-          <span className="text-sm font-medium text-purple-900">
+        <button className="flex items-center space-x-3 p-4 rounded-lg bg-gray-50 hover:bg-gray-100 border border-gray-200 hover:border-gray-300 transition-all group">
+          <FileText className="h-5 w-5 text-gray-600 group-hover:text-blue-600 group-hover:scale-110 transition-all" />
+          <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">
             View Trials
           </span>
         </button>
         {canViewInvitations && (
-          <button className="flex items-center space-x-3 p-4 rounded-xl bg-orange-50 hover:bg-orange-100 transition-colors group">
-            <Mail className="h-5 w-5 text-orange-600 group-hover:scale-110 transition-transform" />
-            <span className="text-sm font-medium text-orange-900">
+          <button className="flex items-center space-x-3 p-4 rounded-lg bg-gray-50 hover:bg-gray-100 border border-gray-200 hover:border-gray-300 transition-all group">
+            <Mail className="h-5 w-5 text-gray-600 group-hover:text-blue-600 group-hover:scale-110 transition-all" />
+            <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">
               Invitations
             </span>
           </button>
@@ -228,14 +223,14 @@ export function OrganizationOverview() {
               value={stats.totalTrials}
               icon={FileText}
               description="Currently running trials"
-              color="bg-green-500"
+              color="bg-blue-500"
             />
             <StatCard
               title="Custom Roles"
               value={stats.totalRoles}
               icon={Shield}
               description="Defined access roles"
-              color="bg-purple-500"
+              color="bg-blue-500"
             />
             {/* stat card only visible if stats.totalInvitations is diff than 0 */}
             {stats.totalInvitations > 0 && (
@@ -244,7 +239,7 @@ export function OrganizationOverview() {
                 value={stats.totalInvitations}
                 icon={Mail}
                 description="Outstanding invitations"
-                color="bg-orange-500"
+                color="bg-blue-500"
               />
             )}
           </div>

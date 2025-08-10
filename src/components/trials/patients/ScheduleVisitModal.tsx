@@ -62,19 +62,19 @@ export function ScheduleVisitModal({
       value: "baseline",
       label: "Baseline",
       icon: Calendar,
-      color: "bg-green-100 text-green-800",
+      color: "bg-blue-100 text-blue-800",
     },
     {
       value: "follow_up",
       label: "Follow-up",
       icon: Stethoscope,
-      color: "bg-purple-100 text-purple-800",
+      color: "bg-blue-100 text-blue-800",
     },
     {
       value: "treatment",
       label: "Treatment",
       icon: FileText,
-      color: "bg-orange-100 text-orange-800",
+      color: "bg-blue-100 text-blue-800",
     },
   ];
 

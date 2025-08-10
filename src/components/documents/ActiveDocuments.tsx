@@ -38,11 +38,11 @@ export function ActiveDocuments({ trial }: ActiveDocumentsProps) {
   const getStatusBadgeColor = (status: string) => {
     switch (status?.toLowerCase()) {
       case "approved":
-        return "bg-green-100 text-green-800 border-green-200";
+        return "bg-blue-100 text-blue-800 border-blue-200";
       case "pending":
-        return "bg-orange-100 text-orange-800 border-orange-200";
+        return "bg-blue-100 text-blue-800 border-blue-200";
       case "signed":
-        return "bg-teal-100 text-teal-800 border-teal-200";
+        return "bg-blue-100 text-blue-800 border-blue-200";
       case "submitted":
         return "bg-gray-100 text-gray-800 border-gray-200";
       default:
@@ -190,7 +190,7 @@ export function ActiveDocuments({ trial }: ActiveDocumentsProps) {
                       {document.document_name}
                     </span>
                     {isLatestDocument(document) && (
-                      <Badge className="bg-orange-100 text-orange-800 text-xs">
+                      <Badge className="bg-blue-100 text-blue-800 text-xs">
                         Latest
                       </Badge>
                     )}

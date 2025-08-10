@@ -125,20 +125,10 @@ export function TrialsPage() {
   ];
 
   const headerColors = [
-    "bg-red-100",
+    "bg-blue-50",
+    "bg-gray-50",
     "bg-blue-100",
-    "bg-green-100",
-    "bg-yellow-100",
-    "bg-purple-100",
-    "bg-orange-100",
-    "bg-pink-100",
-    "bg-teal-100",
     "bg-gray-100",
-    "bg-indigo-100",
-    "bg-lime-100",
-    "bg-amber-100",
-    "bg-cyan-100",
-    "bg-fuchsia-100",
   ];
 
   // Dynamic locations from trials data
@@ -208,7 +198,7 @@ export function TrialsPage() {
         <Card
           key={trial.id}
           className={`w-full max-w-sm overflow-hidden hover:shadow-xl hover:translate-y-[-2px] transition-all duration-300 cursor-pointer ${
-            isAssigned ? "ring-2 ring-blue-200" : ""
+            isAssigned ? "ring-2 ring-blue-50" : ""
           }`}
           onClick={() => navigate(`/trials/${trial.id}`)}
         >
@@ -220,7 +210,7 @@ export function TrialsPage() {
           >
             {/* Tags in top left */}
             <div className="absolute top-3 left-3 flex flex-wrap gap-1">
-              <Badge className="bg-teal-100 text-teal-800 text-xs rounded-full hover:bg-teal-200">
+              <Badge className="bg-blue-100 text-blue-800 text-xs rounded-full hover:bg-blue-200">
                 {trial.phase}
               </Badge>
               {trial.location && (

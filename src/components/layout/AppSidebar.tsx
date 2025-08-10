@@ -95,7 +95,7 @@ export const AppSidebar = () => {
   return (
     <div className="flex h-full flex-col">
       {/* Logo */}
-      <div className="flex h-16 flex-shrink-0 items-center px-4 border-b border-gray-200 justify-center">
+      <div className="flex h-16 flex-shrink-0 items-center px-4 border-b border-gray-200 justify-center bg-white">
         <a href="/dashboard">
           <img className="h-4 w-auto " src="/assets/logo.svg" alt="THEMISON" />
         </a>
@@ -113,8 +113,8 @@ export const AppSidebar = () => {
                   to={item.href}
                   className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors ${
                     item.current
-                      ? "bg-blue-50 text-blue-700 "
-                      : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                      ? "bg-blue-100 text-blue-600 "
+                      : "text-gray-700 hover:bg-gray-300 hover:text-gray-900"
                   }`}
                 >
                   <Icon
@@ -164,7 +164,7 @@ export const AppSidebar = () => {
         </nav>
 
         {/* User Section */}
-        <div className="flex-shrink-0 border-t border-gray-200 p-4">
+        <div className="flex-shrink-0 border-t border-gray-200 p-4 bg-white">
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
@@ -181,9 +181,9 @@ export const AppSidebar = () => {
               onClick={handleSignOut}
               variant="ghost"
               size="sm"
-              className="ml-2 h-8 w-8 p-0"
+              className="ml-2 h-8 w-8 p-0 hover:bg-gray-100"
             >
-              <LogOut className="h-4 w-4" />
+              <LogOut className="h-4 w-4 text-gray-600" />
             </Button>
           </div>
         </div>

@@ -80,17 +80,17 @@ export function StaffOnboarding({
           {/* Status Information */}
           <div className="space-y-4 mb-8">
             <div className="flex items-center justify-center space-x-3 text-gray-600">
-              <CheckCircle className="h-5 w-5 text-green-600" />
+              <CheckCircle className="h-5 w-5 text-blue-600" />
               <span>Account created successfully</span>
             </div>
             <div className="flex items-center justify-center space-x-3 text-gray-600">
-              <CheckCircle className="h-5 w-5 text-green-600" />
+              <CheckCircle className="h-5 w-5 text-blue-600" />
               <span>Added to {organization.name}</span>
             </div>
             <div className="flex items-center justify-center space-x-3 text-gray-600">
               {hasAssignedTrials ? (
                 <>
-                  <CheckCircle className="h-5 w-5 text-green-600" />
+                  <CheckCircle className="h-5 w-5 text-blue-600" />
                   <span>
                     Assigned to {assignedTrials.length} trial
                     {assignedTrials.length > 1 ? "s" : ""}

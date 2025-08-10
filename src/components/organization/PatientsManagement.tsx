@@ -168,7 +168,10 @@ function PatientDocumentsSummary({ patientId }: PatientDocumentsSummaryProps) {
         <span className="text-xs font-medium">{totalDocs}</span>
       </div>
       {approvedDocs > 0 && (
-        <Badge variant="outline" className="text-xs px-1 py-0">
+        <Badge
+          variant="outline"
+          className="text-xs px-2 py-0 flex items-center w-fit"
+        >
           {approvedDocs} approved
         </Badge>
       )}
@@ -944,7 +947,7 @@ export function PatientsManagement() {
                       </TableCell>
                       <TableCell>
                         {patient.consent_signed ? (
-                          <Badge className="bg-green-100 text-green-800 border-green-200">
+                          <Badge className="bg-blue-100 text-blue-800 border-blue-200">
                             ✓ Signed
                           </Badge>
                         ) : (

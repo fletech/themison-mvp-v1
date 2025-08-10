@@ -110,8 +110,8 @@ function RolesPlaceholder() {
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12">
           <div className="text-center">
-            <div className="bg-purple-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-              <Shield className="h-8 w-8 text-purple-600" />
+            <div className="bg-blue-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+              <Shield className="h-8 w-8 text-blue-600" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
               Role Management

@@ -195,9 +195,9 @@ export function OrganizationSettings() {
 
             {/* Save Status Messages */}
             {saveStatus === "success" && (
-              <div className="flex items-center space-x-2 p-4 bg-green-50 rounded-lg border border-green-200">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-                <p className="text-sm text-green-800">
+              <div className="flex items-center space-x-2 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <CheckCircle className="h-5 w-5 text-blue-600" />
+                <p className="text-sm text-blue-800">
                   Settings saved successfully!
                 </p>
               </div>

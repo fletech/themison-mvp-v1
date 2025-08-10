@@ -158,7 +158,7 @@ export function PatientDetailsDrawer({
             <Badge variant="secondary">{age} years old</Badge>
             <Badge variant="outline">{formatGender(patient.gender)}</Badge>
             {patient.consent_signed && (
-              <Badge className="bg-green-100 text-green-800">
+              <Badge className="bg-blue-100 text-blue-800">
                 Consent Signed
               </Badge>
             )}

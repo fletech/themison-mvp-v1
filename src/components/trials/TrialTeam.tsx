@@ -269,8 +269,8 @@ export function TrialTeam({ trial }: TrialTeamProps) {
 
         <Card className="p-4">
           <div className="flex items-center space-x-3">
-            <div className="bg-green-100 p-2 rounded-lg">
-              <UserCheck className="h-5 w-5 text-green-600" />
+            <div className="bg-blue-100 p-2 rounded-lg">
+              <UserCheck className="h-5 w-5 text-blue-600" />
             </div>
             <div>
               <p className="text-sm text-gray-600">Active Members</p>
@@ -281,8 +281,8 @@ export function TrialTeam({ trial }: TrialTeamProps) {
 
         <Card className="p-4">
           <div className="flex items-center space-x-3">
-            <div className="bg-orange-100 p-2 rounded-lg">
-              <Clock className="h-5 w-5 text-orange-600" />
+            <div className="bg-blue-100 p-2 rounded-lg">
+              <Clock className="h-5 w-5 text-blue-600" />
             </div>
             <div>
               <p className="text-sm text-gray-600">Pending Invites</p>
@@ -296,7 +296,7 @@ export function TrialTeam({ trial }: TrialTeamProps) {
       {confirmedCount > 0 && (
         <Card className="p-6">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <UserCheck className="h-5 w-5 text-green-600" />
+            <UserCheck className="h-5 w-5 text-blue-600" />
             Active Members ({confirmedCount})
           </h3>
           <div className="space-y-3">
@@ -344,14 +344,14 @@ export function TrialTeam({ trial }: TrialTeamProps) {
       {pendingCount > 0 && (
         <Card className="p-6">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <Clock className="h-5 w-5 text-orange-600" />
+            <Clock className="h-5 w-5 text-blue-600" />
             Pending Invitations ({pendingCount})
           </h3>
           <div className="space-y-3">
             {pendingMembers.map((pending) => (
               <div
                 key={pending.id}
-                className="flex items-center justify-between p-3 bg-orange-50 rounded-lg"
+                className="flex items-center justify-between p-3 bg-blue-50 rounded-lg"
               >
                 <div className="flex items-center space-x-3">
                   <Avatar>
@@ -374,7 +374,7 @@ export function TrialTeam({ trial }: TrialTeamProps) {
                 <div className="text-right">
                   <Badge
                     variant="outline"
-                    className="bg-orange-50 text-orange-800 border-orange-200"
+                    className="bg-blue-50 text-blue-800 border-blue-200"
                   >
                     {pending.roles.name}
                   </Badge>

@@ -237,7 +237,7 @@ function MemberCard({ member, onRemove, onUpdateRole }: MemberCardProps) {
         <div className="flex items-center space-x-1">
           <div
             className={`w-2 h-2 rounded-full ${
-              member.onboarding_completed ? "bg-green-500" : "bg-orange-500"
+              member.onboarding_completed ? "bg-blue-500" : "bg-gray-500"
             }`}
           />
           <span>
@@ -341,8 +341,8 @@ export function MembersManagement() {
             </div>
             <div className="bg-white rounded-xl p-6 border border-gray-100">
               <div className="flex items-center space-x-3">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <Check className="h-5 w-5 text-green-600" />
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Check className="h-5 w-5 text-blue-600" />
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Active Members</p>
@@ -354,8 +354,8 @@ export function MembersManagement() {
             </div>
             <div className="bg-white rounded-xl p-6 border border-gray-100">
               <div className="flex items-center space-x-3">
-                <div className="p-2 bg-orange-100 rounded-lg">
-                  <Mail className="h-5 w-5 text-orange-600" />
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Mail className="h-5 w-5 text-blue-600" />
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Pending Invites</p>

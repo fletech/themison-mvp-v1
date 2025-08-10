@@ -238,7 +238,7 @@ export function DocumentAI({ trial }: DocumentAIProps) {
                 className={`rounded-lg px-4 py-2 shadow text-sm ${
                   msg.role === "user"
                     ? "bg-blue-600 text-white rounded-br-none"
-                    : "bg-gray-100 text-gray-900 rounded-bl-none"
+                    : "bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 text-gray-900 rounded-bl-none"
                 }`}
               >
                 {msg.role === "user" ? (
@@ -253,8 +253,11 @@ export function DocumentAI({ trial }: DocumentAIProps) {
           ))}
           {isLoading && (
             <div className="max-w-2xl mx-auto flex justify-start">
-              <div className="rounded-lg px-4 py-2 shadow text-sm bg-gray-100 text-gray-900 rounded-bl-none">
-                <span className="animate-pulse">Analyzing document...</span>
+              <div className="rounded-lg px-4 py-2 shadow text-sm bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 text-gray-900 rounded-bl-none">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
+                  <span className="animate-pulse">Analyzing document...</span>
+                </div>
               </div>
             </div>
           )}
@@ -294,8 +297,7 @@ export function DocumentAI({ trial }: DocumentAIProps) {
               type="submit"
               size="icon"
               disabled={!query.trim() || isLoading || !documentId}
-              className="bg-blue-500 hover:bg-blue-600 text-white rounded-xl p-2 transition-colors disabled:opacity-50"
-              style={{ boxShadow: "none" }}
+              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl p-2 transition-all disabled:opacity-50 shadow-lg"
             >
               <MessageSquare className="w-5 h-5" />
             </Button>

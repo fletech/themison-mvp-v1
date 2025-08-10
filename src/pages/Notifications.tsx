@@ -188,7 +188,7 @@ const notificationIcons = {
 
 const notificationColors = {
   urgent: "text-red-600",
-  high: "text-orange-600",
+  high: "text-blue-600",
   medium: "text-blue-600",
   low: "text-gray-600",
 };
@@ -202,14 +202,14 @@ const priorityBadgeVariants = {
 
 const notificationBorderColors = {
   urgent: "border-l-red-500",
-  high: "border-l-orange-500",
+  high: "border-l-blue-500",
   medium: "border-l-blue-500",
   low: "border-l-gray-300",
 };
 
 const iconBackgroundColors = {
   urgent: "bg-red-50 dark:bg-red-900/20",
-  high: "bg-orange-50 dark:bg-orange-900/20",
+  high: "bg-blue-50 dark:bg-blue-900/20",
   medium: "bg-blue-50 dark:bg-blue-900/20",
   low: "bg-gray-50 dark:bg-gray-900/20",
 };

@@ -36,9 +36,9 @@ export function TrialSelector({ from }: TrialSelectorProps) {
 
   const getStatusBadge = (trial: any) => {
     const status = trial.status?.toLowerCase();
-    if (status === 'active') return { text: 'Active', variant: 'default' as const, className: 'bg-green-100 text-green-800' };
+    if (status === 'active') return { text: 'Active', variant: 'default' as const, className: 'bg-blue-100 text-blue-800' };
     if (status === 'recruiting') return { text: 'Recruiting', variant: 'default' as const, className: 'bg-blue-100 text-blue-800' };
-    if (status === 'screening') return { text: 'Screening', variant: 'default' as const, className: 'bg-orange-100 text-orange-800' };
+    if (status === 'screening') return { text: 'Screening', variant: 'default' as const, className: 'bg-blue-100 text-blue-800' };
     return { text: status || 'Unknown', variant: 'secondary' as const, className: '' };
   };
 

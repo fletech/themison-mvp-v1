@@ -15,10 +15,10 @@ export function AppLayout({
   breadcrumbItems,
 }: AppLayoutProps) {
   return (
-    <div className="h-screen flex bg-gray-50">
+    <div className="h-screen flex bg-white">
       {/* Static sidebar for desktop */}
       <div className="flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0">
-        <div className="flex flex-col flex-grow bg-white border border-gray-200 border-t-white overflow-y-auto">
+        <div className="flex flex-col flex-grow bg-gray-50 border-r border-gray-200 overflow-y-auto">
           <AppSidebar />
         </div>
       </div>
@@ -47,7 +47,7 @@ export function AppLayout({
         </div>
 
         {/* Main content area with scroll */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto bg-white">
           <div className="p-4 sm:p-6 lg:p-8 pb-0">{children}</div>
         </main>
       </div>

@@ -436,7 +436,7 @@ export function TrialPatientsManager({ trial }: TrialPatientsManagerProps) {
                               </div>
                               <div className="w-full bg-muted rounded-full h-2">
                                 <div 
-                                  className="bg-green-600 h-2 rounded-full"
+                                  className="bg-blue-600 h-2 rounded-full"
                                   style={{ 
                                     width: `${((visits.completed || 0) / ((visits.completed || 0) + (visits.remaining || 0)) || 0) * 100}%` 
                                   }}
@@ -444,7 +444,7 @@ export function TrialPatientsManager({ trial }: TrialPatientsManagerProps) {
                               </div>
                               <div className="grid grid-cols-3 gap-2 text-xs text-center pt-2">
                                 <div>
-                                  <div className="font-medium text-green-600">{visits.completed || 0}</div>
+                                  <div className="font-medium text-blue-600">{visits.completed || 0}</div>
                                   <div className="text-muted-foreground">Done</div>
                                 </div>
                                 <div>
@@ -534,7 +534,7 @@ export function TrialPatientsManager({ trial }: TrialPatientsManagerProps) {
                               <div key={index} className="flex items-center justify-between p-3 rounded-lg border">
                                 <div className="flex items-center gap-3">
                                   <div className={`w-2 h-2 rounded-full ${
-                                    visit.status === 'completed' ? 'bg-green-500' : 'bg-blue-500'
+                                    visit.status === 'completed' ? 'bg-blue-600' : 'bg-gray-400'
                                   }`} />
                                   <div>
                                     <div className="font-medium">{visit.type}</div>
@@ -705,7 +705,7 @@ export function TrialPatientsManager({ trial }: TrialPatientsManagerProps) {
                                   </div>
                                   <div className="w-full bg-muted rounded-full h-2">
                                     <div 
-                                      className="bg-green-600 h-2 rounded-full"
+                                      className="bg-blue-600 h-2 rounded-full"
                                       style={{ width: `${compliance.overallScore}%` }}
                                     />
                                   </div>
@@ -733,7 +733,7 @@ export function TrialPatientsManager({ trial }: TrialPatientsManagerProps) {
                                   </div>
                                   <div className="w-full bg-muted rounded-full h-2">
                                     <div 
-                                      className="bg-purple-600 h-2 rounded-full"
+                                      className="bg-blue-600 h-2 rounded-full"
                                       style={{ width: `${compliance.visitAttendance}%` }}
                                     />
                                   </div>
@@ -747,7 +747,7 @@ export function TrialPatientsManager({ trial }: TrialPatientsManagerProps) {
                                   </div>
                                   <div className="w-full bg-muted rounded-full h-2">
                                     <div 
-                                      className="bg-orange-600 h-2 rounded-full"
+                                      className="bg-blue-600 h-2 rounded-full"
                                       style={{ width: `${compliance.questionnaires}%` }}
                                     />
                                   </div>
@@ -760,9 +760,9 @@ export function TrialPatientsManager({ trial }: TrialPatientsManagerProps) {
                             {compliance.issues && compliance.issues.length > 0 ? (
                               <div className="space-y-2">
                                 {compliance.issues.map((issue: any, index: number) => (
-                                  <div key={index} className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                                  <div key={index} className="p-3 bg-red-50 border border-red-200 rounded-lg">
                                     <div className="flex items-start gap-2">
-                                      <AlertTriangle className="h-4 w-4 text-orange-600 mt-0.5" />
+                                      <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5" />
                                       <span className="text-sm">{issue}</span>
                                     </div>
                                   </div>

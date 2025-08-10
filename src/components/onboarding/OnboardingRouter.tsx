@@ -61,13 +61,13 @@ export function OnboardingRouter() {
             Please contact your administrator to set up your account.
           </p>
 
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-            <p className="text-sm text-yellow-800 mb-3">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <p className="text-sm text-blue-800 mb-3">
               If you're experiencing issues, try clearing your browser data:
             </p>
             <button
               onClick={handleClearStorage}
-              className="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
             >
               Clear Browser Data & Refresh
             </button>

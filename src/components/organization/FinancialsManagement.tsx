@@ -146,13 +146,13 @@ export function FinancialsManagement() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <DollarSign className="h-8 w-8 text-green-600" />
+        <Card className="p-6 border border-gray-200 hover:shadow-md hover:border-gray-300 transition-all">
+          <div className="flex items-center space-x-4">
+            <div className="p-3 rounded-lg bg-blue-50">
+              <DollarSign className="h-5 w-5 text-blue-600" />
             </div>
-            <div className="ml-4">
-              <dt className="text-sm font-medium text-gray-500">Total Budget</dt>
+            <div>
+              <dt className="text-sm font-medium text-gray-600 mb-1">Total Budget</dt>
               <dd className="text-2xl font-bold text-gray-900">
                 {formatCurrency(organizationTotals.totalBudget)}
               </dd>
@@ -160,13 +160,13 @@ export function FinancialsManagement() {
           </div>
         </Card>
 
-        <Card className="p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <TrendingUp className="h-8 w-8 text-blue-600" />
+        <Card className="p-6 border border-gray-200 hover:shadow-md hover:border-gray-300 transition-all">
+          <div className="flex items-center space-x-4">
+            <div className="p-3 rounded-lg bg-blue-50">
+              <TrendingUp className="h-5 w-5 text-blue-600" />
             </div>
-            <div className="ml-4">
-              <dt className="text-sm font-medium text-gray-500">Total Spent</dt>
+            <div>
+              <dt className="text-sm font-medium text-gray-600 mb-1">Total Spent</dt>
               <dd className="text-2xl font-bold text-gray-900">
                 {formatCurrency(organizationTotals.totalSpent)}
               </dd>
@@ -177,13 +177,13 @@ export function FinancialsManagement() {
           </div>
         </Card>
 
-        <Card className="p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <BarChart3 className="h-8 w-8 text-purple-600" />
+        <Card className="p-6 border border-gray-200 hover:shadow-md hover:border-gray-300 transition-all">
+          <div className="flex items-center space-x-4">
+            <div className="p-3 rounded-lg bg-blue-50">
+              <BarChart3 className="h-5 w-5 text-blue-600" />
             </div>
-            <div className="ml-4">
-              <dt className="text-sm font-medium text-gray-500">Monthly Burn</dt>
+            <div>
+              <dt className="text-sm font-medium text-gray-600 mb-1">Monthly Burn</dt>
               <dd className="text-2xl font-bold text-gray-900">
                 {formatCurrency(organizationTotals.totalMonthlyBurn)}
               </dd>
@@ -191,10 +191,10 @@ export function FinancialsManagement() {
           </div>
         </Card>
 
-        <Card className="p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <Users className="h-8 w-8 text-orange-600" />
+        <Card className="p-6 border border-gray-200 hover:shadow-md hover:border-gray-300 transition-all">
+          <div className="flex items-center space-x-4">
+            <div className="p-3 rounded-lg bg-blue-50">
+              <Users className="h-5 w-5 text-blue-600" />
             </div>
             <div className="ml-4">
               <dt className="text-sm font-medium text-gray-500">
@@ -228,7 +228,7 @@ export function FinancialsManagement() {
         </div>
         <div className="grid grid-cols-3 gap-4 text-center text-sm">
           <div>
-            <div className="font-medium text-green-600">
+            <div className="font-medium text-blue-600">
               {formatCurrency(
                 organizationTotals.totalBudget - organizationTotals.totalSpent
               )}
@@ -242,7 +242,7 @@ export function FinancialsManagement() {
             <div className="text-gray-500">Active Trials</div>
           </div>
           <div>
-            <div className="font-medium text-purple-600">
+            <div className="font-medium text-blue-600">
               {organizationTotals.totalMonthlyBurn > 0
                 ? Math.round(
                     (organizationTotals.totalBudget -
@@ -294,7 +294,7 @@ export function FinancialsManagement() {
                       className={`h-5 w-5 ${
                         alertLevel === "critical"
                           ? "text-red-500"
-                          : "text-yellow-500"
+                          : "text-blue-500"
                       }`}
                     />
                   )}
@@ -314,7 +314,7 @@ export function FinancialsManagement() {
                       alertLevel === "critical"
                         ? "[&>div]:bg-red-500"
                         : alertLevel === "warning"
-                        ? "[&>div]:bg-yellow-500"
+                        ? "[&>div]:bg-blue-500"
                         : ""
                     }`}
                   />
