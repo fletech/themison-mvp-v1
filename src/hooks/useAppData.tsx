@@ -236,12 +236,34 @@ export function useAppData() {
     enabled: !!organization?.id,
   });
 
+  // Get patients count
+  const {
+    data: patientsCount = 0,
+    isLoading: patientsLoading,
+    error: patientsError,
+  } = useQuery({
+    queryKey: ["patients-count", organization?.id],
+    queryFn: async () => {
+      if (!organization?.id) return 0;
+
+      const { count, error } = await supabase
+        .from("patients")
+        .select("*", { count: "exact", head: true })
+        .eq("organization_id", organization.id);
+
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: !!organization?.id,
+  });
+
   // Calculate stats from data (compatible with useOrganization)
   const stats = {
     totalMembers: members.length,
     totalTrials: metrics?.trials?.length || 0,
     totalRoles: roles.length,
     totalInvitations: pendingInvitationsCount,
+    totalPatients: patientsCount,
   };
 
   // Update organization mutation
@@ -507,6 +529,9 @@ export function useAppData() {
     await queryClient.invalidateQueries({
       queryKey: ["pending-invitations-count"],
     });
+    await queryClient.invalidateQueries({
+      queryKey: ["patients-count"],
+    });
   };
 
   const isLoading = memberLoading || organizationLoading;
@@ -552,6 +577,7 @@ export function useAppData() {
     membersLoading,
     rolesLoading,
     invitationsLoading,
+    patientsLoading,
 
     // Error states
     hasError,
@@ -563,6 +589,7 @@ export function useAppData() {
     membersError,
     rolesError,
     invitationsError,
+    patientsError,
 
     // Computed values
     organizationId: member?.organization_id || organization?.id,

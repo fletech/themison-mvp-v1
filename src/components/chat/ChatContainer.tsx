@@ -60,7 +60,7 @@ export function ChatContainer({ organizationId, stats }: ChatContainerProps) {
       let contextData = `Organization ID: ${organizationId}
 - Total Trials: ${stats?.totalTrials || 0}
 - Total Members: ${stats?.totalMembers || 0}
-- Total Patients: 2
+- Total Patients: ${stats?.totalPatients || 0}
 - Pending Invitations: ${stats?.totalInvitations || 0}`;
 
       if (trials && trials.length > 0) {
@@ -69,9 +69,9 @@ export function ChatContainer({ organizationId, stats }: ChatContainerProps) {
         let totalSpent = 0;
 
         for (const trial of trials) {
-          const { count } = await supabase
+          const { data: trialPatients, count } = await supabase
             .from("trial_patients")
-            .select("*", { count: "exact", head: true })
+            .select("cost_data, patient_data")
             .eq("trial_id", trial.id);
 
           const budgetData = (trial.budget_data as Record<string, any>) || {};
@@ -88,6 +88,37 @@ export function ChatContainer({ organizationId, stats }: ChatContainerProps) {
           contextData += `\n  * Remaining: $${(
             budget - spent
           ).toLocaleString()}`;
+
+          // Add detailed patient data for agentic behavior
+          if (trialPatients && trialPatients.length > 0) {
+            contextData += `\n  * Patient Details:`;
+            trialPatients.forEach((patient, index) => {
+              const patientData =
+                (patient.patient_data as Record<string, any>) || {};
+              const costData = (patient.cost_data as Record<string, any>) || {};
+
+              if (patientData.medical) {
+                contextData += `\n    - Patient ${index + 1}: Age ${
+                  patientData.medical.age || "N/A"
+                }, Gender ${patientData.medical.gender || "N/A"}`;
+              }
+              if (patientData.visits) {
+                contextData += `\n      Visits: ${
+                  patientData.visits.completed || 0
+                }/${patientData.visits.total_target || 0} completed`;
+              }
+              if (patientData.compliance) {
+                contextData += `\n      Compliance Score: ${
+                  patientData.compliance.overallScore || "N/A"
+                }%`;
+              }
+              if (patientData.nextVisit) {
+                contextData += `\n      Next Visit: ${
+                  patientData.nextVisit.date || "Not scheduled"
+                }`;
+              }
+            });
+          }
         }
 
         contextData += `\n\nOrganization Financial Summary:`;
@@ -173,9 +204,14 @@ Choose the best format based on what the user is asking and what would be most h
   };
 
   const hasArtifactContent = (content: string): boolean => {
-    return (
-      content.includes("##") || content.includes("|") || content.includes("- ")
-    );
+    // Check for structured data that benefits from ArtifactRenderer
+    const hasHeaders = content.includes("##");
+    const hasTables = content.includes("|") && content.includes("---");
+    const hasBulletLists = content
+      .split("\n")
+      .some((line) => line.trim().startsWith("- "));
+
+    return hasHeaders || hasTables || hasBulletLists;
   };
 
   const handleNewChat = () => {

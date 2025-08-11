@@ -11,6 +11,18 @@ export function ArtifactRenderer({ content }: ArtifactRendererProps) {
   let isInTable = false;
   let tableHeaders: string[] = [];
 
+  // Process inline markdown (bold, italic, etc.)
+  const processInlineMarkdown = (text: string): React.ReactNode => {
+    // Handle bold text **text**
+    const parts = text.split(/(\*\*.*?\*\*)/g);
+    return parts.map((part, index) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return <strong key={index}>{part.slice(2, -2)}</strong>;
+      }
+      return part;
+    });
+  };
+
   // First pass: identify tables
   const processedContent: Array<{ type: string; content: any; index: number }> =
     [];
@@ -123,11 +135,7 @@ export function ArtifactRenderer({ content }: ArtifactRendererProps) {
                               key={cellIndex}
                               className="px-4 py-3 text-sm text-slate-700"
                             >
-                              {cell.startsWith("**") && cell.endsWith("**") ? (
-                                <strong>{cell.replace(/\*\*/g, "")}</strong>
-                              ) : (
-                                cell
-                              )}
+                              {processInlineMarkdown(cell)}
                             </td>
                           ))}
                         </tr>
@@ -143,7 +151,7 @@ export function ArtifactRenderer({ content }: ArtifactRendererProps) {
               <div key={index} className="flex items-start gap-3 py-1">
                 <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
                 <span className="text-sm text-slate-700 leading-relaxed">
-                  {item.content}
+                  {processInlineMarkdown(item.content)}
                 </span>
               </div>
             );
@@ -151,7 +159,7 @@ export function ArtifactRenderer({ content }: ArtifactRendererProps) {
           case "text":
             return (
               <p key={index} className="text-sm text-slate-700 leading-relaxed">
-                {item.content}
+                {processInlineMarkdown(item.content)}
               </p>
             );
 

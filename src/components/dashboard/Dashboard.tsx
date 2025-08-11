@@ -47,7 +47,7 @@ export function Dashboard() {
       },
       {
         name: "Total Patients",
-        value: "2",
+        value: stats?.totalPatients?.toString() || "0",
         icon: Users,
         color: "text-blue-600",
         href: "/organization?tab=patients",
@@ -119,14 +119,7 @@ export function Dashboard() {
                     </DialogContent>
                   </Dialog>
                 )}
-                {canInviteMembers && (
-                  <Link to="/organization?tab=patients&sign-patient" className="block">
-                    <Button variant="outline" className="w-full justify-start">
-                      <Users className="h-4 w-4 mr-2" />
-                      Sign a new patient
-                    </Button>
-                  </Link>
-                )}
+
                 {canInviteMembers && (
                   <>
                     <Button
@@ -152,6 +145,17 @@ export function Dashboard() {
                       }}
                     />
                   </>
+                )}
+                {canInviteMembers && (
+                  <Link
+                    to="/organization?tab=patients&sign-patient"
+                    className="block"
+                  >
+                    <Button variant="outline" className="w-full justify-start">
+                      <Users className="h-4 w-4 mr-2" />
+                      Sign a new patient
+                    </Button>
+                  </Link>
                 )}
 
                 {!canCreateTrials && !canInviteMembers && (
