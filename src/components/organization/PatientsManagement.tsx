@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import {
   Users,
   Eye,
@@ -209,6 +210,7 @@ const calculateAge = (dateOfBirth: string | null) => {
 };
 
 export function PatientsManagement() {
+  const location = useLocation();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<PatientInsert>(INITIAL_FORM_STATE);
   const [currentStep, setCurrentStep] = useState("basic");
@@ -229,6 +231,14 @@ export function PatientsManagement() {
     updatePatientLoading,
     generatePatientCode,
   } = usePatients({ organizationId: organization?.id });
+
+  // Check URL parameters to auto-open dialog
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    if (searchParams.has('sign-patient')) {
+      handleCreateNew();
+    }
+  }, [location.search]);
 
   // Generate patient code when dialog opens for new patient
   useEffect(() => {
@@ -357,7 +367,7 @@ export function PatientsManagement() {
           onClick={handleCreateNew}
         >
           <Plus className="w-4 h-4" />
-          Create Patient
+          Sign a new patient
         </Button>
       </div>
 
@@ -373,7 +383,7 @@ export function PatientsManagement() {
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {isEditing ? "Edit Patient" : "Create New Patient"}
+              {isEditing ? "Edit Patient" : "Sign New Patient"}
             </DialogTitle>
             <DialogDescription>
               {isEditing
@@ -854,10 +864,10 @@ export function PatientsManagement() {
               {createPatientLoading || updatePatientLoading
                 ? isEditing
                   ? "Updating..."
-                  : "Creating..."
+                  : "Signing..."
                 : isEditing
                 ? "Update Patient"
-                : "Create Patient"}
+                : "Sign Patient"}
             </Button>
           </DialogFooter>
         </DialogContent>

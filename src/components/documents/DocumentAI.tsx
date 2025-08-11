@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -8,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MessageSquare, AlertCircle } from "lucide-react";
+import { Send, AlertCircle } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { useDocument, useTrialDocuments } from "@/hooks/useDocuments";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -28,7 +27,7 @@ interface ChatMessage {
 export function DocumentAI({ trial }: DocumentAIProps) {
   const location = useLocation();
   const [query, setQuery] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const [documentId, setDocumentId] = useState<string | null>(null);
   const [chat, setChat] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -63,6 +62,15 @@ export function DocumentAI({ trial }: DocumentAIProps) {
     inputRef.current?.focus();
   }, []);
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      if (!isLoading && query.trim() && documentId) {
+        handleSend(e as any);
+      }
+    }
+  };
+
   // Handle send
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,8 +100,8 @@ export function DocumentAI({ trial }: DocumentAIProps) {
 
       // Log the request payload
       const requestPayload = {
-        message: userMessage,
-        retrieve_only: false,
+        message: `${userMessage}. Please provide references to the actual document. eg: "Section 5.1 Inclusion Criteria" `,
+        user_id: token,
         limit: 5,
         document_ids: documentId ? [documentId] : undefined,
       };
@@ -121,7 +129,8 @@ export function DocumentAI({ trial }: DocumentAIProps) {
         throw new Error(`API request failed: ${apiResponse.status}`);
       }
 
-      const responseText = await apiResponse.text();
+      const responseJson = await apiResponse.json();
+      const responseContent = responseJson.response || "No response received";
 
       // Add the response to chat
       setChat((prev) => [
@@ -129,7 +138,7 @@ export function DocumentAI({ trial }: DocumentAIProps) {
         {
           id: `${Date.now()}-llm`,
           role: "llm",
-          content: responseText,
+          content: responseContent,
         },
       ]);
     } catch (error) {
@@ -265,7 +274,7 @@ export function DocumentAI({ trial }: DocumentAIProps) {
       </div>
 
       {/* Input container - fixed at the bottom of this component */}
-      <div className="bottom-0 left-0 right-0 border-t border-gray-300">
+      <div className="bottom-0 left-0 right-0 border-t border-gray-200 bg-gray-50 rounded-b-md">
         {/* Document selector */}
         <div className="px-4 pt-3 pb-2 text-xs text-gray-600 flex items-center gap-3">
           <span className="font-medium text-gray-700 flex-shrink-0">
@@ -273,34 +282,59 @@ export function DocumentAI({ trial }: DocumentAIProps) {
           </span>
           <div className="flex-1 max-w-md">{documentSelector}</div>
         </div>
-        {/* Input row */}
-        <form
-          onSubmit={handleSend}
-          className="flex items-end justify-center px-4 py-4"
-        >
-          <div className="flex w-full max-w-2xl bg-white border border-gray-200 rounded-2xl shadow-sm px-4 py-2 gap-2 items-center">
-            <Input
-              ref={inputRef}
-              className="flex-1 text-base bg-transparent border-none outline-none placeholder-gray-400"
-              placeholder={
-                documentId
-                  ? "Ask a question about this document..."
-                  : "Please select a document first"
-              }
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              autoFocus
-              autoComplete="off"
-              disabled={isLoading || !documentId}
-            />
+
+        {/* Input form */}
+        <form onSubmit={handleSend} className="p-4">
+          <div className="flex gap-3 items-start">
+            <div className="flex-1 relative">
+              <textarea
+                ref={inputRef}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={handleKeyDown}
+                className="w-full h-[44px] resize-none border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white overflow-y-auto"
+                placeholder={
+                  documentId
+                    ? "Ask a question about this document..."
+                    : "Please select a document first"
+                }
+                disabled={isLoading || !documentId}
+                rows={1}
+              />
+
+              {/* Character count */}
+              {query.length > 0 && (
+                <div className="absolute bottom-2 right-3 text-xs text-gray-400">
+                  {query.length}
+                </div>
+              )}
+            </div>
+
+            {/* Send button */}
             <Button
               type="submit"
-              size="icon"
-              disabled={!query.trim() || isLoading || !documentId}
-              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl p-2 transition-all disabled:opacity-50 shadow-lg"
+              disabled={isLoading || !query.trim() || !documentId}
+              className="bg-blue-600 hover:bg-blue-700 text-sm h-[44px] px-4 flex items-center gap-2"
             >
-              <MessageSquare className="w-5 h-5" />
+              {isLoading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span className="hidden sm:inline">Analyzing...</span>
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4" />
+                  <span className="hidden sm:inline">Send</span>
+                </>
+              )}
             </Button>
+          </div>
+
+          {/* Helper text */}
+          <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
+            <div className="flex items-center gap-4">
+              <span>Press Enter to send, Shift+Enter for new line</span>
+            </div>
           </div>
         </form>
       </div>

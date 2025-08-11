@@ -120,36 +120,18 @@ export function Dashboard() {
                   </Dialog>
                 )}
                 {canInviteMembers && (
-                  <>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start "
-                      onClick={() => setShowInviteDialog(true)}
-                    >
+                  <Link to="/organization?tab=patients&sign-patient" className="block">
+                    <Button variant="outline" className="w-full justify-start">
                       <Users className="h-4 w-4 mr-2" />
-                      Assign a new Patient
+                      Sign a new patient
                     </Button>
-                    <InviteMemberDialog
-                      open={showInviteDialog}
-                      onOpenChange={setShowInviteDialog}
-                      onInvite={async (members) => {
-                        for (const member of members) {
-                          await inviteMember(
-                            member.email,
-                            member.name,
-                            member.role
-                          );
-                        }
-                        setShowInviteDialog(false);
-                      }}
-                    />
-                  </>
+                  </Link>
                 )}
                 {canInviteMembers && (
                   <>
                     <Button
                       variant="outline"
-                      className="w-full justify-start "
+                      className="w-full justify-start"
                       onClick={() => setShowInviteDialog(true)}
                     >
                       <Users className="h-4 w-4 mr-2" />
