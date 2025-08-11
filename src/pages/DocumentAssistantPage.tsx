@@ -93,7 +93,7 @@ export default function DocumentAssistantPage() {
 
   return (
     <AppLayout title="Document Assistant" breadcrumbItems={breadcrumbItems}>
-      <div className="flex-1 h-[calc(100vh-35vh)]  ">
+      <div className="flex-1 flex flex-col h-full">
         <DocumentAssistantTabs
           currentTab={currentTab}
           onTabChange={(newTab) =>
@@ -101,7 +101,7 @@ export default function DocumentAssistantPage() {
           }
         />
 
-        <div className="py-4  h-full ">
+        <div className="flex-1 h-0 relative">
           <DocumentAssistantContent
             trial={selectedTrial}
             currentTab={currentTab}

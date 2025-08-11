@@ -247,7 +247,7 @@ export function TrialsPage() {
               </p>
             )}
 
-            <p className="text-sm text-gray-500 mb-4">
+            <p className="text-sm text-gray-500 mb-4 line-clamp-3">
               {trial.description || "No description available"}
             </p>
 

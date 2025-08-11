@@ -15,6 +15,7 @@ import {
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { ChatHistory } from "./ChatHistory";
 
 export const AppSidebar = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -129,6 +130,9 @@ export const AppSidebar = () => {
               );
             })}
           </div>
+
+          {/* Chat History Section */}
+          <ChatHistory />
 
           {/* Others Section */}
           {/* <div className="pt-6">
