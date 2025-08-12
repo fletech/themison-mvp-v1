@@ -16,6 +16,7 @@ import {
   Zap,
   Settings,
   Bell,
+  UserPlus,
 } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { useDocument, useTrialDocuments } from "@/hooks/useDocuments";
@@ -26,6 +27,7 @@ import {
   getMockResponse,
   generateMockDocument,
 } from "@/services/mockAIService";
+import { PatientChecklistModal } from "./PatientChecklistModal";
 
 interface DocumentAIProps {
   trial: any;
@@ -65,6 +67,11 @@ export function DocumentAI({ trial }: DocumentAIProps) {
     null
   );
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Checklist modal state
+  const [showChecklistModal, setShowChecklistModal] = useState(false);
+  const [currentChecklist, setCurrentChecklist] = useState<string>("");
+  const [currentChecklistTitle, setCurrentChecklistTitle] = useState<string>("");
 
   // Get all documents and filter for active ones
   const { data: documents = [], isLoading: docsLoading } = useTrialDocuments(
@@ -388,8 +395,14 @@ export function DocumentAI({ trial }: DocumentAIProps) {
     icon: string;
     action: string;
     type: "download" | "generate" | "setup";
-  }) => {
-    if (action.type === "download" || action.type === "generate") {
+  }, messageContent?: string) => {
+    if (action.action === "add_checklist_to_patient") {
+      // Extract checklist from the current message content
+      const checklistContent = messageContent || currentChecklist;
+      setCurrentChecklist(checklistContent);
+      setCurrentChecklistTitle("Medical Test Checklist");
+      setShowChecklistModal(true);
+    } else if (action.type === "download" || action.type === "generate") {
       // Generate and download the suggested template
       const template = {
         title: action.title,
@@ -636,6 +649,8 @@ export function DocumentAI({ trial }: DocumentAIProps) {
                                   ? Settings
                                   : action.icon === "Bell"
                                   ? Bell
+                                  : action.icon === "UserPlus"
+                                  ? UserPlus
                                   : Zap;
                               return (
                                 <Button
@@ -643,7 +658,7 @@ export function DocumentAI({ trial }: DocumentAIProps) {
                                   variant="outline"
                                   size="sm"
                                   className="bg-white hover:bg-indigo-50 border-indigo-200 text-indigo-800 hover:text-indigo-900 hover:border-indigo-300 transition-colors"
-                                  onClick={() => handleQuickAction(action)}
+                                  onClick={() => handleQuickAction(action, msg.content)}
                                 >
                                   <IconComponent className="w-3.5 h-3.5 mr-2" />
                                   {action.title}
@@ -742,6 +757,18 @@ export function DocumentAI({ trial }: DocumentAIProps) {
           </div>
         </form>
       </div>
+
+      {/* Patient Checklist Modal */}
+      <PatientChecklistModal
+        isOpen={showChecklistModal}
+        onClose={() => {
+          setShowChecklistModal(false);
+          setCurrentChecklist("");
+          setCurrentChecklistTitle("");
+        }}
+        checklistContent={currentChecklist}
+        checklistTitle={currentChecklistTitle}
+      />
     </div>
   );
 }

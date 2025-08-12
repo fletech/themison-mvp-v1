@@ -56,6 +56,7 @@ import {
 import { useAppData } from "@/hooks/useAppData";
 import { PatientDetailsDrawer } from "./PatientDetailsDrawer";
 import { usePatientDocuments } from "@/hooks/usePatientDocuments";
+import { supabase } from "@/integrations/supabase/client";
 
 // Form validation and constants
 const GENDER_OPTIONS = [
@@ -263,6 +264,29 @@ export function PatientsManagement() {
     // Basic validation
     if (!form.patient_code || !form.organization_id) {
       return;
+    }
+
+    // Email validation - check for duplicates if email is provided
+    if (form.email && form.email.trim()) {
+      // Real-time validation with Supabase - exact match on email and organization
+      const { data: existingEmail, error: emailError } = await supabase
+        .from("patients")
+        .select("patient_code, first_name, last_name, email")
+        .eq("organization_id", form.organization_id)
+        .eq("email", form.email.trim()) // Use exact match instead of ilike
+        .neq("id", editingPatientId || ""); // Exclude current patient if editing
+      
+      if (emailError) {
+        console.error("Email validation error:", emailError);
+        alert("Error validating email. Please try again.");
+        return;
+      }
+      
+      if (existingEmail && existingEmail.length > 0) {
+        const existing = existingEmail[0];
+        alert(`Email ${form.email} is already in use by patient ${existing.patient_code} (${existing.first_name} ${existing.last_name})`);
+        return;
+      }
     }
 
     // Convert numeric strings to numbers

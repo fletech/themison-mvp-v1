@@ -130,6 +130,12 @@ const DIABETES_PROTOCOL_RESPONSES: MockResponses = {
     ],
     quickActions: [
       {
+        title: "Add this checklist to a patient",
+        icon: "UserPlus",
+        action: "add_checklist_to_patient",
+        type: "setup"
+      },
+      {
         title: "Generate Test Checklist",
         icon: "FileDown",
         action: "medical_tests_checklist.pdf",

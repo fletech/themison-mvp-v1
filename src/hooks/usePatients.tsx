@@ -184,9 +184,7 @@ export function usePatients({ organizationId }: UsePatientOptions = {}) {
     const { data, error } = await supabase
       .from("patients")
       .select("patient_code")
-      .eq("organization_id", organizationId)
-      .order("patient_code", { ascending: false })
-      .limit(1);
+      .eq("organization_id", organizationId);
 
     if (error) throw error;
 
@@ -194,10 +192,18 @@ export function usePatients({ organizationId }: UsePatientOptions = {}) {
       return "P-001";
     }
 
-    const lastCode = data[0].patient_code;
-    const match = lastCode.match(/P-(\d+)/);
-    if (match) {
-      const nextNumber = parseInt(match[1]) + 1;
+    // Filter valid codes and extract numbers
+    const validCodes = data
+      .map(p => {
+        const match = p.patient_code.match(/^P-(\d+)$/);
+        return match ? parseInt(match[1]) : null;
+      })
+      .filter(num => num !== null)
+      .sort((a, b) => b - a); // Sort numbers descending
+
+    if (validCodes.length > 0) {
+      const highestNumber = validCodes[0];
+      const nextNumber = highestNumber + 1;
       return `P-${nextNumber.toString().padStart(3, "0")}`;
     }
 
