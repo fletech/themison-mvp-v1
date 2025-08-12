@@ -561,20 +561,30 @@ export function TrialPatientsManager({ trial }: TrialPatientsManagerProps) {
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                               <h5 className="font-medium mb-3">Cost Breakdown</h5>
-                              {costs.breakdown && costs.breakdown.length > 0 ? (
-                                <div className="space-y-2">
-                                  {costs.breakdown.map((item: any, index: number) => (
-                                    <div key={index} className="flex justify-between text-sm">
-                                      <span>{item.category}</span>
-                                      <span className="font-medium">{formatCurrency(item.amount)}</span>
-                                    </div>
-                                  ))}
+                              <div className="space-y-2">
+                                <div className="flex justify-between text-sm">
+                                  <span>Transportation</span>
+                                  <span className="font-medium">{formatCurrency(costs.transport_allowance || 0)}</span>
                                 </div>
-                              ) : (
-                                <div className="text-sm text-muted-foreground">
-                                  No cost breakdown available
+                                <div className="flex justify-between text-sm">
+                                  <span>Reimbursement Rate</span>
+                                  <span className="font-medium">{formatCurrency(costs.reimbursement_rate || 0)}</span>
                                 </div>
-                              )}
+                                <div className="flex justify-between text-sm">
+                                  <span>Target Visits</span>
+                                  <span className="font-medium">{costs.target_visits || 0} visits</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                  <span>Compliance Target</span>
+                                  <span className="font-medium">{costs.compliance_target || 0}%</span>
+                                </div>
+                                {costs.expected_completion && (
+                                  <div className="flex justify-between text-sm">
+                                    <span>Expected Completion</span>
+                                    <span className="font-medium">{new Date(costs.expected_completion).toLocaleDateString()}</span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                             <div>
                               <h5 className="font-medium mb-3">Budget Overview</h5>

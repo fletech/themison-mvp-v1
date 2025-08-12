@@ -103,19 +103,72 @@ export function ChatContainer({ organizationId, stats }: ChatContainerProps) {
                 }, Gender ${patientData.medical.gender || "N/A"}`;
               }
               if (patientData.visits) {
-                contextData += `\n      Visits: ${
+                contextData += `\n      Visits Overall: ${
                   patientData.visits.completed || 0
                 }/${patientData.visits.total_target || 0} completed`;
+                
+                // EXPLICITLY add 6-month data
+                if (patientData.visits.last_6_months) {
+                  contextData += `\n      Last 6 Months: ${
+                    patientData.visits.last_6_months.completed || 0
+                  } completed, ${
+                    patientData.visits.last_6_months.scheduled || 0
+                  } scheduled, ${
+                    patientData.visits.last_6_months.missed || 0
+                  } missed`;
+                  contextData += `\n      6-Month Attendance Rate: ${
+                    patientData.visits.last_6_months.completed && patientData.visits.last_6_months.scheduled
+                      ? ((patientData.visits.last_6_months.completed / patientData.visits.last_6_months.scheduled) * 100).toFixed(1)
+                      : 0
+                  }%`;
+                }
               }
               if (patientData.compliance) {
                 contextData += `\n      Compliance Score: ${
                   patientData.compliance.overallScore || "N/A"
                 }%`;
               }
+              
+              // Add cost data for financial analysis
+              if (costData && Object.keys(costData).length > 0) {
+                contextData += `\n      Cost Information:`;
+                if (costData.budget_allocated) {
+                  contextData += `\n        Budget Allocated: $${costData.budget_allocated}`;
+                }
+                if (costData.costs_to_date) {
+                  contextData += `\n        Costs to Date: $${costData.costs_to_date}`;
+                }
+                if (costData.transport_allowance) {
+                  contextData += `\n        Transportation Allowance: $${costData.transport_allowance}`;
+                }
+                if (costData.reimbursement_rate) {
+                  contextData += `\n        Reimbursement Rate: $${costData.reimbursement_rate}`;
+                }
+                if (costData.target_visits) {
+                  contextData += `\n        Target Visits: ${costData.target_visits}`;
+                }
+              }
               if (patientData.nextVisit) {
                 contextData += `\n      Next Visit: ${
                   patientData.nextVisit.date || "Not scheduled"
                 }`;
+              }
+              
+              // Add visit history for temporal analysis
+              if (patientData.visitHistory && Array.isArray(patientData.visitHistory)) {
+                contextData += `\n      Visit History Details:`;
+                patientData.visitHistory.forEach((visit: any) => {
+                  contextData += `\n        * ${visit.date} (${visit.month}): ${visit.type} - ${visit.status}`;
+                });
+                
+                // Calculate last month data (assuming current month is August 2025)
+                const lastMonthVisits = patientData.visitHistory.filter((v: any) => v.month === "2025-07");
+                const lastMonthCompleted = lastMonthVisits.filter((v: any) => v.status === "completed").length;
+                const lastMonthTotal = lastMonthVisits.length;
+                
+                if (lastMonthTotal > 0) {
+                  contextData += `\n        Last Month (July 2025): ${lastMonthCompleted}/${lastMonthTotal} completed (${((lastMonthCompleted/lastMonthTotal)*100).toFixed(1)}%)`;
+                }
               }
             });
           }
@@ -136,19 +189,55 @@ export function ChatContainer({ organizationId, stats }: ChatContainerProps) {
 
 ${contextData}
 
-You have complete freedom to decide how to respond to user queries. You can:
-- Answer conversationally for simple questions
-- Create structured data presentations using markdown formatting when you think it would be helpful
-- Use tables (| separators), headers (## text), and bullet points (- text) when organizing complex information
-- Be creative in how you present information - you decide what's most useful for the user
+CRITICAL CALCULATION GUIDELINES - READ CAREFULLY:
+When analyzing visit data, you MUST distinguish between these metrics:
+- "6-Month Attendance Rate" = last_6_months.completed / last_6_months.scheduled × 100
+- "Overall Progress Rate" = visits.completed / visits.total_target × 100
+- IMPORTANT: "scheduled" means total visits that were supposed to happen (not completed + remaining)
+- When user asks for "last 6 months" data, use the last_6_months object values
+- The contextData already includes pre-calculated 6-Month Attendance Rate - TRUST AND USE IT
+- NEVER recalculate if pre-calculated values are provided - they are authoritative
+- Always show your calculation formula and the actual numbers used
 
-The system can render:
+SMART VERBOSITY GUIDELINES:
+Adapt your response detail level based on question type:
+- SUMMARY questions (how many, what's the total, what's the rate): Provide CONCISE answers with key metrics only
+- ANALYSIS questions (show patterns, compare, identify issues): Provide detailed breakdowns with individual data
+- EXECUTIVE questions (business review, quarterly analysis): Lead with executive summary, then supporting details
+- If >5 patients and asking for simple totals/counts: DON'T list individual patients unless specifically requested
+- For simple metrics, format as: "Answer: X out of Y (Z% rate). Calculation: formula"
+- Always prioritize the direct answer to the user's question first
+
+For patient_data structure:
+- visits.completed = total completed visits in trial
+- visits.total_target = total planned visits for entire trial
+- visits.last_6_months.completed = visits completed in last 6 months
+- visits.last_6_months.scheduled = visits scheduled in last 6 months
+- visitHistory = array of individual visits with dates and status
+- CRITICAL: For monthly analysis, use visitHistory array to filter by month field
+- Each visitHistory entry has: date, month, type, status, visit_number
+- The contextData includes pre-calculated "Last Month" data - USE IT DIRECTLY
+- For cost analysis, use the Cost Information section for each patient
+- Transportation costs are in "Transportation Allowance" field per patient
+- Compare costs across trial phases by grouping patients by their trial's phase
+
+RESPONSE FORMAT GUIDELINES:
+- For SIMPLE questions: Start with direct answer, then brief supporting details
+- For COMPLEX analysis: Use structured format with headers and tables
+- For EXECUTIVE queries: Executive summary first, then detailed analysis
+
+You can use these formatting options:
 - ## Headers for sections
 - | Table | Format | With | Columns |
 - - Bullet points for lists
 - Regular conversational text
 
-Choose the best format based on what the user is asking and what would be most helpful to them. Trust your judgment on when to use structured vs conversational responses.`;
+RESPONSE EXAMPLES:
+Simple: "14 visits were scheduled last month, 1 was missed (92.9% completion rate). Calculation: 13 completed ÷ 14 scheduled = 92.9%"
+Analysis: "## Visit Pattern Analysis\n[detailed breakdown with individual data]"
+Executive: "## Executive Summary\nKey findings: [summary]\n## Detailed Analysis\n[supporting data]"
+
+Always match your response style to the complexity and audience level of the question.`;
 
       const chatCompletion = await groq.chat.completions.create({
         messages: [
